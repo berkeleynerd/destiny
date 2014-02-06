@@ -1,0 +1,473 @@
+#include "stdafx.h"
+
+#include "Ball.h"
+#include "Ballpark.h"
+
+const Be::ClassInfo* Ball::ExposeToBlue()
+{
+	
+	EXPOSURE_BEGIN(Ball, "")
+		MAP_INTERFACE(INotify)
+		MAP_INTERFACE(IBall)
+		MAP_INTERFACE(Ball)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               name of ball
+
+		MAP_ATTRIBUTE
+		(
+			"id",
+			mId,
+			"id of ball",
+			Be::READ| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               mass
+		MAP_ATTRIBUTE
+		(
+			"mass",
+			mMass,
+			"Mass of ball (kg)",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               radius
+		MAP_ATTRIBUTE
+		(
+			"radius",
+			mRadius,
+			"Radius of ball (m)",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               maxVelocity
+		MAP_ATTRIBUTE
+		(
+			"maxVelocity",
+			mMaxVel,
+			"Maximum velocity of ball (m/s)",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               isFree
+		MAP_ATTRIBUTE
+		(
+			"isFree",
+			isFree,
+			"True if ball is free to move",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               isGlobal
+		MAP_ATTRIBUTE
+		(
+			"isGlobal",
+			isGlobal,
+			"True if ball should be visible from all",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               isMassive
+		MAP_ATTRIBUTE
+		(
+			"isMassive",
+			isMassive,
+			"True if ball is solid",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               isInteractive
+		MAP_ATTRIBUTE
+		(
+			"isInteractive",
+			isInteractive,
+			"True if ball is interactive",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               isCloaked
+		MAP_ATTRIBUTE
+		(
+			"isCloaked",
+			isCloaked,
+			"True if ball is cloaked",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               isMoribund
+		MAP_ATTRIBUTE
+		(
+			"isMoribund",
+			isMoribund,
+			"True if ball is moribund",
+			Be::READ
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               mHarmonic
+		MAP_ATTRIBUTE
+		(
+			"harmonic",
+			mHarmonic,
+			"Shield harmonic value of ball",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               mCorporationID
+		MAP_ATTRIBUTE
+		(
+			"corporationID",
+			mCorporationID,
+			"corporation ID of ball",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               mAllianceID
+		MAP_ATTRIBUTE
+		(
+			"allianceID",
+			mAllianceID,
+			"alliance ID of ball",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              x of ball
+		MAP_ATTRIBUTE
+		(
+			"x",
+			mNewPos.x,
+			"x position of ball (m)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              y of ball
+		MAP_ATTRIBUTE
+		(
+			"y",
+			mNewPos.y,
+			"y position of ball (m)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              z of ball
+		MAP_ATTRIBUTE
+		(
+			"z",
+			mNewPos.z,
+			"z position of ball (m)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              vx of ball
+		MAP_ATTRIBUTE
+		(
+			"vx",
+			mNewVel.x,
+			"x velocity of ball (m/s)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              vy of ball
+		MAP_ATTRIBUTE
+		(
+			"vy",
+			mNewVel.y,
+			"y velocity of ball (m/s)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              vz of ball
+		MAP_ATTRIBUTE
+		(
+			"vz",
+			mNewVel.z,
+			"z velocity of ball (m/s)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              yaw of ball
+		MAP_ATTRIBUTE
+		(
+			"yaw",
+			mNewYaw,
+			"Yaw of ball",
+			Be::READ
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              pitch of ball
+		MAP_ATTRIBUTE
+		(
+			"pitch",
+			mNewPitch,
+			"Pitch of ball",
+			Be::READ
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              roll of ball
+		MAP_ATTRIBUTE
+		(
+			"roll",
+			mNewRoll,
+			"Roll of ball",
+			Be::READ
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               Agility
+
+		MAP_ATTRIBUTE
+		(
+			"Agility",
+			mAgility,
+			"Agility modifier of ship",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+		/////////////////////////////////////////////////////////////////////////////
+		//               speedFraction
+		MAP_ATTRIBUTE
+		(
+			"speedFraction",
+			mSpeedFraction,
+			"Cruise velocity as a fraction of maximum velocity",
+			Be::READWRITE | Be::NOTIFY| Be::PERSIST
+		)
+		/////////////////////////////////////////////////////////////////////////////
+		//               mode
+		MAP_ATTRIBUTE_WITH_CHOOSER
+		(
+			"mode",
+			mMode,
+			"Dynamic mode of ball",
+			Be::READ| Be::ENUM| Be::PERSIST,
+			DstBallMode
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              x of goto
+		MAP_ATTRIBUTE
+		(
+			"gotoX",
+			mGoto.x,
+			"x destination of ball (m)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              y of goto
+		MAP_ATTRIBUTE
+		(
+			"gotoY",
+			mGoto.y,
+			"y destination of ball (m)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              z of goto
+		MAP_ATTRIBUTE
+		(
+			"gotoZ",
+			mGoto.z,
+			"z destination of ball (m)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST
+		)
+
+
+		MAP_ATTRIBUTE
+		(
+			"followId",
+			mFollowId,
+			"id of ball",
+			Be::READ| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               followRange
+		MAP_ATTRIBUTE
+		(
+			"followRange",
+			mFollowRange,
+			"range of follow",
+			Be::READ| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              ownerId
+
+
+		MAP_ATTRIBUTE
+		(
+			"ownerId",
+			mOwnerId,
+			"id of ball",
+			Be::READWRITE| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               effectStamp
+		MAP_ATTRIBUTE
+		(
+			"effectStamp",
+			mEffectStamp,
+			"time stamp of effect",
+			Be::READ| Be::PERSIST
+		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               new bubbleId
+		MAP_ATTRIBUTE
+		(
+			"newBubbleId",
+			mNewBubble,
+			"id of bubble ball currently belongs to",
+			Be::READ
+		)
+		/////////////////////////////////////////////////////////////////////////////
+		//               old bubbleId
+		MAP_ATTRIBUTE
+		(
+			"oldBubbleId",
+			mOldBubble,
+			"id of bubble ball used to belong to",
+			Be::READ
+		)
+		/////////////////////////////////////////////////////////////////////////////
+		//               formation ID
+		MAP_ATTRIBUTE
+		(
+			"formationID",
+			mFormationID,
+			"id of current formation",
+			Be::READ
+		)
+		////////////////////////////////////////////////////////////////////////////
+		//               keys
+		MAP_ATTRIBUTE
+		(
+			"miniBalls",
+			mMiniBalls,
+			"na",
+			Be::READWRITE | Be::PERSIST
+		)
+
+
+		////////////////////////////////////////////////////////////////////////////
+		//               ballpark
+		MAP_ATTRIBUTE
+		(
+			"ballpark",
+			mPark,
+			"The ballpark",
+			Be::READ
+		)
+
+		////////////////////////////////////////////////////////////////////////////
+		//               __init__
+		MAP_METHOD_AS_METHOD
+		(
+			"__init__",
+			Py__init__,
+			"Constructor arguments"
+		)
+
+		MAP_METHOD_AS_METHOD
+		(
+			"AddMiniBall",
+			PyAddMiniBall,
+			"Adds a miniball to the miniballs list"
+		)
+
+		MAP_METHOD_AS_METHOD
+		(
+			"GetRotatedVector",
+			PyGetRotatedVector,
+			"Returns the given vector rotated with the balls current rotation"
+		)
+		MAP_METHOD_AS_METHOD
+		(
+			"AddProximitySensor",
+			PyAddProximitySensor,
+			"Adds a proximity sensor to the given ball"
+		)
+		MAP_METHOD_AS_METHOD
+		(
+			"ReserveFormationSlot",
+			PyReserveFormationSlot,
+			"Reserves a formation slot"
+		)
+		MAP_METHOD_AS_METHOD
+		(
+			"FreeFormationSlot",
+			PyFreeFormationSlot,
+			"Frees a formation slot"
+		)
+	EXPOSURE_END()
+}
+
+
+const Be::ClassInfo* ClientBall::ExposeToBlue()
+{
+
+	EXPOSURE_BEGIN(ClientBall, "")
+		MAP_INTERFACE(ITriQuaternionFunction)
+		MAP_INTERFACE(ITriVectorFunction)
+		MAP_INTERFACE(IEveReferencePoint)
+		MAP_INTERFACE(ClientBall)
+
+
+		MAP_ATTRIBUTE
+		(
+			"showBoxes",
+			mShowBoxes,
+			"True to display partition boxes around ball",
+			Be::READWRITE
+		)
+
+		MAP_ATTRIBUTE
+		(
+			"centerDist",
+			mCenterDist,
+			"center-center distance from ego",
+			Be::READ
+		)
+		MAP_ATTRIBUTE
+		(
+			"surfaceDist",
+			mSurfaceDist,
+			"surface-surface distance from ego",
+			Be::READ
+		)
+
+		MAP_METHOD_AS_METHOD
+		(
+			"GetPartitionBoxes",
+			PyGetPartitionBoxes,
+			"Testing python method call."
+		)
+
+	EXPOSURE_CHAINTO(Ball)
+}

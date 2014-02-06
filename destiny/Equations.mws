@@ -1,0 +1,136 @@
+{VERSION 5 0 "IBM INTEL NT" "5.0" }
+{USTYLETAB {CSTYLE "Maple Input" -1 0 "Courier" 0 1 255 0 0 1 0 1 0 0 
+1 0 0 0 0 1 }{CSTYLE "2D Math" -1 2 "Times" 0 1 0 0 0 0 0 0 2 0 0 0 0 
+0 0 1 }{CSTYLE "2D Output" 2 20 "" 0 1 0 0 255 1 0 0 0 0 0 0 0 0 0 1 }
+{CSTYLE "" -1 256 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 257 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 259 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 261 "Helvetica" 1 14 0 0 0 0 1 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 262 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 264 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 265 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 266 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 268 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{CSTYLE "" -1 269 "Helvetica" 1 14 0 0 0 0 0 0 0 0 0 0 0 0 0 0 }
+{PSTYLE "Normal" -1 0 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 2 2 2 2 
+2 2 1 1 1 1 }1 1 0 0 0 0 1 0 1 0 2 2 0 1 }{PSTYLE "Maple Output" -1 
+11 1 {CSTYLE "" -1 -1 "Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 1 1 1 }3 3 0 
+0 0 0 1 0 1 0 2 2 0 1 }{PSTYLE "Maple Plot" -1 13 1 {CSTYLE "" -1 -1 "
+Times" 1 12 0 0 0 1 2 2 2 2 2 2 1 1 1 1 }3 1 0 0 0 0 1 0 1 0 2 2 0 1 }
+}
+{SECT 0 {EXCHG {PARA 0 "" 0 "" {TEXT 256 124 "This is the basic equati
+on of motion for the ship. The value of k is the drag factor of space,
+ m is the mass, g is a thrust." }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 
+1 0 8 "restart;" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 25 "interfac
+e(showassumed=0);" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 21 "assume
+(m > 0, k > 0);" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 27 "eq1 := m
+*dvdt = -k*v + m*g;" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#>%$eq1G/*&%#m|i
+rG\"\"\"%%dvdtGF(,&*&%#k|irGF(%\"vGF(!\"\"*&F'F(%\"gGF(F(" }}}{EXCHG 
+{PARA 0 "> " 0 "" {MPLTEXT 1 0 16 "eq2 := dxdt = v;" }}{PARA 11 "" 1 "
+" {XPPMATH 20 "6#>%$eq2G/%%dxdtG%\"vG" }}}{EXCHG {PARA 0 "" 0 "" 
+{TEXT 257 150 "A simplistic implicit Euler gives us the integration fo
+rmulas. The x0 and v0 are the old values, and x and v are the new valu
+es after a time step dt. " }{TEXT -1 0 "" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 31 "s1 := subs(dvdt=(v-v0)/dt,eq1);" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "6#>%#s1G/*(%#m|irG\"\"\",&%\"vGF(%#v0G!\"\"F(%#dtGF,,&*&%
+#k|irGF(F*F(F,*&F'F(%\"gGF(F(" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 
+0 31 "s2 := subs(dxdt=(x-x0)/dt,eq2);" }}{PARA 11 "" 1 "" {XPPMATH 20 
+"6#>%#s2G/*&,&%\"xG\"\"\"%#x0G!\"\"F)%#dtGF+%\"vG" }}}{EXCHG {PARA 0 "
+> " 0 "" {MPLTEXT 1 0 21 "solve(\{s1,s2\},\{x,v\});" }}{PARA 11 "" 1 "
+" {XPPMATH 20 "6#<$/%\"vG*(%#m|irG\"\"\",&%#v0GF(*&%\"gGF(%#dtGF(F(F(,
+&F'F(*&%#k|irGF(F-F(F(!\"\"/%\"xG*&,**&%#x0GF(F'F(F(*(F7F(F0F(F-F(F(*(
+F'F(F-F(F*F(F(*(F'F()F-\"\"#F(F,F(F(F(F.F1" }}}{EXCHG {PARA 0 "" 0 "" 
+{TEXT 259 98 "Solving the dynamical equations on the other hand gives \+
+(same for all spatial dimensions assuming " }{TEXT 261 1 "g" }{TEXT 
+262 12 " constant): " }{TEXT -1 0 "" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 62 "diffeq := m*diff(diff(x(t),t),t) + k*diff(x(t),t) - m
+ * g = 0;" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#>%'diffeqG/,(*&%#m|irG\"
+\"\"-%%diffG6$-%\"xG6#%\"tG-%\"$G6$F0\"\"#F)F)*&%#k|irGF)-F+6$F-F0F)F)
+*&F(F)%\"gGF)!\"\"\"\"!" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 33 "
+sol := subs(dsolve(diffeq),x(t));" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#>
+%$solG,(**%$_C1G\"\"\"%#k|irG!\"\"%#m|irGF(-%$expG6#,$*(F)F(F+F*%\"tGF
+(F*F(F***%\"gGF(F)F*F+F(F1F(F(%$_C2GF(" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 20 "dsol := diff(sol,t);" }}{PARA 11 "" 1 "" {XPPMATH 20 
+"6#>%%dsolG,&*(%\"gG\"\"\"%#k|irG!\"\"%#m|irGF(F(*&-%$expG6#,$*(F)F(F+
+F*%\"tGF(F*F(%$_C1GF(F(" }}}{EXCHG {PARA 0 "" 0 "" {TEXT 264 90 "Assum
+ing that at t0 we have x0 and v0, we get an expression for the integra
+tion constants:" }{TEXT -1 0 "" }}}{EXCHG {PARA 0 "" 0 "" {TEXT -1 0 "
+" }{MPLTEXT 1 0 75 "constants := solve( \{subs(t=t0,sol) = x0, subs(t=
+t0,dsol) = v0\},\{_C1,_C2\});" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#>%*co
+nstantsG<$/%$_C2G,$*&,**&)%#m|irG\"\"#\"\"\"%\"gGF/F/*(F-F/%#v0GF/%#k|
+irGF/!\"\"**F0F/F-F/%#t0GF/F3F/F/*&%#x0GF/)F3F.F/F4F/F3!\"#F4/%$_C1G,$
+*(,&*&F-F/F0F/F/*&F2F/F3F/F4F/-%$expG6#,$*(F3F/F-F4F6F/F4F4F3F4F4" }}}
+{EXCHG {PARA 0 "" 0 "" {TEXT 265 72 "And putting them back into the so
+lution, gives us the general equations:" }}}{EXCHG {PARA 0 "> " 0 "" 
+{MPLTEXT 1 0 28 "sol0 := subs(constants,sol);" }}{PARA 11 "" 1 "" 
+{XPPMATH 20 "6#>%%sol0G,(*,,&*&%#m|irG\"\"\"%\"gGF*F**&%#v0GF*%#k|irGF
+*!\"\"F*-%$expG6#,$*(F.F*F)F/%#t0GF*F/F/F.!\"#F)F*-F16#,$*(F.F*F)F/%\"
+tGF*F/F*F***F+F*F.F/F)F*F;F*F**&,**&)F)\"\"#F*F+F*F**(F)F*F-F*F.F*F/**
+F+F*F)F*F5F*F.F*F**&%#x0GF*)F.FAF*F/F*F.F6F/" }}}{EXCHG {PARA 0 "> " 
+0 "" {MPLTEXT 1 0 30 "dsol0 := subs(constants,dsol);" }}{PARA 11 "" 1 
+"" {XPPMATH 20 "6#>%&dsol0G,&*(%\"gG\"\"\"%#k|irG!\"\"%#m|irGF(F(**-%$
+expG6#,$*(F)F(F+F*%\"tGF(F*F(,&*&F+F(F'F(F(*&%#v0GF(F)F(F*F(-F.6#,$*(F
+)F(F+F*%#t0GF(F*F*F)F*F*" }}}{EXCHG {PARA 0 "" 0 "" {TEXT 268 84 "Note
+ that the system has a terminal velocity, which is only dependent on t
+he thrust:" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 43 "terminalVeloc
+ity :=limit(dsol0,t=infinity);" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#>%1t
+erminalVelocityG*(%\"gG\"\"\"%#k|irG!\"\"%#m|irGF'" }}}{EXCHG {PARA 0 
+"" 0 "" {TEXT 269 82 " If thrust is shut off at a certain time (e.g. t
+0), the distance traveled will be:" }{TEXT -1 0 "" }}}{EXCHG {PARA 0 "
+> " 0 "" {MPLTEXT 1 0 65 "brakingDistance := simplify(limit(subs(g=0,s
+ol0),t=infinity)-x0);" }}{PARA 11 "" 1 "" {XPPMATH 20 "6#>%0brakingDis
+tanceG*(%#m|irG\"\"\"%#v0GF'%#k|irG!\"\"" }}}{EXCHG {PARA 0 "" 0 "" 
+{TEXT 266 112 "Playing around with the parameters gives you a rough id
+ea of the behavior. Position is red and velocity is blue." }{TEXT -1 
+0 "" }}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 95 "plot(subs(x0 = 0, v0
+ = 1, t0 = 0, k = 1, m = 1, g = 3,[sol0,dsol0]),t=0...10,color=[red,bl
+ue]);" }}{PARA 13 "" 1 "" {GLPLOT2D 400 300 300 {PLOTDATA 2 "6&-%'CURV
+ESG6$7S7$$\"\"!F)F(7$$\"3emmm;arz@!#=$\"3.#*3CrF6AEF-7$$\"3[LL$e9ui2%F
+-$\"3Bs%Qe;cL`&F-7$$\"3nmmm\"z_\"4iF-$\"3ka<MXU]w$*F-7$$\"39ommT&phN)F
+-$\"3!zYS\"HY1u8!#<7$$\"3KLLe*=)H\\5F?$\"3M^_G>9E[=F?7$$\"3smm\"z/3uC
+\"F?$\"3clcMx3s;BF?7$$\"3!****\\7LRDX\"F?$\"3))Q#*)yxob#GF?7$$\"3%om;z
+R'ok;F?$\"3!e3\"\\*=fDP$F?7$$\"33++D1J:w=F?$\"3)p2Hry:[$RF?7$$\"3oLLL3
+En$4#F?$\"3[1:3a_[FXF?7$$\"3#pmmT!RE&G#F?$\"3KV>gEhGf]F?7$$\"3D+++D.&4
+]#F?$\"3/%4/:.lom&F?7$$\"3;+++vB_<FF?$\"3m4VWkMk%G'F?7$$\"33+++v'Hi#HF
+?$\"33n&y'4l)e)oF?7$$\"3&om;z*ev:JF?$\"3WfM:Uw&fV(F?7$$\"3_LLL347TLF?$
+\"3Y!Q)yTs:%4)F?7$$\"3nLLLLY.KNF?$\"3%31\\Mg%fa')F?7$$\"33++D\"o7Tv$F?
+$\"3^D]r!\\!=4$*F?7$$\"3?LLL$Q*o]RF?$\"3Kq%e\\,^0*)*F?7$$\"3m++D\"=lj;
+%F?$\"3i))G2g7,`5!#;7$$\"3S++vV&R<P%F?$\"3lrte8x/96Fjq7$$\"3CML$e9Ege%
+F?$\"3aYXn+l%y<\"Fjq7$$\"3]LLeR\"3Gy%F?$\"3)fobG$p^O7Fjq7$$\"3emm;/T1&
+*\\F?$\"3#)oMl)[t)*H\"Fjq7$$\"3=nm\"zRQb@&F?$\"3%\\E]5#yul8Fjq7$$\"3:+
++v=>Y2aF?$\"3-5vUw^8B9Fjq7$$\"3Znm;zXu9cF?$\"3;#H.=7_^[\"Fjq7$$\"34+++
+]y))GeF?$\"39YgFCYD\\:Fjq7$$\"3H++]i_QQgF?$\"3C<DFgE*>h\"Fjq7$$\"3b++D
+\"y%3TiF?$\"3-$fvE)\\rs;Fjq7$$\"3+++]P![hY'F?$\"3!p55AXb,u\"Fjq7$$\"3i
+KLL$Qx$omF?$\"3aF$4nIn2!=Fjq7$$\"3Y+++v.I%)oF?$\"3g#pE*e[\\l=Fjq7$$\"3
+?mm\"zpe*zqF?$\"3D;#e4(f:C>Fjq7$$\"3;,++D\\'QH(F?$\"3AF\"*p;aH))>Fjq7$
+$\"3%HL$e9S8&\\(F?$\"3=N3#3O^'[?Fjq7$$\"3s++D1#=bq(F?$\"3is\"H*Gbu6@Fj
+q7$$\"3\"HLL$3s?6zF?$\"3E?t%[[NM<#Fjq7$$\"3a***\\7`Wl7)F?$\"3QJ:%pZA!Q
+AFjq7$$\"3enmmm*RRL)F?$\"3Y+4uM+B+BFjq7$$\"3%zmmTvJga)F?$\"3M(*>=*Q[QO
+#Fjq7$$\"3]MLe9tOc()F?$\"3x&['[&oTpU#Fjq7$$\"31,++]Qk\\*)F?$\"3IL[n6\"
+>\\[#Fjq7$$\"3![LL3dg6<*F?$\"3'z/*Rq*o8b#Fjq7$$\"3%ymmmw(Gp$*F?$\"3>YY
+#3R.3h#Fjq7$$\"3C++D\"oK0e*F?$\"3?w^S;O<uEFjq7$$\"35,+v=5s#y*F?$\"3^t%
+R#*eF[t#Fjq7$$\"#5F)$\"3X_f)*z!4+!GFjq-%'COLOURG6&%$RGBG$\"*++++\"!\")
+F(F(-F$6$7Z7$F($\"\"\"F)7$$\"3WmmmT&)G\\a!#>$\"3eof!y]pg5\"F?7$$\"3GLL
+L3x&)*3\"F-$\"3aO)o`k8l?\"F?7$$\"3$*****\\ilyM;F-$\"3!31:GvI;I\"F?7$F+
+$\"3k5f(yM.<R\"F?7$$\"3v***\\7y%*z7$F-$\"3m-.D#)o?P:F?7$F1$\"3w_h;Fmap
+;F?7$$\"3z***\\(oMrU^F-$\"3!3M,@vFT!=F?7$F6$\"3lCe'HT&4D>F?7$$\"3Unmmm
+6m#G(F-$\"3M8>EA%4X.#F?7$F;$\"3WK&fLB'yK@F?7$$\"3A,+v=ddC%*F-$\"3hn)=R
+'>m?AF?7$FA$\"3i[ZY\\Jj*H#F?7$FF$\"3cMVSmK]DCF?7$FK$\"3/h2'e@\\?`#F?7$
+FP$\"3;:*eU++:i#F?7$FU$\"31B4iJNk$p#F?7$FZ$\"3-&\\=4dKNv#F?7$Fin$\"3_c
+!)*ee0lz#F?7$F^o$\"3:2f\\Vf)f$GF?7$Fco$\"3E\"pb0mBz'GF?7$Fho$\"3;L9K:D
+!G*GF?7$F]p$\"3mSlf^+J6HF?7$Fbp$\"3y=;@$[0#HHF?7$Fgp$\"3HR4b'H4:%HF?7$
+F\\q$\"3iv\\.`v:`HF?7$Faq$\"3#z_T]8<:'HF?7$Ffq$\"3K;6-VH)*oHF?7$F\\r$
+\"33'Gw`\\TZ(HF?7$Far$\"3MQXvIMhzHF?7$Ffr$\"3%)RJ>!4bK)HF?7$F[s$\"3Q8`
+'fUdk)HF?7$F`s$\"37`tC$)p8*)HF?7$Fes$\"3%*)*[(>*R.\"*HF?7$Fjs$\"3Q\"3n
+%>Dr#*HF?7$F_t$\"3iO&RsI<T*HF?7$Fdt$\"3eF[x%=H_*HF?7$Fit$\"3woS*p^/h*H
+F?7$F^u$\"3wK*)R!f*)o*HF?7$Fcu$\"3!Qs1H3fu*HF?7$Fhu$\"3itItND&z*HF?7$F
+]v$\"3_Py;%Q;$)*HF?7$Fbv$\"3cH(3!31k)*HF?7$Fgv$\"3S\\;aN%))))*HF?7$F\\
+w$\"3%oFe%H$*4**HF?7$Faw$\"3S%zElxm#**HF?7$Ffw$\"39'oMV#)3%**HF?7$F[x$
+\"3Y&*4f_&>&**HF?7$F`x$\"3qG+oq8h**HF?7$Fex$\"3%e9&)))3&o**HF?7$Fjx$\"
+31r;DL/u**HF?7$F_y$\"3)R_4&3?z**HF?7$Fdy$\"3eUNv\"RH)**HF?7$Fiy$\"3[T#
+)pz=')**HF?7$F^z$\"3+m_&Q;())**HF?7$Fcz$\"3-v/9+#4***HF?-Fhz6&FjzF(F(F
+[[l-%+AXESLABELSG6$Q\"t6\"Q!F^gl-%%VIEWG6$;F(Fcz%(DEFAULTG" 1 2 0 1 
+10 0 2 9 1 4 2 1.000000 45.000000 45.000000 0 0 "Curve 1" "Curve 2" }}
+}}{EXCHG {PARA 0 "> " 0 "" {MPLTEXT 1 0 0 "" }}}{PARA 11 "" 1 "" 
+{TEXT -1 0 "" }}}{MARK "24 0 0" 0 }{VIEWOPTS 1 1 0 1 1 1803 1 1 1 1 }
+{PAGENUMBERS 0 1 2 33 1 1 }
