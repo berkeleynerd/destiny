@@ -3206,6 +3206,9 @@ void Ballpark::SetBallFree(
         mFreeBalls.erase(ball->mId);
         InsertBallInBoxes(ball);
 
+        // Clear out accumulated forces (otherwise missile target-prediction can get confused)
+        ball->mLastG = Vector3d(0.0, 0.0, 0.0);
+
         // Add miniballs if necessary
         ball->AddMiniBalls();
     }
