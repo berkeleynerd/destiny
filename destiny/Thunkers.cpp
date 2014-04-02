@@ -1630,7 +1630,7 @@ PyObject* Ballpark::PyReadFullStateFromStream(
 	byteCount = 0;
 	size_t tmpCnt = 0;
 
-	sp->Seek(0,BS_BEGIN);
+	sp->Seek(0, ICcpStream::SO_BEGIN);
 	while((tmpCnt = sp->Read(&packet,1)) > 0)
 	{
 		byteCount += tmpCnt;
@@ -1681,7 +1681,7 @@ PyObject* Ballpark::PyWriteFullStateToStream(
 	long timestamp = mCurrentTime;
 	char packet = DESTINY_FULLSTATE;
 
-	sp->Seek(0,BS_BEGIN);
+	sp->Seek(0,ICcpStream::SO_BEGIN);
 	byteCount = sp->Write(&packet,sizeof(packet));
 	byteCount += sp->Write(&timestamp,sizeof(timestamp));
 
@@ -1712,7 +1712,7 @@ PyObject* Ballpark::PyWriteFullStateToStream(
 	} // End of writing balls
 	
 	// Seek to start of stream
-	sp->Seek(0,BS_BEGIN);
+	sp->Seek(0,ICcpStream::SO_BEGIN);
 
 	CCP_LOG_CH( s_chPark,"Wrote %d bytes to stream", byteCount);
 	Py_INCREF(Py_None);
@@ -1743,7 +1743,7 @@ PyObject* Ballpark::PyWriteBallsToStream(
 	char packet = DESTINY_BALLS;
 
 	// Seek to start of stream
-	sp->Seek(0,BS_BEGIN);
+	sp->Seek(0,ICcpStream::SO_BEGIN);
 
 	// Write the header
 	byteCount = sp->Write(&packet,sizeof(packet));
@@ -1769,7 +1769,7 @@ PyObject* Ballpark::PyWriteBallsToStream(
 	}
 
 	// Seek to start of stream
-	sp->Seek(0,BS_BEGIN);
+	sp->Seek(0,ICcpStream::SO_BEGIN);
 
 	CCP_LOG_CH( s_chPark,"Wrote %d bytes to stream", byteCount);
 	Py_INCREF(Py_None);
