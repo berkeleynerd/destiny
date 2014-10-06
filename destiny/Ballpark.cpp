@@ -1001,7 +1001,7 @@ Vector3d Ballpark::GotoThrust(const Ball *ball, const Vector3d& target, bool mis
     double length2 = a.LengthSq();
 
     // This is the distance that the ball can travel during one time step
-    double dist = (double)ball->mRadius + (double)ball->mSpeedFraction * ball->mMaxVel * dt;
+    double dist = (double)ball->mSpeedFraction * ball->mMaxVel * dt;
 
     // This is the maximum thrust of this ball, as defined by its mass, agility and max speed
     double maxThrust = mFriction*ball->mSpeedFraction*(double)ball->mMaxVel/(ball->mMass * ball->mAgility);
