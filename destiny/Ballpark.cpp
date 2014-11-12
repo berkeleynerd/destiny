@@ -94,7 +94,11 @@ Ballpark::Ballpark(IRoot* lockobj) :
     mLocalCnt(-1),
     mLocalHiCnt(DSTLOCALBALLS),
     mMoribundBallRemovalCount(7),
-    mMoribundBallRemovalBuffer(2)
+    mMoribundBallRemovalBuffer(2),
+	mRollSpeedAcceleration(-3.0),
+	mRollSpeedDecay(-0.9),
+	mRollAcceleration(1.0),
+	mRollDecay(-0.5)
 {
     dt = mTickInterval * 0.001;
     mHaveTicks = false;

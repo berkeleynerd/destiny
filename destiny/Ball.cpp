@@ -10,6 +10,7 @@
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))
 #define SIGNUM(X) ((X)>=0.0?1.0:-1.0)
 
+#define _HALFPI_  1.57079632679489655
 #define _PI_  3.1415926535897931
 #define _2PI_ 6.2831853071795862
 
@@ -311,22 +312,26 @@ void Ball::CalculateYawPitchRoll(bool snap)
     mNewYaw   = (mOldYaw   + massModifier*0.5*mNewYaw  )*tmp;
     mNewPitch = (mOldPitch + massModifier*0.5*mNewPitch)*tmp;
 
-    double dt = mPark->dt;
-    double k = 0.55;
-    double f = 1.0;
-    double dd = 1.0/(1.0 + k*dt + f*dt*dt);
-    mYawDelta = asin(sin(mNewYaw-mOldYaw));
-    double g = 6.0*mYawDelta; // hack to really get angle where I want it
+	// This is basically doing a modulus on the change in yaw, incase we spin very quickly within 1 tick
+	mYawDelta = asin(sin(mNewYaw - mOldYaw));
 
-    mNewRoll = (mOldRoll + mOldRoll*k*dt + dt*mOldRollSpeed - g*dt*dt)*dd;
+	// Roll speed is increased by changes in yaw
+	mNewRollSpeed += mYawDelta * mPark->mRollSpeedAcceleration;
 
-    // Cap the roll
-    if(mNewRoll < -_2PI_*0.25)
-        mNewRoll = -_2PI_*0.25;
-    else if(mNewRoll > _2PI_*0.25)
-        mNewRoll = _2PI_*0.25;
+	// Roll speed decays over time
+	mNewRollSpeed += mOldRollSpeed * mPark->mRollSpeedDecay * mPark->dt;
 
-    mNewRollSpeed = (-f*dt*mOldRoll + mOldRollSpeed - g*dt)*dd;
+	// Clamp roll speed so it doesn't get too crazy
+	mNewRollSpeed = max(-_HALFPI_, min(_HALFPI_, mNewRollSpeed));
+
+	// Roll is increased by the roll speed, scaled over time
+	mNewRoll += mNewRollSpeed * mPark->mRollAcceleration * mPark->dt;
+
+	// Roll also decays over time
+	mNewRoll += mOldRoll * mPark->mRollDecay * mPark->dt;
+
+	// Clamp the maximum roll so we don't flip upside down
+	mNewRoll = max(-_HALFPI_, min(_HALFPI_, mNewRoll));
 }
 
 //---------------------------------------------------------------------------------------

@@ -119,6 +119,10 @@ public://Exposed
 	int mMoribundBallRemovalCount; // The number of balls that can be removed per tick before the absolute lifetime is up.
 	int mMoribundBallRemovalBuffer; // The number of seconds before absolute lifetime that we will start removing balls.
 
+	double mRollSpeedAcceleration;
+	double mRollSpeedDecay;
+	double mRollAcceleration;
+	double mRollDecay;
 
 private://MEMBERS
 

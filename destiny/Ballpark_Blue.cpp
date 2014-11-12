@@ -243,6 +243,46 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 
 		////////////////////////////////////////////////////////////////////////////
+		//               Roll Speed Acceleration
+		MAP_ATTRIBUTE
+		(
+			"rollSpeedAcceleration",
+			mRollSpeedAcceleration,
+			"",
+			Be::READWRITE
+		)
+
+		////////////////////////////////////////////////////////////////////////////
+		//               Roll Speed Decay
+		MAP_ATTRIBUTE
+		(
+			"rollSpeedDecay",
+			mRollSpeedDecay,
+			"",
+			Be::READWRITE
+		)
+
+		////////////////////////////////////////////////////////////////////////////
+		//               Roll Acceleration
+		MAP_ATTRIBUTE
+		(
+			"rollAcceleration",
+			mRollAcceleration,
+			"",
+			Be::READWRITE
+		)
+
+		////////////////////////////////////////////////////////////////////////////
+		//               Roll Decay
+		MAP_ATTRIBUTE
+		(
+			"rollDecay",
+			mRollDecay,
+			"",
+			Be::READWRITE
+		)
+
+		////////////////////////////////////////////////////////////////////////////
 		//               __init__
 		MAP_METHOD_AS_METHOD
 		(
