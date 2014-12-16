@@ -3086,6 +3086,12 @@ void Ballpark::SetBallPosition(
     double z
     )
 {
+    if(!_finite(x) || !_finite(y) || !_finite(z))
+    {
+        CCP_LOGWARN_CH( s_chPark,"NaN in SetBallPosition. Ignored");
+        return;
+    }
+
     Ball *ball = mBalls[srcId];
 
     if(!ball)
@@ -3118,6 +3124,12 @@ void Ballpark::SetBallVelocity(
     double vz
     )
 {
+    if(!_finite(vx) || !_finite(vy) || !_finite(vz))
+    {
+        CCP_LOGWARN_CH( s_chPark,"NaN in SetBallVelocity. Ignored");
+        return;
+    }
+
     Ball *ball = mBalls[srcId];
 
     if(!ball)
