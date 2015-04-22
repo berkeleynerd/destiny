@@ -10,6 +10,7 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
+#define NOMINMAX
 
 // Insert your headers here
 #define VC_EXTRALEAN		// Exclude rarely-used stuff from Windows headers
@@ -24,7 +25,18 @@ using std::exception;
 #define _HAS_EXCEPTIONS 1
 #endif
 
-#include <windows.h>
+#ifdef _WIN32
+#include <d3d9.h>
+#include <d3dx9math.h>
+#else
+#include <CcpMath/include/Quaternion.h>
+#include <CcpMath/include/Vector3.h>
+#include <CcpMath/include/Matrix.h>
+typedef Quaternion D3DXQUATERNION;
+typedef Vector3 D3DXVECTOR3;
+typedef Matrix D3DXMATRIX;
+#endif
+
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
 #include "BlueExposure/include/BlueExposure.h"
 #include <blue/include/blue.h>

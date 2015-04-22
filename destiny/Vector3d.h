@@ -51,8 +51,8 @@ public:
 	friend const Vector3d operator + ( const Vector3& v, const Vector3d& vd ) { return Vector3d( v.x + vd.x, v.y + vd.y, v.z + vd.z ); };
 	friend const Vector3d operator - ( const Vector3& v, const Vector3d& vd ) { return Vector3d( v.x - vd.x, v.y - vd.y, v.z - vd.z ); };
 
-	BOOL operator == ( const Vector3d& v ) const  { return x==v.x && y==v.y && z==v.z; };
-	BOOL operator != ( const Vector3d& v ) const { return x!=v.x || y!=v.y || z!=v.z; };
+	bool operator == ( const Vector3d& v ) const  { return x==v.x && y==v.y && z==v.z; };
+	bool operator != ( const Vector3d& v ) const { return x!=v.x || y!=v.y || z!=v.z; };
 
 	double Length() const { return sqrt(x*x+y*y+z*z);};
 	double LengthSq() const { return x*x+y*y+z*z;};

@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include <math.h>
+#ifdef _MSC_VER
 #include <fpieee.h>
 #include <excpt.h>
+#endif
 #include <float.h>
 
 
@@ -61,6 +63,16 @@ double WARP_FACTOR_TO_ACCELERATION = 1.0 / 1000; // Higher value means shorter 0
 double WARP_FACTOR_TO_DECELERATION = 1.0 / 3000; // Higher value means shorter max-warp-to-0 time
 // The acceleration:deceleration ratio approx follows the ratio of time spent acceleration vs time spent decelerating
 // ('Approx' is because the scaling isn't totally linear, but is reasonably close for the scales we use)
+
+#ifndef _MSC_VER
+namespace
+{
+    inline float _finite( double x )
+    {
+        return finite( x );
+    }
+}
+#endif
 
 #pragma region Constructor and destructor
 //---------------------------------------------------------------------------------------
@@ -427,7 +439,7 @@ void Ballpark::Evolve(Be::Time timestamp)
 
         if(ball->mMode == DSTBALL_MUSHROOM)
         {
-            int startTime = ball->mEffectStamp;
+            long startTime = ball->mEffectStamp;
             float range = ball->mFollowRange;
             float timeFraction = (mCurrentTime - startTime)*mTickInterval*0.001f/(float)(ball->mGoto[0]);
             if(timeFraction < 1.0)
@@ -869,9 +881,9 @@ Vector3d Ballpark::EvolveOrbit(Ball* ball, long currentTime)
     Vector3d radialVector = Vector3d(cos(phi1)*cos(phi2),sin(phi2),sin(phi1)*cos(phi2));
     //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit original radialvector (%.14f,%.14f,%.14f)", currentTime, ball->mId, radialVector.x, radialVector.y, radialVector.z);
     // shitround the components to 7 decimal digits
-    radialVector.x =  (double)((__int64)(radialVector.x*10000000))/10000000;
-    radialVector.y =  (double)((__int64)(radialVector.y*10000000))/10000000;
-    radialVector.z =  (double)((__int64)(radialVector.z*10000000))/10000000;
+    radialVector.x =  (double)((int64_t)(radialVector.x*10000000))/10000000;
+    radialVector.y =  (double)((int64_t)(radialVector.y*10000000))/10000000;
+    radialVector.z =  (double)((int64_t)(radialVector.z*10000000))/10000000;
     //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit rounded radialvector (%.14f,%.14f,%.14f)", currentTime, ball->mId, radialVector.x, radialVector.y, radialVector.z);
                 
     radialVector.Cross(toVector);
@@ -897,7 +909,7 @@ Vector3d Ballpark::EvolveOrbit(Ball* ball, long currentTime)
 
     // Shitfix, exp() returns slightly different results depending on target platform (32bit or 64bit) so 
     // we round to 7 significant decimal digits.
-    radialFactor =  (double)((__int64)(radialFactor*10000000))/10000000;
+    radialFactor =  (double)((int64_t)(radialFactor*10000000))/10000000;
     //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Corrected radialFactor %.14f", currentTime, ball->mId, radialFactor);
 
     // Now use the law of cosine rule to get the other factor
@@ -1395,8 +1407,8 @@ void Ballpark::CalculateBoidPotential(Ball *ball, ListOfBalls &close)
 bool Ballpark::CheckForMiniBall(double& radius, const Vector3d& p1, Vector3d& q1, Ball *me,Ball *other,double s)
 {
     // I want to check for miniballs in other
-    SSIZE_T numberOfMiniBalls = other->mMiniBalls.GetSize();
-    SSIZE_T i;
+    ssize_t numberOfMiniBalls = other->mMiniBalls.GetSize();
+    ssize_t i;
     MiniBall *contender = 0;
     Vector3d contenderPos;
 
@@ -1767,7 +1779,7 @@ void Ballpark::InsertBallInBoxes(Ball *ball)
     // The box we had might well have been deleted. Create it again.
     box1 = mPartition->GetBox(inflatedRadius,ball->mNewPos);
 
-    __int64 ix,iy,iz;
+    int64_t ix,iy,iz;
 
     ix = box1->mKey.ix;
     iy = box1->mKey.iy;
@@ -1918,7 +1930,7 @@ double Ballpark::GetMaxRadius(double start)
     double radius = start;
     BallIterator it(&mBalls);
 
-    while(b = it++)
+    while((b = it++))
     {
         if((double)b->mRadius + dt*b->mMaxVel > radius)
             radius = (double)b->mRadius+dt*b->mMaxVel;
@@ -2495,7 +2507,7 @@ void Ballpark::WarpTo(
 
     // Note that we shanghai the followId member to keep a double (casting it to 64bit int)
     double tmp = minRange;
-    ball->mFollowId = *((__int64 *)&tmp);
+    ball->mFollowId = *((int64_t *)&tmp);
 
     // And we also shanghai the ownerId member to keep the desired warp speed
     ball->mOwnerId = warpFactor;
@@ -2608,13 +2620,13 @@ void Ballpark::SetupWarpConstants(
     accelRate = warpFactor * WARP_FACTOR_TO_ACCELERATION;
     //  The rate of deceleration
     //  (Constrain this to maximum of 2 to prevent fast ships from insta-decelerating)
-    decelRate = min(warpFactor * WARP_FACTOR_TO_DECELERATION, 2);
+    decelRate = std::min(warpFactor * WARP_FACTOR_TO_DECELERATION, 2.0);
 
     // A warp is split in to three phases: Acceleration, Cruise, Deceleration
     // If the warp is short enough that the ship would overshoot the destination before it reached top speed,
     // then we reduce the top speed accordingly so that the acceleration+deceleration phases alone are exactly enough to complete the distance
     // (and so the cruise phase effectively takes 0 seconds)
-    warpSpeed = min(warpSpeed, (warpDistance + 1) * accelRate * decelRate / (accelRate + decelRate));
+    warpSpeed = std::min(warpSpeed, (warpDistance + 1) * accelRate * decelRate / (accelRate + decelRate));
 
     // Calculate the time spent and distance travelled in each phase
     accelDuration = log(warpSpeed / accelRate) / accelRate;
@@ -2681,7 +2693,7 @@ double Ballpark::WarpDistance(Ball *ball, Vector3d& p, Vector3d& v, double t, bo
 
         // Once the speed drops below 50% of regular max-velocity and 100m/s, the ship drops out of warp
         // (This ensures that very fast ships still spend a bit of time in the end-warp phase before they become active/targetable)
-        if (speed < min(ball->mMaxVel / 2.0, 100.0) && !interpolating)
+        if (speed < std::min(ball->mMaxVel / 2.0, 100.0) && !interpolating)
         {
             if (!isMaster && !PyOS->PostEvent(
                 (IEveBallpark*)this, "Destiny::OnDeactivatingWarp",
@@ -2704,6 +2716,7 @@ double Ballpark::WarpDistance(Ball *ball, Vector3d& p, Vector3d& v, double t, bo
 
         p = ball->mGoto;
         v = Vector3d(0, 0, 0);
+        distance = 0;
         
         if (!interpolating)
         {
@@ -2751,7 +2764,7 @@ void Ballpark::EntityWarpIn(const ID& srcId, double x, double y, double z, int w
     // Fake us already having aligned (don't care about rotation/ypr)
     Vector3d dst(x,y,z);
     ball->mNewVel = dst.Normalize() * AU ; // start at ~1AU velocity
-    ball->mEffectStamp = max(mCurrentTime-5, 0); // fake that we started warping some ticks ago
+    ball->mEffectStamp = std::max(mCurrentTime-5, 0l); // fake that we started warping some ticks ago
     dst = ball->mNewPos - ball->mGoto; // reusing dst
     ball->mLastCollision = dst.Length();  // mLastCollision repurposed for the total warp length (you're not collidable whilst in warp)
     //CCP_LOG_CH( s_chPark,"EntityWarpIn: The length between goto and pos is %.12f km", ball->mLastCollision/1000.0);
@@ -2778,7 +2791,7 @@ void Ballpark::AdjustTimes(Be::Time timeDelta)
     // Now the same for all of my balls
     BallIterator it(&mBalls);
     Ball* iterBall;
-    while(iterBall = it++)
+    while((iterBall = it++))
     {
         if (iterBall->ClassType() == ClientBall::ClassType_())
         {
@@ -2803,7 +2816,7 @@ void Ballpark::ShiftFromPlanets(Vector3d& p)
     BallIterator it(&mBalls);
     Ball* sphere;
 
-    while(sphere = it++)
+    while((sphere = it++))
     {
         if(!sphere->isGlobal)
             continue;
@@ -3142,7 +3155,7 @@ void Ballpark::SetBallVelocity(
 
 void Ballpark::SetBallHarmonic(
     const ID& srcId,
-    __int64 harmonic,
+    int64_t harmonic,
     int corporationID,
     int allianceID,
     bool field
@@ -3617,7 +3630,7 @@ ID Ballpark::CheckVisibility(
 
     BallIterator it(&mBalls);
     Ball* occluder;
-    while(occluder = it++)
+    while((occluder = it++))
     {
         if( occluder->mNewBubble != src->mNewBubble || occluder == src || occluder == dst || !occluder->isMassive || occluder->isCloaked)
             continue;
@@ -3744,12 +3757,12 @@ void Ballpark::RemoveBall(
     ball->isMoribund = true;
 
     // miniballs should be removed regardless of delay
-    SSIZE_T miniballSize = ball->mMiniBalls.GetSize();
+    ssize_t miniballSize = ball->mMiniBalls.GetSize();
     if(miniballSize > 0 && !ball->isFree)
     {
         CCP_LOG_CH( s_chPark,"Deleting %d miniballs for ball %I64d", miniballSize, srcId);
         //ball->RemoveMiniBalls();
-        for(SSIZE_T i=miniballSize-1 ; i >= 0; i--)
+        for(ssize_t i=miniballSize-1 ; i >= 0; i--)
         {
             MiniBall *mb = (MiniBall *)(void *)(ball->mMiniBalls.GetAt(i));
             RemoveBall(mb->mId);
@@ -3929,7 +3942,7 @@ void Ballpark::ClearAll(
     MapOfBoxes::iterator jt;
     Ball *b;
 
-    while(b = it++)
+    while((b = it++))
     {
         b->DeleteBallFromBoxes();
         b->mPark = 0;
@@ -3994,7 +4007,7 @@ void Ballpark::UpdateBallBubble(
 
     long hiID = -1;
     Ball *b;
-    while(b = it++)
+    while((b = it++))
     {
         if(b->mNewBubble > hiID)
             hiID = b->mNewBubble;
@@ -4132,7 +4145,7 @@ void Ballpark::CopyBubbles()
         Py_ssize_t pos2 = 0;
         while (PyDict_Next(bubble, &pos2, &ballID, &value))
         {
-            int action = PyInt_AS_LONG(value);
+            long action = PyInt_AS_LONG(value);
             if(action == 1)
             {
                 PyDict_SetItem(bubble, ballID, Zero);
@@ -4191,7 +4204,7 @@ bool Ballpark::InDeadBubble(Ball *ball)
     PyObject *interactivesDict;
     Py_ssize_t interactiveCount = 0;
     // A bubble with one or more interactive balls is considered live
-    if(interactivesDict = PyDict_GetItem(bubbleInteractives, key))
+    if((interactivesDict = PyDict_GetItem(bubbleInteractives, key)))
     {
         interactiveCount = PyDict_Size(interactivesDict);
         if(interactiveCount != 0)
@@ -4204,7 +4217,7 @@ bool Ballpark::InDeadBubble(Ball *ball)
     PyObject *keepAlivesSet;
     Py_ssize_t keepAlivesCount = 0;
     // A bubble with one or more keep-alive balls is considered live
-    if(keepAlivesSet = PyDict_GetItem(bubbleKeepAlives, key))
+    if((keepAlivesSet = PyDict_GetItem(bubbleKeepAlives, key)))
     {
         keepAlivesCount = PySet_Size(keepAlivesSet);
         if(keepAlivesCount != 0)
@@ -4228,7 +4241,7 @@ size_t Ballpark::GetInteractiveCnt(Ball *ball)
     PyObject *dict;
     PyObject *key = PyLong_FromLong(ball->mNewBubble);
 
-    if(dict = PyDict_GetItem(bubbleInteractives, key))
+    if((dict = PyDict_GetItem(bubbleInteractives, key)))
         cnt = PyDict_Size(dict);
 
     Py_DECREF(key);
@@ -4333,7 +4346,7 @@ void Ballpark::DecreaseInteractiveCnt(Ball *ball, long inBubble)
         {
             PyObject *key = PyLong_FromLong(inBubble);
             PyObject *dict;
-            if(dict = PyDict_GetItem(bubbleInteractives, key))
+            if((dict = PyDict_GetItem(bubbleInteractives, key)))
             {
                 PyObject *key2 = PyLong_FromLongLong(ball->mId);
                 PyDict_DelItem(dict, key2);
@@ -4546,7 +4559,7 @@ void Ballpark::InitializeBubbles()
 
 
     // Now cycle over all balls
-    while(ball = it++)
+    while((ball = it++))
     {
         box = ball->mMyBox;
 

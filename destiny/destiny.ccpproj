@@ -1,0 +1,118 @@
+# These are the SDKs that are used by all configurations
+Imports:
+- ..\..\..\carbon\src\core_project.yaml
+
+# Settings from the General section, for all configurations
+General:
+  ConfigurationType: DynamicLibrary
+  UseOfMfc: false
+  IntDir: ../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/
+  OutDir: ../../autobuild/destiny/$(Platform)/$(PlatformToolset)/
+
+# Compiler settings for all configurations
+ClCompile:
+  EnableEnhancedInstructionSet: StreamingSIMDExtensions2
+  PrecompiledHeader: Use
+  PrecompiledHeaderFile: stdafx.h
+  PrecompiledHeaderOutputFile: $(IntDir)destiny.pch
+  DebugInformationFormat: ProgramDatabase
+  WarningLevel: Level3
+  TreatWarningAsError: true
+  BufferSecurityCheck: false
+  AdditionalIncludeDirectories:
+  - ../../../../../../sdk/directx/october2004/include
+  - ../../../carbon/src/CcpUtils
+  CppExceptions: true
+  RuntimeTypeInfo: true
+  FunctionLevelLinking: true
+
+ResourceCompile:
+  Culture: 0x040f
+  AdditionalIncludeDirectories: ..\..\..\include
+
+# Linker settings for all configurations
+Link:
+  GenerateDebugInformation: true
+
+BaseConfigurations:
+  Debug:
+    ClCompile:
+      PreprocessorDefinitions:
+      - _DEBUG
+      Optimization: Disabled
+      RuntimeLibrary: MultiThreadedDebugDLL
+    ResourceCompile:
+      PreprocessorDefinitions: _DEBUG;%(PreprocessorDefinitions)
+    Link:
+      AdditionalDependencies:
+      - blue_d.lib
+      SuppressStartupBanner: true
+      IgnoreAllDefaultLibraries: false
+      GenerateDebugInformation: true
+    General:
+      TargetName: _destiny_d
+
+  Release:
+    ClCompile:
+      Optimization: MaxSpeed
+      RuntimeLibrary: MultiThreadedDLL
+    Link:
+      AdditionalDependencies:
+      - blue.lib
+      LinkTimeCodeGeneration: UseLinkTimeCodeGeneration
+      SuppressStartupBanner: true
+      IgnoreAllDefaultLibraries: false
+      GenerateDebugInformation: true
+    General:
+      TargetName: _destiny
+  
+  Windows:
+    Link:
+      AdditionalLibraryDirectories:
+        - ../../../../../../sdk/directx/october2004/lib/$(Platform)
+
+Configurations:
+  Debug|Win32,x64:
+    BaseConfigurations:
+      - Debug
+      - Windows
+    Link:
+      AdditionalDependencies:
+      - d3dx9dt.lib
+    Imports:
+      - ..\..\..\carbon\src\blue\uses_blue.yaml
+  Release|Win32,x64:
+    BaseConfigurations:
+      - Release
+      - Windows
+    Link:
+      AdditionalDependencies:
+      - d3dx9.lib
+    Imports:
+      - ..\..\..\carbon\src\blue\uses_blue.yaml
+  Debug_27|Win32,x64:
+    BaseConfigurations:
+      - Debug
+      - Windows
+    Link:
+      AdditionalDependencies:
+      - d3dx9.lib
+    Imports:
+      - ../../../carbon/src/blue/uses_blue_27.yaml
+  Release_27|Win32,x64:
+    BaseConfigurations:
+      - Release
+      - Windows
+    Link:
+      AdditionalDependencies:
+      - d3dx9.lib
+    Imports:
+      - ../../../carbon/src/blue/uses_blue_27.yaml
+  Release_27|Mac64:
+    BaseConfigurations:
+      - Release
+    Imports:
+      - ../../../carbon/src/blue/uses_blue_27.yaml
+      - ../../../carbon/src/CcpMath/uses_CcpMath.yaml
+
+ProjectGuid: 9545E741-2B03-40CE-8505-80032EC308F6

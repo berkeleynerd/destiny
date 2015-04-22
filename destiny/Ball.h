@@ -36,12 +36,9 @@ struct Vector3d;
 #include <trinity/Include/IEveReferencePoint.h>
 
 #include <blue/include/blue.h>
-#include <hash_set>
+#include <unordered_set>
 #include <vector>
 #include <bitset>
-
-#include <d3d9.h>
-#include <d3dx9math.h>
 
 class Box;
 class Ball;
@@ -49,8 +46,8 @@ class Ball;
 #include "MapOfLongLongs.h"
 #include "Hashers.h"
 
-typedef stdext::hash_set<Ball *, BallPtrHasher> SetOfOrderedBalls;
-typedef stdext::hash_set<Ball *> SetOfBalls;
+typedef std::unordered_set<Ball *, BallPtrHasher, BallPtrHasher> SetOfOrderedBalls;
+typedef std::unordered_set<Ball *> SetOfBalls;
 
 class ProximitySensor{
 public:
@@ -94,9 +91,9 @@ public:
   Apart from changes between these dynamical states, the behavior of a ball
   is fully deterministic.
 ------------------------------------------------------------------------*/
-typedef stdext::hash_set<Box *, BoxPtrHasher> SetOfOrderedBoxes;
+typedef std::unordered_set<Box *, BoxPtrHasher, BoxPtrHasher> SetOfOrderedBoxes;
 typedef std::vector<Ball *> VectorOfBalls;
-typedef __int64 ID;
+typedef int64_t ID;
 
 
 class Ball :
@@ -121,7 +118,7 @@ public:
 	ID mId; // main id of Ball
     ID mFollowId; // the ball being followed for a DSTBALL_FOLLOW, DSTBALL_ORBIT and DSTBALL_MISSILE mode
     ID mOwnerId; // the ball that launched me for DSTBALL_MISSILE mode
-    __int64 mHarmonic; // Harmonic value of the ball
+    int64_t mHarmonic; // Harmonic value of the ball
 
     Ballpark *mPark; // pointer to ball owner
     Ball *mTrackingPtr; // Var for tracking a target and notification on range.

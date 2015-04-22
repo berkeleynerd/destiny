@@ -30,8 +30,8 @@
 
 struct Vector3d;
 
-#include <hash_map>
-#include <hash_set>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <iterator>
 
@@ -73,13 +73,13 @@ const double AU = .1495978707e12;
    Each time one of these methods is called, this defines a new initial
    condition for the whole dynamical system.
 ------------------------------------------------------------------------*/
-typedef stdext::hash_map<ID, Ball *> DictOfBalls;
+typedef std::unordered_map<ID, Ball *> DictOfBalls;
 typedef std::map<ID, Ball *> DictOfFreeBalls;
 typedef std::pair<ID, Ball*> DictEntry;
-typedef stdext::hash_set<Ball *> SetOfBalls;
+typedef std::unordered_set<Ball *> SetOfBalls;
 typedef std::vector<Ball *> VectorOfBalls;
 typedef std::back_insert_iterator< VectorOfBalls > BallVectorInsertor;
-typedef stdext::hash_set<Box *> SetOfBoxes;
+typedef std::unordered_set<Box *> SetOfBoxes;
 typedef std::vector<Box *> VectorOfBoxes;
 typedef std::back_insert_iterator< VectorOfBoxes > BoxVectorInsertor;
 typedef std::vector<Vector3d> VectorOfVectors;
@@ -546,7 +546,7 @@ public://FUNCTIONS
 	//////////////////////////////////////////////////////////////////////////////
 	void SetBallHarmonic(
 		const ID& srcId,
-		__int64 harmonic,
+		int64_t harmonic,
 		int corporationID,
 		int allianceID,
 		bool field
@@ -763,7 +763,7 @@ private:
 	ClientBall *GetEgo(); // Gets the latest ego..possibly cached
 	bool CheckForMiniBall(double& r, const Vector3d& p1, Vector3d& q1, Ball *me,Ball *other,double s);
 	double WarpDistance(Ball *b,Vector3d& p, Vector3d& v,double t,bool interpolating=false);
-    void Ballpark::SetupWarpConstants(
+    void SetupWarpConstants(
             double warpFactor,
             double warpDistance,
             double &accelDuration,

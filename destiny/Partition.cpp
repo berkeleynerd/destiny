@@ -23,7 +23,7 @@ Partition::Partition():
     // Initialize lookup vectors
     double bigbox = (1 << (2*mNumberOfLevels))*mGridUnit*0.25;
     double width;
-    __int64 grid;
+    int64_t grid;
     for(int i=0; i < mNumberOfLevels; i++)
     {
         mLevels.push_back(MapOfBoxes());
@@ -39,7 +39,7 @@ Partition::Partition():
 //---------------------------------------------------------------------------------------
 // Box Factory numero uno
 //---------------------------------------------------------------------------------------
-Box* Partition::GetBox(__int64 ix, __int64 iy, __int64 iz,  long level)
+Box* Partition::GetBox(int64_t ix, int64_t iy, int64_t iz,  long level)
 {
     Box *box;
 
@@ -48,7 +48,7 @@ Box* Partition::GetBox(__int64 ix, __int64 iy, __int64 iz,  long level)
 
     // Find the number of grid divisions for this level
     // Basically mGridBase elevated to the power of levels
-    __int64 n = mLevelGrid[level];
+    int64_t n = mLevelGrid[level];
 
     //CCP_LOG_CH( s_chPart,"Requesting box [%I64d,%I64d,%I64d] at level %d\n",ix,iy,iz,level);
 
@@ -62,14 +62,14 @@ Box* Partition::GetBox(__int64 ix, __int64 iy, __int64 iz,  long level)
     return box;
 }
 
-Box* Partition::CheckBox(__int64 ix, __int64 iy, __int64 iz,  long level)
+Box* Partition::CheckBox(int64_t ix, int64_t iy, int64_t iz,  long level)
 {
     if(level >= mNumberOfLevels || level < 0)
         return 0;    // Illegal level
 
     // Find the number of grid divisions for this level
     // Basically mGridBase elevated to the power of levels
-    __int64 n = mLevelGrid[level];
+    int64_t n = mLevelGrid[level];
 
     MapOfBoxes::iterator srcIt = mLevels[level].find(Key(ix,iy,iz,n));
 
@@ -98,12 +98,12 @@ Box* Partition::GetBox(double radius, const Vector3d& pos, bool create)
 
     double boxWidth = mLevelWidth[level];
     double fac = 1.0/boxWidth;
-    __int64 n = mLevelGrid[level];
+    int64_t n = mLevelGrid[level];
 
     // Given that level, lets find where we are positioned
-    __int64 ix = __int64((pos.x+0.5*boxWidth*n)*fac);
-    __int64 iy = __int64((pos.y+0.5*boxWidth*n)*fac);
-    __int64 iz = __int64((pos.z+0.5*boxWidth*n)*fac);
+    int64_t ix = int64_t((pos.x+0.5*boxWidth*n)*fac);
+    int64_t iy = int64_t((pos.y+0.5*boxWidth*n)*fac);
+    int64_t iz = int64_t((pos.z+0.5*boxWidth*n)*fac);
 
     if(create)
     {
@@ -131,12 +131,12 @@ void Partition::GetBoxCenter(int level,  Vector3d& pos)
 {
     double boxWidth = mLevelWidth[level];
     double fac = 1.0/boxWidth;
-    __int64 n = mLevelGrid[level];
+    int64_t n = mLevelGrid[level];
 
         // Given that level, lets find where we are positioned
-    pos.x = __int64((pos.x+0.5*boxWidth*n)*fac)*boxWidth + boxWidth*0.5 - boxWidth*n*0.5;
-    pos.y = __int64((pos.y+0.5*boxWidth*n)*fac)*boxWidth + boxWidth*0.5 - boxWidth*n*0.5;
-    pos.z = __int64((pos.z+0.5*boxWidth*n)*fac)*boxWidth + boxWidth*0.5 - boxWidth*n*0.5;
+    pos.x = int64_t((pos.x+0.5*boxWidth*n)*fac)*boxWidth + boxWidth*0.5 - boxWidth*n*0.5;
+    pos.y = int64_t((pos.y+0.5*boxWidth*n)*fac)*boxWidth + boxWidth*0.5 - boxWidth*n*0.5;
+    pos.z = int64_t((pos.z+0.5*boxWidth*n)*fac)*boxWidth + boxWidth*0.5 - boxWidth*n*0.5;
 }
 
 //---------------------------------------------------------------------------------------
@@ -175,7 +175,7 @@ Box* Partition::GetTopmost(Box *box)
 // GetOffsetBox returns a box that is at the offset from the given box
 //---------------------------------------------------------------------------------------
 
-Box* Partition::GetOffsetBox(Box *box,__int64 i,__int64 j,__int64 k)
+Box* Partition::GetOffsetBox(Box *box,int64_t i,int64_t j,int64_t k)
 {
     if(!box)
         return 0;
@@ -187,7 +187,7 @@ Box* Partition::GetOffsetBox(Box *box,__int64 i,__int64 j,__int64 k)
 // CheckOffsetBox returns the box at the offset from the given box iff it already exists
 //---------------------------------------------------------------------------------------
 
-Box* Partition::CheckOffsetBox(Box *box,__int64 i,__int64 j,__int64 k)
+Box* Partition::CheckOffsetBox(Box *box,int64_t i,int64_t j,int64_t k)
 {
     if(!box)
         return 0;
@@ -430,7 +430,7 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, bool isMaster, Ne
             uni.push_back(otherBall);
         }
     }
-    for(SSIZE_T i = uni.size()-1; i>=0; --i)
+    for(ssize_t i = uni.size()-1; i>=0; --i)
         uni[i]->mHandled = false;
 }
 
@@ -476,7 +476,7 @@ BoxAllocator::~BoxAllocator()
     }
 }
 
-Box * BoxAllocator::GetNewBox(__int64 i,  __int64 j,  __int64 k, long level,Partition *p)
+Box * BoxAllocator::GetNewBox(int64_t i,  int64_t j,  int64_t k, long level,Partition *p)
 {
     //Allocate.  Either get memory from the vector, or from operator new
     void *mem;

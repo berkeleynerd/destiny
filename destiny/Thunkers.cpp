@@ -719,7 +719,7 @@ PyObject* Ballpark::PyLaunchMissile(
 	if(!launcherBall)
 	{
 		//PyErr_SetString(PyExc_RuntimeError, "BallNotInPark");
-		goto done; // silently ignore
+        Py_RETURN_NONE;
 	}
 
     if(dstID!=ownerID)
@@ -752,7 +752,7 @@ PyObject* Ballpark::PyLaunchMissile(
             direction = Vector3d(v);
 		}
 
-		v0 = vs +max(150.0, maxVelocity)*direction;
+		v0 = vs +std::max(150.0, maxVelocity)*direction;
 	}
 
     if(massive)
@@ -762,19 +762,17 @@ PyObject* Ballpark::PyLaunchMissile(
 	SetBallVelocity(srcID, v0.x, v0.y, v0.z);
 
     if(targetBall && targetBall->isCloaked)
-        goto done;
+        Py_RETURN_NONE;
 
     if(!targetBall)
         if(maxVelocity > 0.0)
 			GotoDirection(srcID, v0.x, v0.y, v0.z);
         else
-            goto done;
+            Py_RETURN_NONE;
     else
 		MissileFollow(srcID, dstID, ownerID);
 
-done:
-	Py_INCREF(Py_None);
-	return Py_None;
+    Py_RETURN_NONE;
 }
 
 #pragma warning (pop)
@@ -786,7 +784,7 @@ PyObject* Ballpark::PySetBallHarmonic(
 	)
 {
 	ID objectId;
-	__int64 harmonic;
+	int64_t harmonic;
 	int corporationID;
 	int allianceID;
 	int field = 0;
@@ -1174,7 +1172,7 @@ PyObject* Ballpark::GetBallIdsInRange(
 	char includeCloaked = 0;
 	double x,y,z;
 	Vector3d center;
-	int bubbleID = -1;
+	long bubbleID = -1;
 	bool useBall=true;
 
 	if (!PyArg_ParseTuple(args, "Ld|b",
@@ -1207,7 +1205,7 @@ PyObject* Ballpark::GetBallIdsInRange(
 		refBall = mBalls[srcId];
 		if(!refBall)
 		{
-			PyErr_Format(PyExc_RuntimeError, "GetBallIdsInRange: Ball %d not in park", srcId);
+			PyErr_Format(PyExc_RuntimeError, "GetBallIdsInRange: Ball %" CCP_INT64_FORMAT " not in park", srcId);
 			return 0;
 		}
 
@@ -1678,7 +1676,7 @@ PyObject* Ballpark::PyWriteFullStateToStream(
 		return NULL;
 	}
 	
-	long timestamp = mCurrentTime;
+	int32_t timestamp = int32_t( mCurrentTime );
 	char packet = DESTINY_FULLSTATE;
 
 	sp->Seek(0,ICcpStream::SO_BEGIN);
@@ -1692,7 +1690,7 @@ PyObject* Ballpark::PyWriteFullStateToStream(
 	if(srcID!=-1)
 		src = mBalls[srcID];
 
-	while(b = it++)
+	while( ( b = it++ ) )
 	{
 		if(b->mId < DSTLOCALBALLS)
 			continue;
@@ -1739,7 +1737,7 @@ PyObject* Ballpark::PyWriteBallsToStream(
 
 	size_t cnt = PyList_Size(ballList);
 
-	long timestamp = mCurrentTime;
+	int32_t timestamp = int32_t( mCurrentTime );
 	char packet = DESTINY_BALLS;
 
 	// Seek to start of stream
@@ -1908,7 +1906,7 @@ PyObject* Ballpark::PyScanCone(
 		sphere = true;
 	}
 
-	while(ball = it++)
+	while( ( ball = it++ ) )
 	{
 		if(ball->mId==srcID || ball->mId < 0 || ball->isCloaked)
 			continue;
@@ -1936,14 +1934,14 @@ PyObject* Ballpark::PyScanCone(
 
 bool Ballpark::ReadFullStateFromStream(IBlueStreamPtr s, int partial)
 {
-	long timestamp;
+	int32_t timestamp;
 
 	byteCount += s->Read(&timestamp,sizeof(timestamp));
 
 	mCurrentTime = timestamp;
 	Ball *ball;
 	VectorOfBalls l;
-	while(ball = ReadBallFromStream(s, partial))
+	while( ( ball = ReadBallFromStream(s, partial) ) )
 	{
 		l.push_back(ball);
 	}
@@ -2001,7 +1999,7 @@ void Ballpark::PopulateAddDelForBubble(PyObject *bubble, PyObject *bubbleAddList
 			return;
 		}
 
-		int action = PyInt_AS_LONG(value);
+		long action = PyInt_AS_LONG(value);
 
 		if(ballID < DSTLOCALBALLS)
 			continue;
@@ -2239,7 +2237,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					PyErr_Restore(e, v, t);
 					return 0;
 				}
-				int action = PyInt_AS_LONG(value);
+				long action = PyInt_AS_LONG(value);
 
 				// Don't include miniballs
 				if(ballID < DSTLOCALBALLS)
@@ -2301,7 +2299,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					return 0;
 				}
 
-				int action = PyInt_AS_LONG(value);
+				long action = PyInt_AS_LONG(value);
 
 				// Don't include miniballs
 				if(ballID < DSTLOCALBALLS)
@@ -2369,16 +2367,16 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 		double mass = 1.0e34;
 		float radius;
 		Vector3d pos;
-		unsigned char flags;
-		char isCloaked = 0;
-		unsigned char mode;
+		uint8_t flags;
+		int8_t isCloaked = 0;
+		uint8_t mode;
 		float maxVel = 0.0;
 		Vector3d vel;
 		float agility = 1.0;
 		float speedFraction = 0.0;
-		__int64 harmonic = -1;
-		int corporationID = -1;
-		int allianceID = -1;
+		int64_t harmonic = -1;
+		int32_t corporationID = -1;
+		int32_t allianceID = -1;
 
 		byteCount += tmpCnt;
 
@@ -2417,11 +2415,13 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 						speedFraction
 						);
 
-		byteCount += s->Read(&ball->mFormationID , sizeof(ball->mFormationID));
+		int8_t formationID;
+		byteCount += s->Read(&formationID, sizeof(formationID));
+		ball->mFormationID = formationID;
 
 		if(partial!=1 && !(flags&DSTBALL_ISFREE))
         {
-            for(SSIZE_T i=ball->mMiniBalls.GetSize()-1 ; i >= 0; i--)
+            for(ssize_t i=ball->mMiniBalls.GetSize()-1 ; i >= 0; i--)
             {
                 MiniBall *mb = (MiniBall *)(void *)(ball->mMiniBalls.GetAt(i));
                 RemoveBall(mb->mId);
@@ -2434,6 +2434,7 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 		ball->mAllianceID = allianceID;
 		ball->mMode = (DSTBALLMODE)mode;
 		ball->isCloaked = isCloaked;
+		int32_t effectStamp;
 		
 		switch(mode)
 		{
@@ -2450,7 +2451,8 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 
 				byteCount += s->Read(&ball->mFollowId,    sizeof(ball->mFollowId)    );
 				byteCount += s->Read(&ball->mFollowRange, sizeof(ball->mFollowRange) );
-				byteCount += s->Read(&ball->mEffectStamp, sizeof(ball->mEffectStamp) );
+				byteCount += s->Read(&effectStamp, sizeof(effectStamp) );
+				ball->mEffectStamp = effectStamp;
 
 				break;
 			}
@@ -2460,7 +2462,8 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 				byteCount += s->Read(&ball->mFollowId,    sizeof(ball->mFollowId)    );
 				byteCount += s->Read(&ball->mFollowRange, sizeof(ball->mFollowRange) );
 				byteCount += s->Read(&ball->mOwnerId,     sizeof(ball->mOwnerId)     );
-				byteCount += s->Read(&ball->mEffectStamp, sizeof(ball->mEffectStamp) );
+				byteCount += s->Read(&effectStamp, sizeof(effectStamp) );
+				ball->mEffectStamp = effectStamp;
 				byteCount += s->Read(&ball->mGoto.x,         sizeof(ball->mGoto)           );
 
 				break;
@@ -2481,7 +2484,8 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 		case DSTBALL_WARP:
 			{
 				byteCount += s->Read(&ball->mGoto.x,      sizeof(ball->mGoto)        ); // Warp destination point
-				byteCount += s->Read(&ball->mEffectStamp, sizeof(ball->mEffectStamp) ); // Timestamp at start of warp
+				byteCount += s->Read(&effectStamp, sizeof(effectStamp) ); // Timestamp at start of warp
+				ball->mEffectStamp = effectStamp;
 				byteCount += s->Read(&ball->mLastCollision, sizeof(ball->mLastCollision) ); // Total length of warp
 				byteCount += s->Read(&ball->mFollowId,    sizeof(ball->mFollowId)    ); // Minimum range (as double)
 				byteCount += s->Read(&ball->mOwnerId,    sizeof(ball->mOwnerId)     ); // Warp factor (speed multiplier)
@@ -2494,7 +2498,8 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 
 				byteCount += s->Read(&ball->mFollowRange, sizeof(ball->mFollowRange) );
 				byteCount += s->Read(&span              , sizeof(span)               );
-				byteCount += s->Read(&ball->mEffectStamp, sizeof(ball->mEffectStamp) );
+				byteCount += s->Read(&effectStamp, sizeof(effectStamp) );
+				ball->mEffectStamp = effectStamp;
 				byteCount += s->Read(&ball->mOwnerId,     sizeof(ball->mOwnerId)     );
 				ball->mGoto.x = span;
 
@@ -2502,7 +2507,8 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 			}
 		case DSTBALL_TROLL:
 			{
-				byteCount += s->Read(&ball->mEffectStamp, sizeof(ball->mEffectStamp) );
+				byteCount += s->Read(&effectStamp, sizeof(effectStamp) );
+				ball->mEffectStamp = effectStamp;
 
 				break;
 			}
@@ -2525,7 +2531,7 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 		//CCP_LOG_CH( s_chPThunk,"ReadBallFromStream: ball %I64d has miniballflag set to %d", id, !!(flags&DSTBALL_HASMINIBALLS));
 		if(flags&DSTBALL_HASMINIBALLS)
 		{
-			unsigned short cnt;
+			uint16_t cnt;
 			byteCount += s->Read(&cnt, sizeof(cnt));
 			for(int i = 0; i < cnt; i++)
 			{
@@ -2560,15 +2566,15 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 	double mass = b->mMass;
 	float radius = b->mRadius;
 	Vector3d pos = b->mNewPos;
-	unsigned char flags = (b->isFree?DSTBALL_ISFREE:0) |(b->isGlobal?DSTBALL_ISGLOBAL:0) |(b->isMassive?DSTBALL_ISMASSIVE:0)|(b->isInteractive?DSTBALL_ISINTERACTIVE:0)|(b->isSpaceJunk?DSTBALL_ISSPACEJUNK:0);
-	char isCloaked = b->isCloaked;
-	unsigned short miniBallCnt = (unsigned short)(b->mMiniBalls.GetSize());
+	uint8_t flags = (b->isFree?DSTBALL_ISFREE:0) |(b->isGlobal?DSTBALL_ISGLOBAL:0) |(b->isMassive?DSTBALL_ISMASSIVE:0)|(b->isInteractive?DSTBALL_ISINTERACTIVE:0)|(b->isSpaceJunk?DSTBALL_ISSPACEJUNK:0);
+	int8_t isCloaked = b->isCloaked;
+	uint16_t miniBallCnt = (unsigned short)(b->mMiniBalls.GetSize());
     //CCP_LOG_CH( s_chPThunk,"WriteBallToStream: ball %d has %d miniballs", id, miniBallCnt);
 
 	if(miniBallCnt)
 		flags = flags | DSTBALL_HASMINIBALLS;
 
-	unsigned char mode = b->mMode;
+	uint8_t mode = b->mMode;
 	float maxVel = b->mMaxVel;
 	Vector3d vel = b->mNewVel;
 	float agility = b->mAgility;
@@ -2585,8 +2591,10 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 		byteCount += s->Write(&mass     , sizeof(mass));
 		byteCount += s->Write(&isCloaked, sizeof(isCloaked));
 		byteCount += s->Write(&b->mHarmonic, sizeof(b->mHarmonic));
-		byteCount += s->Write(&b->mCorporationID, sizeof(b->mCorporationID));
-		byteCount += s->Write(&b->mAllianceID, sizeof(b->mAllianceID));
+		int32_t corporationID = int32_t( b->mCorporationID );
+		byteCount += s->Write(&corporationID, sizeof(corporationID));
+		int32_t allianceID = int32_t( b->mAllianceID );
+		byteCount += s->Write(&allianceID, sizeof(allianceID));
 	}
 
 	if(flags & DSTBALL_ISFREE)
@@ -2597,7 +2605,9 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 		byteCount += s->Write(&speedFraction,sizeof(speedFraction));
 	}
 
-	byteCount += s->Write(&b->mFormationID, sizeof(b->mFormationID));
+	int8_t formationID = int8_t( b->mFormationID );
+	byteCount += s->Write(&formationID, sizeof(formationID));
+	int32_t effectStamp = int32_t( b->mEffectStamp );
 
 	switch(mode)
 	{
@@ -2614,7 +2624,7 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 
 			byteCount += s->Write(&b->mFollowId,    sizeof(b->mFollowId)    );
 			byteCount += s->Write(&b->mFollowRange, sizeof(b->mFollowRange) );
-			byteCount += s->Write(&b->mEffectStamp, sizeof(b->mEffectStamp) );
+			byteCount += s->Write(&effectStamp, sizeof(effectStamp) );
 
 			break;
 		}
@@ -2624,7 +2634,7 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 			byteCount += s->Write(&b->mFollowId,    sizeof(b->mFollowId)    );
 			byteCount += s->Write(&b->mFollowRange, sizeof(b->mFollowRange) );
 			byteCount += s->Write(&b->mOwnerId,     sizeof(b->mOwnerId)     );
-			byteCount += s->Write(&b->mEffectStamp, sizeof(b->mEffectStamp) );
+			byteCount += s->Write(&effectStamp, sizeof(effectStamp) );
 			byteCount += s->Write(&b->mGoto.x,      sizeof(b->mGoto)        );
 
 			break;
@@ -2646,7 +2656,7 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 	case DSTBALL_WARP:
 		{
 			byteCount += s->Write(&b->mGoto.x,      sizeof(b->mGoto)        ); // Warp destination point
-			byteCount += s->Write(&b->mEffectStamp, sizeof(b->mEffectStamp) ); // Timestamp at start of warp
+			byteCount += s->Write(&effectStamp, sizeof(effectStamp) );
 			byteCount += s->Write(&b->mLastCollision, sizeof(b->mLastCollision) ); // Total length of warp
 			byteCount += s->Write(&b->mFollowId,    sizeof(b->mFollowId)    ); // Minimum range (as double)
 			byteCount += s->Write(&b->mOwnerId,     sizeof(b->mOwnerId)     ); // Warp factor (speed multiplier)
@@ -2659,14 +2669,14 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 
 			byteCount += s->Write(&b->mFollowRange, sizeof(b->mFollowRange) );
 			byteCount += s->Write(&span           , sizeof(span)               );
-			byteCount += s->Write(&b->mEffectStamp, sizeof(b->mEffectStamp) );
+			byteCount += s->Write(&effectStamp, sizeof(effectStamp) );
 			byteCount += s->Write(&b->mOwnerId,     sizeof(b->mOwnerId)     );
 
 			break;
 		}
 	case DSTBALL_TROLL:
 		{
-			byteCount += s->Write(&b->mEffectStamp, sizeof(b->mEffectStamp) );
+			byteCount += s->Write(&effectStamp, sizeof(effectStamp) );
 
 			break;
 		}

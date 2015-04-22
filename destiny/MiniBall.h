@@ -31,7 +31,7 @@
 #include "Vector3d.h"
 #include "DstConstants.h"
 
-typedef __int64 ID;
+typedef int64_t ID;
 
 class MiniBall :
 	public IRoot

@@ -28,5 +28,4 @@ class Random
     int state;
 };
 
-#include "Random.cpp"
 #endif

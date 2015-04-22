@@ -20,6 +20,8 @@
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
 
+#ifdef _WIN32
+
 struct Vector3 
 { 
 	Vector3() {}
@@ -28,5 +30,7 @@ struct Vector3
 	operator const float* () const { return &x; }
 	float x, y, z; 
 };
+
+#endif
 
 #endif

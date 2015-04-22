@@ -5,7 +5,7 @@ static int boxCount = 0;
 //---------------------------------------------------------------------------------------
 // Box Constructor
 //---------------------------------------------------------------------------------------
-Box::Box(__int64 _ix, __int64 _iy, __int64 _iz, long _level,Partition *_p)
+Box::Box(int64_t _ix, int64_t _iy, int64_t _iz, long _level,Partition *_p)
 {
 	mLevel = _level;
 	mPartition = _p;
@@ -15,7 +15,7 @@ Box::Box(__int64 _ix, __int64 _iy, __int64 _iz, long _level,Partition *_p)
 	mHandled = false;
 	// Find the number of grid divisions for this level
 	// Basically mGridBase elevated to the power of levels
-	__int64 n = mPartition->mLevelGrid[mLevel];
+	int64_t n = mPartition->mLevelGrid[mLevel];
 
 	mKey = Key(_ix,_iy,_iz,n);
 
@@ -221,10 +221,10 @@ long Box::NearbyBubbles()
 
 size_t BoxPtrHasher::operator ()(const Box* b) const
 {
-	return stdext::hash_compare<Key>()(b->mKey);
+	return std::hash<size_t>()(b->mKey);
 }
 
 bool BoxPtrHasher::operator () (const Box* r, const Box* l) const
 {
-	return (r->mKey < l->mKey);
+	return r->mKey == l->mKey;
 }

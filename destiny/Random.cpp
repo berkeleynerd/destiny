@@ -1,4 +1,5 @@
-        #include "Random.h"
+		#include "stdafx.h"
+		#include "Random.h"
 
 
         static const int A = 48271;

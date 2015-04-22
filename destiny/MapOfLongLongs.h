@@ -1,19 +1,19 @@
 #ifndef DST_MAPOFLONGLONGS
 #define DST_MAPOFLONGLONGS
 
-#include <hash_map>
-class MapOfLongLongs : public stdext::hash_map<__int64, __int64>
+#include <unordered_map>
+class MapOfLongLongs : public std::unordered_map<int64_t, int64_t>
 {
-	typedef stdext::hash_map<__int64, __int64> parent_t;
+	typedef std::unordered_map<int64_t, int64_t> parent_t;
 public:
 	
 	//insert into the map.  If already present, change the old value.
-	void insert(__int64 key, __int64 val) {
+	void insert(int64_t key, int64_t val) {
 		parent_t::operator[](key) = val;
 	}
 	
 	//special operator semantics, for retrieval, returns 0 if not found.
-	__int64 operator [] (__int64 id) {
+	int64_t operator [] (int64_t id) {
 		parent_t::iterator i = find(id);
 		if (i != end())
 			return i->second;

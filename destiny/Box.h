@@ -9,14 +9,14 @@ class Ball;
 
 
 
-typedef stdext::hash_set<Ball *, BallPtrHasher> SetOfOrderedBalls;
+typedef std::unordered_set<Ball *, BallPtrHasher, BallPtrHasher> SetOfOrderedBalls;
 
 
 class Box
 {
 friend class Partition;
 public:
-	Box( __int64 i,  __int64 j,  __int64 k, long level,Partition *p);
+	Box( int64_t i,  int64_t j,  int64_t k, long level,Partition *p);
 	~Box();
 
 	void RemoveChildren(Box *box);

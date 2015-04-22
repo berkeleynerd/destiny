@@ -327,7 +327,7 @@ static PyMethodDef destiny_methods[] = {
 // Class Factory List
 //
 //////////////////////////////////////////////////////////////////////
-const char* BLUEMODULENAME = "destiny";
+const char* BLUEMODULENAME = "_destiny";
 
 #define BLUECLASSFACTORY(_Class) \
 	{_Class::ClassType_(), SimpleFactory<O##_Class>::Create},
@@ -362,59 +362,40 @@ extern "C" void _setenvp(){}
 
 PyObject* gThisModule = NULL;
 
+#ifdef _WIN32
+//--------------------------------------------------------------------
+BOOL APIENTRY DllMain(HINSTANCE instance, DWORD  reason, LPVOID)
+{
+    if (reason == DLL_PROCESS_ATTACH)
+    {
+        DisableThreadLibraryCalls(instance);
+    }
+    return TRUE;
+}
+#endif
 
 //--------------------------------------------------------------------
-static void StartDLL(HINSTANCE instance)
+// init_destiny - python dll module entry function
+//--------------------------------------------------------------------
+extern "C" void
+#ifdef _MSC_VER
+__declspec(dllexport)
+#endif
+init_destiny()
 {
     CCP_LOG( "Destiny compiled %s %s starting", __DATE__, __TIME__);
 	CCP_LOG( "Size of balls: %d bytes", sizeof(Ball));
-
-	DisableThreadLibraryCalls(instance);
+    
 	BeClasses->RegisterClasses(classes);
-
+    
 	// put myself into python as a module
 	PyObject* module = Py_InitModule((char*)BLUEMODULENAME, destiny_methods);
 	gThisModule = module;
 	PyObject* dict = PyModule_GetDict(module);
-
-
+    
+    
 	// constants
 	AddDstConstants(dict);
-	// Do whatever startup here...
-}
-
-
-//--------------------------------------------------------------------
-static void StopDLL()
-{
-	CCP_LOG( "Destiny Lib terminating");
-}
-
-
-HINSTANCE gInstance = NULL;
-
-//--------------------------------------------------------------------
-BOOL APIENTRY DllMain(HINSTANCE instance, DWORD  reason, LPVOID)
-{
-	if (reason == DLL_PROCESS_ATTACH)
-	{
-		gInstance = instance;
-	}
-	else if (reason == DLL_PROCESS_DETACH)
-	{
-		StopDLL();
-	}
-
-    return TRUE;
-}
-
-
-//--------------------------------------------------------------------
-// initdestiny - python dll module entry function
-//--------------------------------------------------------------------
-extern "C" void __declspec(dllexport) initdestiny()
-{
-	StartDLL(gInstance);
 }
 
 

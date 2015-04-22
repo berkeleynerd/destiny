@@ -1,9 +1,9 @@
 #ifndef DST_PARTITION_H
 #define DST_PARTITION_H
 
-#include <hash_map>
+#include <unordered_map>
 #include <vector>
-#include <hash_set>
+#include <unordered_set>
 #include <iterator>
 
 struct Vector3d;
@@ -33,13 +33,13 @@ class Box;
 class Ball;
 class Key;
 
-typedef __int64 ID;
-typedef stdext::hash_set<Ball *> SetOfBalls;
-typedef stdext::hash_map<ID, Ball *> DictOfBalls;
+typedef int64_t ID;
+typedef std::unordered_set<Ball *> SetOfBalls;
+typedef std::unordered_map<ID, Ball *> DictOfBalls;
 typedef std::vector<Ball *> VectorOfBalls;
 typedef std::pair<ID, Ball*> DictEntry;
-typedef stdext::hash_map<Key,Box *> MapOfBoxes;
-typedef stdext::hash_set<Box *> SetOfBoxes;
+typedef std::unordered_map<Key,Box *,std::hash<size_t>> MapOfBoxes;
+typedef std::unordered_set<Box *> SetOfBoxes;
 typedef std::insert_iterator< SetOfBoxes > BoxSetInsertor;
 typedef std::vector<Box *> VectorOfBoxes;
 typedef std::back_insert_iterator< VectorOfBoxes > BoxVectorInsertor;
@@ -52,7 +52,7 @@ public:
 
     ~BoxAllocator();
 
-    Box *GetNewBox(__int64 i,  __int64 j,  __int64 k, long level, Partition *p);
+    Box *GetNewBox(int64_t i,  int64_t j,  int64_t k, long level, Partition *p);
 
     void ReleaseBox(Box *box);
 
@@ -65,7 +65,7 @@ class Key
 {
 public:
     Key():ix(0),iy(0),iz(0),n(0) {};
-    Key(__int64 i,__int64 j,__int64 k,__int64 N):ix(i),iy(j),iz(k),n(N) { Clamp(); };
+    Key(int64_t i,int64_t j,int64_t k,int64_t N):ix(i),iy(j),iz(k),n(N) { Clamp(); };
     bool operator == ( const Key& k) const  { return ix==k.ix && iy==k.iy && iz==k.iz && n==k.n;};
     //less than operator
     bool operator < (const Key& k) const {
@@ -79,14 +79,14 @@ public:
     }
     //hash key
     operator size_t () const {
-        return stdext::hash_compare<__int64>()((ix<<3) + (iy<<2) + (iz<<1) + n);
+        return std::hash<int64_t>()((ix<<3) + (iy<<2) + (iz<<1) + n);
     }
 
 
-    __int64 ix;
-    __int64 iy;
-    __int64 iz;
-    __int64 n;
+    int64_t ix;
+    int64_t iy;
+    int64_t iz;
+    int64_t n;
 
     void Clamp()
     {
@@ -116,12 +116,12 @@ public:
     // GetBox(i,j,k,l) returns a box for the given grid coordinate at the given level
     // creating one if it didn't exist
     //
-    Box* GetBox(__int64 ,  __int64 , __int64 ,  long level);
+    Box* GetBox(int64_t ,  int64_t , int64_t ,  long level);
     //
     // CheckBox returns a box for the given grid coordinate at the given level
     // if and only if it already exists
     //
-    Box *CheckBox(__int64 ix, __int64 iy, __int64 iz,  long level);
+    Box *CheckBox(int64_t ix, int64_t iy, int64_t iz,  long level);
     //
     // GetBox(r,p) returns a box for the given 3D position and the level corresponding to radius
     // creating one if it didn't exist
@@ -138,8 +138,8 @@ public:
     // GetOffsetBox() and CheckOffsetBox() are similar to the the GetBox() and CheckBox() functions above
     // except the indices are interpreted as offsets from the box provided.
     //
-    Box* GetOffsetBox(Box *box,__int64 i,__int64 j,__int64 k);
-    Box* CheckOffsetBox(Box *box,__int64 i,__int64 j,__int64 k);
+    Box* GetOffsetBox(Box *box,int64_t i,int64_t j,int64_t k);
+    Box* CheckOffsetBox(Box *box,int64_t i,int64_t j,int64_t k);
 
     // Returns the center of the box corresponding to given coordinate for given level    
     void GetBoxCenter(int level,  Vector3d& pos);
@@ -168,7 +168,7 @@ public:
     // vector containing partitions for different levels. Zero is the coarsest level
     std::vector<MapOfBoxes> mLevels;
     std::vector<double> mLevelWidth; // size of partition boxes for each level
-    std::vector<__int64> mLevelGrid; // number of grid partitions for each level
+    std::vector<int64_t> mLevelGrid; // number of grid partitions for each level
 
     int mNumberOfLevels;
 

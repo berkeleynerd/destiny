@@ -7,7 +7,7 @@ class Ball;
 class Box;
 
 
-class BoxPtrHasher : public stdext::hash_compare <Box*>
+class BoxPtrHasher
 {	
 public:
 	size_t operator ()(const Box* b) const ;
@@ -15,7 +15,7 @@ public:
 };
 
 
-class BallPtrHasher : public stdext::hash_compare <Ball*>
+class BallPtrHasher
 {	
 public:
 	size_t operator ()(const Ball* b) const ;

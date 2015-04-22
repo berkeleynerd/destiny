@@ -133,7 +133,7 @@ void Ball::RegisterBallNotInPark()
     if( Ballpark::s_ballNotInParkCallback && Ballpark::s_ballNotInParkCallback != Py_None )
     {
         PyObject* pyThis = PyOS->WrapBlueObject((IBall *)this);
-        PyObject* ret = PyObject_CallFunction( Ballpark::s_ballNotInParkCallback, "O", pyThis );
+        PyObject* ret = PyObject_CallFunction( Ballpark::s_ballNotInParkCallback, (char*)"O", pyThis );
         Py_XDECREF(pyThis);
         Py_XDECREF(ret);
     }
@@ -322,7 +322,7 @@ void Ball::CalculateYawPitchRoll(bool snap)
 	mNewRollSpeed += mOldRollSpeed * mPark->mRollSpeedDecay * mPark->dt;
 
 	// Clamp roll speed so it doesn't get too crazy
-	mNewRollSpeed = max(-_HALFPI_, min(_HALFPI_, mNewRollSpeed));
+	mNewRollSpeed = std::max(-_HALFPI_, std::min(_HALFPI_, mNewRollSpeed));
 
 	// Roll is increased by the roll speed, scaled over time
 	mNewRoll += mNewRollSpeed * mPark->mRollAcceleration * mPark->dt;
@@ -331,7 +331,7 @@ void Ball::CalculateYawPitchRoll(bool snap)
 	mNewRoll += mOldRoll * mPark->mRollDecay * mPark->dt;
 
 	// Clamp the maximum roll so we don't flip upside down
-	mNewRoll = max(-_HALFPI_, min(_HALFPI_, mNewRoll));
+	mNewRoll = std::max(-_HALFPI_, std::min(_HALFPI_, mNewRoll));
 }
 
 //---------------------------------------------------------------------------------------
@@ -539,7 +539,7 @@ void Ball::CheckForProximity_Sensor()
     if(mSensor.balls.size() > 0)
     {
         //create the set of nearby ballIDs on demand
-        stdext::hash_set<ID> nearby;
+        std::unordered_set<ID> nearby;
         for (VectorOfBalls::iterator i = uni.begin(); i!=uni.end(); ++i)
             nearby.insert((*i)->mId);
 
@@ -935,7 +935,7 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
         // This should never happen really
         //CCP_LOGERR_CH( s_ch,"Ball:%I64d no longer in ballpark, InterpolatedPosition",  mId);
         RegisterBallNotInPark();
-        *out = Vector3d(0.0, -FLT_MAX, 0.0);
+        *out = Vector3d(0.0, -std::numeric_limits<float>::max(), 0.0);
         return out;
     }
     
@@ -1078,7 +1078,7 @@ Vector3* ClientBall::GetValueAt(
     {
         // This ball is no longer in any ballpark
         // This should never happen really
-        *in = Vector3(0.0f, -FLT_MAX, 0.0f);
+        *in = Vector3(0.0f, -std::numeric_limits<float>::max(), 0.0f);
         //CCP_LOGERR_CH( s_ch,"Ball:%I64d no longer in ballpark, GetValueAt(Vector3)",  mId);
         RegisterBallNotInPark();
         return in;
@@ -1095,7 +1095,7 @@ Vector3* ClientBall::GetValueAt(
     {
         // This ball is no longer in any ballpark
         // This should never happen really
-        *in = Vector3(0.0f, -FLT_MAX, 0.0f);
+        *in = Vector3(0.0f, -std::numeric_limits<float>::max(), 0.0f);
         CCP_LOGERR_CH( s_ch,"Ball: No valid ego, GetValueAt(Vector3)");
         //DSTCSTACKTRACE();
         PyOS->DoStackTrace();
@@ -1324,12 +1324,12 @@ void Ball::AddMiniBalls()
     if(isFree)
         return; // Don't want to add miniballs to a free ball
     
-    SSIZE_T miniballSize = mMiniBalls.GetSize();
+    ssize_t miniballSize = mMiniBalls.GetSize();
 
     if(miniballSize > 0)
         CCP_LOG_CH( s_ch,"Adding %d miniballs", miniballSize);
 
-    for(SSIZE_T i=0 ; i < miniballSize ; i++)
+    for(ssize_t i=0 ; i < miniballSize ; i++)
     {
         MiniBall *mb = (MiniBall *)(void *)(mMiniBalls.GetAt(i));
         AddActualMiniball(mb);
@@ -1339,11 +1339,11 @@ void Ball::AddMiniBalls()
 
 void Ball::RemoveMiniBalls()
 {
-    SSIZE_T miniballSize = mMiniBalls.GetSize();
+    ssize_t miniballSize = mMiniBalls.GetSize();
     if(miniballSize > 0)
         CCP_LOG_CH( s_ch,"Removing %d miniballs", miniballSize);
 
-    for(SSIZE_T i=0 ; i < miniballSize ; i++)
+    for(ssize_t i=0 ; i < miniballSize ; i++)
     {
         MiniBall *mb = (MiniBall *)(void *)(mMiniBalls.GetAt(i));
         mPark->RemoveBall(mb->mId);
@@ -1354,6 +1354,12 @@ void Ball::AddActualMiniball(MiniBall *b)
 {
     if(isFree)
         return;
+	
+	if(!mPark)
+	{
+		RegisterBallNotInPark();
+		return;
+	}
 
     ID theId = -1;
 
@@ -1632,10 +1638,10 @@ void Ball::FreeFormationSlot(size_t slot)
 
 size_t BallPtrHasher::operator ()(const Ball* b) const
 {
-    return stdext::hash_compare<ID>()(b->mId);
+    return std::hash<ID>()(b->mId);
 }
 
 bool BallPtrHasher::operator () (const Ball* r, const Ball* l) const
 {
-    return (r->mId < l->mId);
+    return r->mId == l->mId;
 }

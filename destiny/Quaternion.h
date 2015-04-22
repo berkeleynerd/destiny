@@ -11,6 +11,8 @@
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
 
+#ifdef _WIN32
+
 // --------------------------------------------------------------------------------------
 // Description:
 //   A simple Quaternion type for destiny compatible with trinity interfaces.
@@ -31,5 +33,7 @@ struct Quaternion
 
 	float x, y, z, w;
 };
+
+#endif
 
 #endif
