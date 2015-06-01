@@ -44,6 +44,7 @@ TYPEDEF_BLUECLASS(Ball);
 TYPEDEF_BLUECLASS(ClientBall);
 
 #include "MapOfBalls.h"
+#include "Capsule.h"
 
 const double AU = .1495978707e12;
 
@@ -78,13 +79,16 @@ typedef std::map<ID, Ball *> DictOfFreeBalls;
 typedef std::pair<ID, Ball*> DictEntry;
 typedef std::unordered_set<Ball *> SetOfBalls;
 typedef std::vector<Ball *> VectorOfBalls;
+typedef std::vector<Capsule *> VectorOfCapsules;
 typedef std::back_insert_iterator< VectorOfBalls > BallVectorInsertor;
 typedef std::unordered_set<Box *> SetOfBoxes;
 typedef std::vector<Box *> VectorOfBoxes;
 typedef std::back_insert_iterator< VectorOfBoxes > BoxVectorInsertor;
 typedef std::vector<Vector3d> VectorOfVectors;
+typedef std::unordered_set<Capsule *> SetOfCapsules;
 
-
+bool Quadratic(double& v1, double& v2, double a, double b, double c);
+double CollideTwoSpheres(const Vector3d& p0, const Vector3d& p1, const Vector3d& q0, const Vector3d& q1, const double collRadius);
 
 class Ballpark :
 	public IEveBallpark,
@@ -93,6 +97,7 @@ class Ballpark :
 
 friend class Ball;
 friend class ClientBall;
+friend class Capsule;
 public://Exposed
 
 	static PyObject* s_ballNotInParkCallback;
@@ -132,6 +137,8 @@ private://MEMBERS
 
 	MapOfBalls mBalls; // Internal list of balls
 	MapOfBalls mGlobals; // of which the following are global balls
+	std::unordered_map<ID, StaticCollidable*> mStaticCollidables;
+	std::unordered_map<ID, Capsule*> mCapsules;
 	SetOfBalls mBubbleConflicts;
 	PyObject *bubbleInteractives;
     PyObject *bubbleKeepAlives; // Per bubble, a set of ballIDs which keep the bubble alive even when no interatives are present
@@ -139,12 +146,12 @@ private://MEMBERS
 	PyObject *mBubbleSubscriptions;
 
 	SetOfBalls moribundBalls;
+	SetOfCapsules moribundCapsules;
 
 	bool mHaveTicks;
 	bool mFirstTime;
 	bool isMaster;
 	bool inEvolve;
-	bool ThereAreaDeads() const {return moribundBalls.size() != 0;}
 
 	Partition *mPartition;
 	Vector3d mLastReference;
@@ -201,6 +208,17 @@ public://FUNCTIONS
 		double vz,
 		float agility,
 		float speedFraction
+		);
+
+	Capsule * AddCapsule(
+		const ID& objectId,
+		double ax,
+		double ay,
+		double az,
+		double bx,
+		double by,
+		double bz,
+		float radius
 		);
 
 
@@ -355,6 +373,19 @@ public://FUNCTIONS
 	//////////////////////////////////////////////////////////////////////////////
 
 	void RemoveBall(
+		const ID& srcId,
+		int delay =0
+		);
+
+	//////////////////////////////////////////////////////////////////////////////
+	// RemoveCapsule removes 'srcId' from the Ballpark.
+	//
+	// pre:  'srcId' exists and is a capsule.
+	// post: The capsule has been removed from the Ballpark.
+	//
+	//////////////////////////////////////////////////////////////////////////////
+
+	void RemoveCapsule(
 		const ID& srcId,
 		int delay =0
 		);
@@ -741,11 +772,13 @@ public://FUNCTIONS
     void AdjustTimes(Be::Time timeDelta);
 
 private:
-	void InsertBallInBox(Box *box,Ball *ball);
+	void InsertInBox(Box *box,Partitionable *partitionable);
+	void InsertInBoxes(Partitionable *Partitionable);
 	void InsertBallInBoxes(Ball *ball);
-	void IncreaseInteractiveCnt(Ball *ball, long inBubble);
-	void DecreaseInteractiveCnt(Ball *ball, long inBubble);
-	void UpdateInteractiveCnt(Ball *ball, long oldBubble, long newBubble);
+	void InsertStaticCollidableInBoxes(StaticCollidable* collidable);
+	void IncreaseInteractiveCnt(Partitionable *p, long inBubble);
+	void DecreaseInteractiveCnt(Partitionable *p, long inBubble);
+	void UpdateInteractiveCnt(Partitionable *p, long oldBubble, long newBubble);
 	bool TrollReady(Ball *ball);
 	void PetrifyTroll(Ball *ball);
 	void CapAcceleration(const Ball *ball, Vector3d& a);
@@ -753,15 +786,16 @@ private:
 
 	void CopyBubbles();
 	void ResolveBubbleConflicts();
-	void AddBallToBubble(Ball *ball);
+	void AddToBubble(Partitionable *partitionable);
 	void StopAllFollowers(Ball *ball);
 	void DeleteBallFromBoxes(Ball *b);
 	double GetMaxRadius(double);
 	void HandleProximities();
-	void BringOutTheDeads(); // Clean up moribund balls
+	void BringOutTheDeads(); // Clean up moribund collidables
+	void BringOutDeadBalls(); // Clean up moribund balls
+	void BringOutDeadCapsules();
 
 	ClientBall *GetEgo(); // Gets the latest ego..possibly cached
-	bool CheckForMiniBall(double& r, const Vector3d& p1, Vector3d& q1, Ball *me,Ball *other,double s);
 	double WarpDistance(Ball *b,Vector3d& p, Vector3d& v,double t,bool interpolating=false);
     void SetupWarpConstants(
             double warpFactor,
@@ -801,6 +835,7 @@ public:
 
 	PyObject* Py__init__ ( PyObject* args );
 	PyObject* PyAddBall ( PyObject* args );
+	PyObject* PyAddCapsule( PyObject* args);
 	PyObject* PyFollowBall ( PyObject* args );
 	PyObject* PyMissileFollow ( PyObject* args );
 	PyObject* PyWarpTo ( PyObject* args );
@@ -808,7 +843,6 @@ public:
 	PyObject* PyGotoDirection ( PyObject* args );
 	PyObject* PyOrbit ( PyObject* args );
 	PyObject* PyStop ( PyObject* args );
-	PyObject* PyRemoveBall ( PyObject* args );
 	PyObject* PyClearAll ( PyObject* args );
 	PyObject* PySetBallMass ( PyObject* args );
 	PyObject* PySetBallRadius ( PyObject* args );
@@ -837,6 +871,7 @@ public:
 	PyObject* PyGetCenterDist ( PyObject* args );
 	PyObject* PyScanCone ( PyObject* args );
 	PyObject* PyGetBallBox ( PyObject* args );
+	PyObject* PyGetStaticCollidableBox ( PyObject* args );
 	PyObject* PyEvolve ( PyObject* args );
 	PyObject* PyPause ( PyObject* args );
 	PyObject* PyStart ( PyObject* args );

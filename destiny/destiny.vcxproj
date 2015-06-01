@@ -423,15 +423,19 @@
     <ClInclude Include="Ball.h"/>
     <ClInclude Include="Ballpark.h"/>
     <ClInclude Include="Box.h"/>
+    <ClInclude Include="Capsule.h"/>
     <ClInclude Include="DstConstants.h"/>
     <ClInclude Include="Hashers.h"/>
     <ClInclude Include="MapOfBalls.h"/>
     <ClInclude Include="MapOfLongLongs.h"/>
     <ClInclude Include="MiniBall.h"/>
+    <ClInclude Include="MiniCapsule.h"/>
     <ClInclude Include="Partition.h"/>
+    <ClInclude Include="Partitionable.h"/>
     <ClInclude Include="Quaternion.h"/>
     <ClInclude Include="Random.h"/>
     <ClInclude Include="resource.h"/>
+    <ClInclude Include="StaticCollidable.h"/>
     <ClInclude Include="StdAfx.h"/>
     <ClInclude Include="Vector3.h"/>
     <ClInclude Include="Vector3d.h"/>
@@ -447,13 +451,19 @@
     <ClCompile Include="Ballpark_Blue.cpp"/>
     <ClCompile Include="Ball_Blue.cpp"/>
     <ClCompile Include="Box.cpp"/>
+    <ClCompile Include="Capsule.cpp"/>
+    <ClCompile Include="Capsule_Blue.cpp"/>
     <ClCompile Include="destiny.cpp"/>
     <ClCompile Include="DstConstants.cpp"/>
     <ClCompile Include="erf.cpp"/>
     <ClCompile Include="MiniBall.cpp"/>
     <ClCompile Include="Miniball_Blue.cpp"/>
+    <ClCompile Include="MiniCapsule.cpp"/>
+    <ClCompile Include="MiniCapsule_Blue.cpp"/>
     <ClCompile Include="Partition.cpp"/>
+    <ClCompile Include="Partitionable.cpp"/>
     <ClCompile Include="Random.cpp"/>
+    <ClCompile Include="StaticCollidable.cpp"/>
     <ClCompile Include="StdAfx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

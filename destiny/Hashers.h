@@ -5,6 +5,7 @@
 
 class Ball;
 class Box;
+class StaticCollidable;
 
 
 class BoxPtrHasher
@@ -20,6 +21,14 @@ class BallPtrHasher
 public:
 	size_t operator ()(const Ball* b) const ;
 	bool operator () (const Ball* r, const Ball* l) const ;
+};
+
+
+class StaticCollidablePtrHasher
+{	
+public:
+	size_t operator ()(const StaticCollidable* b) const ;
+	bool operator () (const StaticCollidable* r, const StaticCollidable* l) const ;
 };
 
 #endif

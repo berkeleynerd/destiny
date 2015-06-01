@@ -10,6 +10,7 @@ class Ball;
 
 
 typedef std::unordered_set<Ball *, BallPtrHasher, BallPtrHasher> SetOfOrderedBalls;
+typedef std::unordered_set<StaticCollidable *, StaticCollidablePtrHasher, StaticCollidablePtrHasher> SetOfOrderedStaticCollidables;
 
 
 class Box
@@ -22,7 +23,9 @@ public:
 	void RemoveChildren(Box *box);
 	void AddChildren(Box *box);
 	void RemoveBall(Ball *ball);
+	void RemoveStaticCollidable(StaticCollidable *collidable);
 	void AddBall(Ball *ball);
+	void AddStaticCollidable(StaticCollidable* collidable);
 	void Traverse(long seed);
 	long NearbyBubbles();
 	void SetObject(PyObject *object);
@@ -39,6 +42,9 @@ public:
 
 	// balls contained in this box at this level
 	SetOfOrderedBalls balls;
+
+	// Static collidable objects contained in this box at this level
+	SetOfOrderedStaticCollidables mStaticCollidables;
 
 	// Boxes underneath this one in the partition
 	SetOfBoxes mChildren;

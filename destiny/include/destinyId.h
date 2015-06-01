@@ -34,6 +34,8 @@ BLUE_DECLARE_INTERFACE(IBallpark);
 BLUE_DECLARE(Ballpark);
 BLUE_DECLARE(Ball);
 BLUE_DECLARE(MiniBall);
+BLUE_DECLARE(MiniCapsule);
 BLUE_DECLARE(ClientBall);
+BLUE_DECLARE(Capsule);
 
 #endif

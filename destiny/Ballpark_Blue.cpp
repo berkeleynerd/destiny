@@ -298,6 +298,12 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 		MAP_METHOD_AS_METHOD
 		(
+			"AddCapsule",
+			PyAddCapsule,
+			"Add a capsule shaped collision object to the ballpark. Create the object if necessary."
+		)
+		MAP_METHOD_AS_METHOD
+		(
 			"FollowBall",
 			PyFollowBall,
 			"no comment"
@@ -338,11 +344,19 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			PyStop,
 			"no comment"
 		)
-		MAP_METHOD_AS_METHOD
+		MAP_METHOD_AND_WRAP_OPTIONAL_ARGS
 		(
 			"RemoveBall",
-			PyRemoveBall,
-			"no comment"
+			RemoveBall,
+			1,
+			"Schedules the Ball for removal during the next evolution."
+		)
+		MAP_METHOD_AND_WRAP_OPTIONAL_ARGS
+		(
+			"RemoveCapsule",
+			RemoveCapsule,
+			1,
+			"Schedules the capsule for removal during the next evolution."
 		)
 		MAP_METHOD_AS_METHOD
 		(
@@ -578,7 +592,12 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			PyGetBallBox,
 			"Returns the (width, (x,y,z)) of the box of the given ball"
 	    )
-
+		MAP_METHOD_AS_METHOD
+		(
+			"GetStaticCollidableBox",
+			PyGetStaticCollidableBox,
+			"Returns the (width, (x,y,z)) of the box of the given static collision object"
+		)
 		MAP_METHOD_AS_METHOD
 		(
 		    "GetRemoteFollowers",

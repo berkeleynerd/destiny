@@ -488,7 +488,7 @@ void Ballpark::Evolve(Be::Time timestamp)
                 // HACK ALERT: The ABS taken here is because of the defender missile hack (negative owner means defender)
                 Ball *owner = mBalls[ABS(ball->mOwnerId)];
                 if(!owner || (owner->mNewBubble != ball->mNewBubble && ball->mNewBubble != -1) || owner->isCloaked)
-                    ball->mCollisions.push_back(ball);
+                    ball->mCollisions.push_back(ball->mId);
             }
             ball->DispatchCollisions();
         }
@@ -1056,9 +1056,11 @@ void Ballpark::Gradient(Ball *ball)
 
     VectorOfBalls uni;
     VectorOfBalls::iterator kt;
+	VectorOfStaticCollidables staticCollidables;
+	VectorOfStaticCollidables::iterator st;
     Ball *neighbor;
     
-    mPartition->GetCollisionCandidates(ball, uni, isMaster);
+    mPartition->GetCollisionCandidates(ball, uni, staticCollidables, isMaster);
         
     for(kt = uni.begin(); kt != uni.end(); ++kt)
     {
@@ -1074,8 +1076,59 @@ void Ballpark::Gradient(Ball *ball)
         
         Potential(ball, neighbor);
     }
+
+	for( st = staticCollidables.begin(); st != staticCollidables.end(); ++st )
+	{
+		if( ball->mMode==DSTBALL_MISSILE || ball->mMode == DSTBALL_MUSHROOM )
+			continue; // Don't include missile launchers and mushrooms
+		(*st)->CollideWithBall(ball);
+	}
 }
 
+double CollideTwoSpheres(const Vector3d& p0, const Vector3d& p1, const Vector3d& q0, const Vector3d& q1, const double collRadius)
+{
+	Vector3d p0q0 = p0 - q0;
+	Vector3d dpq  = (p1 - p0) - (q1 - q0);
+
+	double p0q0_2 = p0q0*p0q0;
+	double dpq_2 = dpq*dpq;
+	double p0q0dpq = p0q0*dpq;
+	double s1,s2,s = -1.0;
+
+	if(Quadratic(s1,s2, dpq_2, 2.0*p0q0dpq, p0q0_2-collRadius*collRadius) )
+	{
+		// We have a bona fide collision. Just a question of when
+		//CCP_LOG_CH( s_chPark,"We have a bona fide overlap between %I64d and %I64d. Just a question of when",me->mId,other->mId);
+		if(s1 >= 0.0 && s1 <= 1.0)
+		{
+			s = s1;
+		}
+
+		if(s2 >= 0.0 && s2 <= 1.0 && s2 < s1)
+		{
+			s = s2;
+		}
+
+		if(p0q0_2 < collRadius*collRadius)
+		{
+			//CCP_LOG_CH( s_chPark,"Ball %I64d and %I64d within each other\n",me->mId,other->mId);
+			// We do have a collision. Use s = 0
+			s = 0.0;
+		}
+
+	}
+	else
+	{
+		// we don't have a collision as such, but we might be within collision
+		if(p0q0_2 < collRadius*collRadius)
+		{
+			//CCP_LOG_CH( s_chPark,"Balls %I64d and %I64d within each other\n",me->mId,other->mId);
+			// We do have a collision. Use s = 0
+			s = 0.0;
+		}
+	}
+	return s;
+}
 
 //---------------------------------------------------------------------------------------
 // Potential calculates actual collision response between two balls
@@ -1083,7 +1136,7 @@ void Ballpark::Gradient(Ball *ball)
 void Ballpark::Potential(Ball *me, Ball *other, int recursionDepth)
 {
     // First task is to estimate where I will be at next dt
-    Vector3d p0,p1,q0,q1,vp1,vq1,p0q0,dpq;
+    Vector3d p0,p1,q0,q1,vp1,vq1;
     double collRadius = (double)me->mRadius + (double)other->mRadius;
 
     // BOIDS taken out for now, as they are not used by anyone
@@ -1114,60 +1167,11 @@ void Ballpark::Potential(Ball *me, Ball *other, int recursionDepth)
     Integrate(q1, vq1, other->mLastG, m2, mFriction, other->mTimeFactor, dt);
 
     // Calculate when collision occurs
-
-    p0q0 = p0 - q0;
-    dpq  = (p1 - p0) - (q1 - q0);
-
-    double p0q0_2 = p0q0*p0q0;
-    double dpq_2 = dpq*dpq;
-    double p0q0dpq = p0q0*dpq;
-    double s1,s2,s = -1.0;
-
-    if(Quadratic(s1,s2, dpq_2, 2.0*p0q0dpq, p0q0_2-collRadius*collRadius) )
-    {
-        // We have a bona fide collision. Just a question of when
-        //CCP_LOG_CH( s_chPark,"We have a bona fide overlap between %I64d and %I64d. Just a question of when",me->mId,other->mId);
-        if(s1 >= 0.0 && s1 <= 1.0)
-        {
-            s = s1;
-        }
-
-        if(s2 >= 0.0 && s2 <= 1.0 && s2 < s1)
-        {
-            s = s2;
-        }
-
-        if(p0q0_2 < collRadius*collRadius)
-        {
-            //CCP_LOG_CH( s_chPark,"Ball %I64d and %I64d within each other\n",me->mId,other->mId);
-            // We do have a collision. Use s = 0
-            s = 0.0;
-        }
-
-        if(s < 0.0)
-        {
-            //CCP_LOG_CH( s_chPark,"Ball %I64d and %I64d are %f from each other at %f. No collision",me->mId,other->mId,sqrt(p0q0_2),s);
-            // No collision...
-            return;
-        }
-        
-    }
-    else
-    {
-        // we don't have a collision as such, but we might be within collision
-        if(p0q0_2 < collRadius*collRadius)
-        {
-            //CCP_LOG_CH( s_chPark,"Balls %I64d and %I64d within each other\n",me->mId,other->mId);
-            // We do have a collision. Use s = 0
-            s = 0.0;
-        }
-        else
-        {
-            // No collision...
-            //CCP_LOG_CH( s_chPark,"Ball %I64d and %I64d are %f from each other at %f\n",me->mId,other->mId,sqrt(p0q0_2),s);
-            return;
-        }
-    }
+    double s = CollideTwoSpheres(p0, p1, q0, q1, collRadius);
+	if( s == -1.0 )
+	{
+		return;
+	}
 
     // Now 's' contains the collision time...
 
@@ -1237,6 +1241,8 @@ void Ballpark::Potential(Ball *me, Ball *other, int recursionDepth)
 
         // This is a situtation where the balls are already in collision
         Vector3d normal;
+		Vector3d p0q0 = q0 - p0;
+		double p0q0_2 = p0q0*p0q0;
         if(p0q0_2==0.0)
         {// I'm right into the other guy...choose an arbitary normal
             if(me->mId > other->mId)
@@ -1345,7 +1351,7 @@ void Ballpark::Potential(Ball *me, Ball *other, int recursionDepth)
         }
     }
 
-    me->mCollisions.push_back(other);
+    me->mCollisions.push_back(other->mId);
 }
 
 
@@ -1403,51 +1409,6 @@ void Ballpark::CalculateBoidPotential(Ball *ball, ListOfBalls &close)
     ball->mLastG += (1.0-mPara1)*a;
 }
 #endif
-
-bool Ballpark::CheckForMiniBall(double& radius, const Vector3d& p1, Vector3d& q1, Ball *me,Ball *other,double s)
-{
-    // I want to check for miniballs in other
-    ssize_t numberOfMiniBalls = other->mMiniBalls.GetSize();
-    ssize_t i;
-    MiniBall *contender = 0;
-    Vector3d contenderPos;
-
-    // The transformation matrix to be used on the miniballs
-    D3DXMATRIX mat;
-    D3DXMatrixRotationYawPitchRoll(&mat,float(other->mNewYaw),float(other->mNewPitch),float(other->mNewRoll));
-    double lastContender = 0.0;
-
-    for(i=0;i<numberOfMiniBalls;i++)
-    {
-        MiniBall *mini = other->mMiniBalls[i];
-        double collRadius = (double)me->mRadius + (double)mini->mRadius;
-
-        Vector3 tmp = mini->mPos.AsVector3();
-        D3DXVECTOR3* tempdx = (D3DXVECTOR3*)&tmp;
-        D3DXVec3TransformCoord(tempdx,tempdx,&mat);
-        Vector3d vec = Vector3d(tmp);
-        vec = q1+vec;
-        double dist2 = (p1-vec).LengthSq();
-
-        if(dist2 > collRadius*collRadius)
-            continue;
-
-        if(dist2 > lastContender)
-        {
-            contender = mini;
-            contenderPos = vec;
-        }
-    }
-
-    if(!contender)
-        return false; // No collision with miniball
-
-    // We have a collision
-    radius = contender->mRadius;
-    q1 = contenderPos;
-
-    return true;
-}
 
 
 bool Quadratic(double& v1, double& v2, double a, double b, double c)
@@ -1648,248 +1609,91 @@ void Ballpark::DeltaVel(
 
 
 #pragma region Ball add/remove/insert
+void Ballpark::InsertInBoxes(Partitionable *p)
+{
+	Box *box1, *top = nullptr;
+	long newBubbleId = -1;
+	float boundingRadius = p->GetBoundingRadius();
+
+	// first determine in what box the center of the ball is. Use the distance it can travel in one time-step
+	// as an inflated radius. Note than an inflated radius will always result in the same bubble as a non-inflated one.
+	double inflatedRadius = p->GetInflatedRadius(dt);
+	box1 = mPartition->GetBox(inflatedRadius, p->mNewPos);
+
+	if(mProbe==p->mId)
+		CCP_LOGWARN_CH( s_chPark,"[%d] Going into insert with [%d, %d]", mCurrentTime, p->mOldBubble, p->mNewBubble);
+
+	if(isMaster)
+	{
+		top = mPartition->GetTopmost(box1);
+		newBubbleId = top->mBubble;
+
+		if(newBubbleId == -1)
+		{
+			if(mProbe==p->mId)
+				CCP_LOGWARN_CH( s_chPark,"[%d] No bubble at new insert", mCurrentTime);
+
+			// At this point, no matter what, this box will get assigned a bubble
+			// In this case I need to remove the ball from its current box as it might be the only ball there
+			// and would trigger an empty neighbor partition box.
+			p->DeleteFromBoxes();
+			p->mMyBox = 0;
+
+			newBubbleId = top->NearbyBubbles();
+
+			if(newBubbleId == -1)
+			{
+				// Still no bubble. Create a new one
+				if(mProbe==p->mId)
+					CCP_LOGWARN_CH( s_chPark,"[%d] No nearby one. Must create one: %d", mCurrentTime, mBubbleId);
+
+				newBubbleId = mBubbleId++;
+			}
+
+			top->mBubble = newBubbleId;
+		}
+
+		if(mProbe==p->mId)
+			CCP_LOGWARN_CH( s_chPark,"[%d] Insertion will be in: %d", mCurrentTime, newBubbleId);
+
+		// The new box belongs to a bubble
+		if(p->mNewBubble == newBubbleId)
+		{
+			// This is the same bubble that I am currently in, so shift bubble history
+			if(mProbe==p->mId)
+				CCP_LOGWARN_CH( s_chPark,"[%d] Ball already in that bubble. Shifting.", mCurrentTime);
+
+			//ball->mOldBubble = ball->mNewBubble;
+		}
+		else
+		{
+			// This is a new bubble
+			p->mOldBubble = p->mNewBubble;
+			p->mNewBubble = newBubbleId;
+			AddToBubble(p);
+			// FLAG BUBBLE SWITCH ONLY ONCE PER BALL PER EVOLVE //
+		}
+	}
+
+	// Let's now find which neighbors it intersects (if any)
+	// Note that we inflate the radius of the ball by
+	// the distance the ball could conceivably move within one time step and we only take boxes
+	// in the direction of the velocity
+	// This is to be sure to include nearby boxes when close to boundaries.
+	p->InsertInBoxes(box1, top, newBubbleId);
+	
+}
+
 void Ballpark::InsertBallInBoxes(Ball *ball)
 {
-    Box *box1, *box2, *top;
-    long newBubbleId = -1;
+	if(!ball)
+		return;
+	
+	TASKLET(Timer_InsertBallInBoxes);
 
-    if(!ball)
-        return;
-
-    TASKLET(Timer_InsertBallInBoxes);
-
-    // first determine in what box the center of the ball is. Use the distance it can travel in one time-step
-    // as an inflated radius. Note than an inflated radius will always result in the same bubble as a non-inflated one.
-    double inflatedRadius = ball->mRadius + dt*ball->mNewVel.Length();
-    box1 = mPartition->GetBox(inflatedRadius, ball->mNewPos);
-
-    if(mProbe==ball->mId)
-        CCP_LOGWARN_CH( s_chPark,"[%d] Going into insert with [%d, %d]", mCurrentTime, ball->mOldBubble, ball->mNewBubble);
-
-    if(isMaster)
-    {
-        top = mPartition->GetTopmost(box1);
-        newBubbleId = top->mBubble;
-
-        if(newBubbleId == -1)
-        {
-            if(mProbe==ball->mId)
-                CCP_LOGWARN_CH( s_chPark,"[%d] No bubble at new insert", mCurrentTime);
-
-            // At this point, no matter what, this box will get assigned a bubble
-            // In this case I need to remove the ball from its current box as it might be the only ball there
-            // and would trigger an empty neighbor partition box.
-            ball->DeleteBallFromBoxes();
-            ball->mMyBox = 0;
-
-            newBubbleId = top->NearbyBubbles();
-
-            if(newBubbleId == -1)
-            {
-                // Still no bubble. Create a new one
-                if(mProbe==ball->mId)
-                    CCP_LOGWARN_CH( s_chPark,"[%d] No nearby one. Must create one: %d", mCurrentTime, mBubbleId);
-
-                newBubbleId = mBubbleId++;
-            }
-
-            top->mBubble = newBubbleId;
-        }
-
-        if(mProbe==ball->mId)
-            CCP_LOGWARN_CH( s_chPark,"[%d] Insertion will be in: %d", mCurrentTime, newBubbleId);
-
-        // The new box belongs to a bubble
-        if(ball->mNewBubble == newBubbleId)
-        {
-            // This is the same bubble that I am currently in, so shift bubble history
-            if(mProbe==ball->mId)
-                CCP_LOGWARN_CH( s_chPark,"[%d] Ball already in that bubble. Shifting.", mCurrentTime);
-
-            //ball->mOldBubble = ball->mNewBubble;
-        }
-        else
-        {
-            // This is a new bubble
-            ball->mOldBubble = ball->mNewBubble;
-            ball->mNewBubble = newBubbleId;
-            AddBallToBubble(ball);
-            // FLAG BUBBLE SWITCH ONLY ONCE PER BALL PER EVOLVE //
-        }
-    }
-
-    // Let's now find which neighbors it intersects (if any)
-    // Note that we inflate the radius of the ball by
-    // the distance the ball could conceivably move within one time step and we only take boxes
-    // in the direction of the velocity
-    // This is to be sure to include nearby boxes when close to boundaries.
-    int q;
-    short mod[3];
-
-    for(q=0;q<3;q++)
-    {
-
-        if( box1->lo[q] + ball->mRadius - ball->mNewPos[q] > 0.0 )
-        {
-            // Add box to the left...
-            mod[q] = -1;
-        }
-        else if ( box1->hi[q] - ball->mRadius - ball->mNewPos[q] < 0.0f )
-        {
-            // add box  to the right
-            mod[q] = 1;
-        }
-        else
-        {
-            // don't need to include any adjacent box
-            mod[q] = 0;
-        }
-    }
-
-    if(mProbe==ball->mId)
-        CCP_LOGWARN_CH( s_chPark,"[%d] Old box is: %d - New box is: %d", mCurrentTime, ball->mMyBox, box1);
-    if(mProbe==ball->mId)
-        CCP_LOGWARN_CH( s_chPark,"[%d] Mod state: [(%d,%d),(%d,%d),(%d,%d)]", mCurrentTime, mod[0], ball->mod[0],mod[1], ball->mod[1],mod[2], ball->mod[2]);
-
-    if(ball->mMyBox && box1->mKey == ball->mMyBox->mKey)
-    {
-        // We have the same base box as before. Check if the mods are the same as well.
-        if(mod[0]==ball->mod[0] && mod[1]==ball->mod[1] && mod[2]==ball->mod[2])
-        {
-            if(mProbe==ball->mId)
-                CCP_LOGWARN_CH( s_chPark,"[%d] Skipping stuff as they are the same", mCurrentTime);
-            // Same mods. This is the same config. Bail out.
-            return;
-        }
-    }
-
-    // Now we know all the boxes we might have to add
-    // We assume that when both modifiers are non-null, then the diagonal
-    // box should be added as well. This is justified by the fact that it usually
-    // very close anyway.
-
-    // Let's run over all the boxes the ball currently thinks it is in and remove it from there
-    // Note that this might invalidate the top box and its bubble, but we will restore it
-    ball->DeleteBallFromBoxes();
-
-    ball->mod[0] = mod[0];
-    ball->mod[1] = mod[1];
-    ball->mod[2] = mod[2];
-
-    // The box we had might well have been deleted. Create it again.
-    box1 = mPartition->GetBox(inflatedRadius,ball->mNewPos);
-
-    int64_t ix,iy,iz;
-
-    ix = box1->mKey.ix;
-    iy = box1->mKey.iy;
-    iz = box1->mKey.iz;
-    long level = box1->mLevel;
-
-    // First the box I am in
-    InsertBallInBox(box1,ball);
-
-    if(isMaster)
-    {
-        // Restore the topmost bubbleID in case it got lost
-        top = mPartition->GetTopmost(box1);
-        top->mBubble = newBubbleId;
-    }
-
-    ball->mActiveBoxes[13] = true;
-    ball->mMyBox = box1;
-
-    if (level==0 && ball->mRadius * 2 > mPartition->mLevelWidth[0])
-    {
-        // If the ball diameter is larger than the top-level box width, then the ball probably overlaps
-        // adjacent boxes in both positive and negative directions on each axis.
-        // (One example of this is the sentry-gun sensors around stations, which have approx 300km diameter.
-        // compared to the top-level grid size of 245km)
-        // This assumption is always valid for stations and stargates for example, because they are always
-        // placed at the centre of a box.
-        // Rather than handling this in a complex way, simply insert the ball to ALL adjacent boxes
-
-        int x, y, z;
-        for (x=-1; x<2; x++)
-        {
-            for (y=-1; y<2; y++)
-            {
-                for (z=-1; z<2; z++)
-                {
-                    if (x==0 && y==0 && z==0)
-                    {
-                        // Skip the centre box where the ball actually is, as it has been specially handled above
-                        continue;
-                    }
-
-                    box2 = mPartition->GetBox(ix+x , iy+y , iz+z, 0);
-                    InsertBallInBox(box2, ball);
-                    ball->mActiveBoxes[13 + x + 3*y + 9*z] = true;
-                }
-            }
-        }
-    }
-    else
-    {
-        // Here we determine which neighbouring boxes the ball might overlap, and insert accordingly
-
-        // Add box in the x dimension
-        if(mod[0])
-        {
-            box2 = mPartition->GetBox( ix+mod[0] , iy , iz , level);
-            InsertBallInBox(box2,ball);
-            ball->mActiveBoxes[13+mod[0]] = true;
-        }
-
-        // Add box in the y dimension
-        if(mod[1])
-        {
-            box2 = mPartition->GetBox( ix , iy+mod[1] , iz , level );
-            InsertBallInBox(box2,ball);
-            ball->mActiveBoxes[13+3*mod[1]] = true;
-        }
-
-        // Add box in the z dimension
-        if(mod[2])
-        {
-            box2 = mPartition->GetBox( ix , iy , iz+mod[2] , level);
-            InsertBallInBox(box2,ball);
-            ball->mActiveBoxes[13+9*mod[2]] = true;
-        }
-
-        // Add the corner boxes
-        // xy corner
-        if(mod[0] && mod[1])
-        {
-            box2 = mPartition->GetBox( ix+mod[0] , iy+mod[1] , iz , level);
-            InsertBallInBox(box2,ball);
-            ball->mActiveBoxes[13+mod[0]+3*mod[1]] = true;
-        }
-
-        // xz corner
-        if(mod[0] && mod[2])
-        {
-            box2 = mPartition->GetBox(ix+mod[0] , iy , iz+mod[2], level);
-            InsertBallInBox(box2,ball);
-            ball->mActiveBoxes[13+mod[0]+9*mod[2]] = true;
-        }
-
-        // yz corner
-        if(mod[1] && mod[2])
-        {
-            box2 = mPartition->GetBox(ix , iy+mod[1] , iz+mod[2], level);
-            InsertBallInBox(box2,ball);
-            ball->mActiveBoxes[13+3*mod[1]+9*mod[2]] = true;
-        }
-
-        // xyz corner
-        if(mod[0] && mod[1] && mod[2])
-        {
-            box2 = mPartition->GetBox(ix+mod[0] , iy+mod[1] , iz+mod[2], level);
-            InsertBallInBox(box2,ball);
-            ball->mActiveBoxes[13+mod[0]+3*mod[1]+9*mod[2]] = true;
-        }
-    }
+	
+	Partitionable* p  = (Partitionable*) ball;
+    InsertInBoxes(ball);
 
     // Add the ball to the map of balls
     if(!inEvolve){
@@ -1907,13 +1711,21 @@ void Ballpark::InsertBallInBoxes(Ball *ball)
 //
 //---------------------------------------------------------------------------------------
 
-void Ballpark::InsertBallInBox(Box *box,Ball *ball)
+void Ballpark::InsertInBox(Box *box,Partitionable *p)
 {
-    if(!box || !ball)
+    if(!p)
         return;
 
-    box->AddBall(ball);
-    ball->mBoxes.insert(box);
+    p->InsertInBox(box);
+}
+
+void Ballpark::InsertStaticCollidableInBoxes(StaticCollidable* collidable)
+{
+	InsertInBoxes(collidable);
+
+	if(!inEvolve){
+		mStaticCollidables[collidable->mId] = collidable;
+	}
 }
 
 //---------------------------------------------------------------------------------------
@@ -2027,7 +1839,7 @@ Ball * Ballpark::AddBall(
         created = true;
     }else{
         // This ball already exists.  Clear its boxes to be sure
-        ball->DeleteBallFromBoxes();
+        ball->DeleteFromBoxes();
         //CCP_LOG_CH( s_chPark, "Ball: %d updated\n",objectId);
     }
 
@@ -2131,6 +1943,68 @@ Ball * Ballpark::AddBall(
     //CCP_LOG_CH( s_chPark, "  isCloaked %d, isMoribund %d, MaxVel, Agility, SpeedFraction", ball->isCloaked, ball->isMoribund, ball->mMaxVel, ball->mAgility, ball->mSpeedFraction);
 
     return ball;
+}
+
+Capsule * Ballpark::AddCapsule(
+	const ID& objectId,
+	double ax,
+	double ay,
+	double az,
+	double bx,
+	double by,
+	double bz,
+	float radius)
+{
+	ID theID;
+	bool created = false;
+
+	theID = objectId;
+	if(isMaster)
+	{
+		// I am on a server, so the ID is mine to generate
+		if(objectId <= 0)
+		{
+			// Generate a local ball
+			if(objectId < 0)
+			{
+				// This is a pure local ball ID request
+				theID = --mLocalHiCnt;
+				//CCP_LOG_CH( s_chPark,"Pure local ball request got ID: %d",theID);
+			}
+			else
+			{
+				// This is supposed to be a client/server non-item ball
+				theID = --mLocalCnt;
+			}
+		}
+	}
+	else
+	{
+		// I am on the client
+		if(objectId == -1)
+		{
+			theID = --mLocalHiCnt;
+		}
+	}
+	Capsule * capsule = nullptr;
+	auto it = mCapsules.find(theID);
+	if( it != mCapsules.end() )
+	{
+		capsule = it->second;
+	}
+	else
+	{
+		capsule = new OCapsule();
+		capsule->Initialize(theID, ax, ay, az, bx, by, bz, radius);
+		mCapsules[theID] = capsule;
+	}
+	
+	capsule->mPark = this;
+
+	// Insert the capsule into the space partition
+	InsertStaticCollidableInBoxes(capsule);
+
+	return capsule;
 }
 
 
@@ -3769,6 +3643,17 @@ void Ballpark::RemoveBall(
         }
         ball->mMiniBalls.Remove(-1); // special cased in BlueListC to clear the list.
     }
+	ssize_t minicapsuleSize = ball->mMiniCapsules.GetSize();
+	if(minicapsuleSize > 0 && !ball->isFree)
+	{
+		CCP_LOG_CH( s_chPark,"Deleting %d minicapsules for ball %I64d", minicapsuleSize, srcId);
+		for(ssize_t i=minicapsuleSize-1 ; i >= 0; i--)
+		{
+			MiniCapsule *mc = (MiniCapsule *)(void *)(ball->mMiniCapsules.GetAt(i));
+			RemoveCapsule(mc->mId);
+		}
+		ball->mMiniCapsules.Remove(-1); // special cased in BlueListC to clear the list.
+	}
     if(inEvolve || delay > 0)
     {
         // If trying to remove ball in the middle of an Evolve loop
@@ -3796,13 +3681,13 @@ void Ballpark::RemoveBall(
     moribundBalls.erase(ball);
 
     // Get the ball out of all boxes
-    ball->DeleteBallFromBoxes();
+    ball->DeleteFromBoxes();
 
     ball->mPark = 0;
     // remove it from the map of balls
     ball->mOldBubble = ball->mNewBubble;
     ball->mNewBubble = -1;
-    AddBallToBubble(ball);
+    AddToBubble(ball);
 
     if(ball->isFree)
         mFreeBalls.erase(srcId);
@@ -3825,15 +3710,71 @@ void Ballpark::RemoveBall(
     mBalls.RemoveBall(srcId);
 }
 
-//---------------------------------------------------------------------------------------
-// BringOutTheDeads removes all moribund balls
-//---------------------------------------------------------------------------------------
+void Ballpark::RemoveCapsule(
+	const ID& srcId,
+	int delay
+	)
+{
+	Capsule *capsule = mCapsules[srcId];
+	if(!capsule)
+	{
+		CCP_LOGERR_CH( s_chPark,"Ballpark::RemoveCapsule trying to remove non-existing capsule %I64d.", srcId);
+		return;
+	}
 
+	capsule->isMoribund = true;
+
+	if(inEvolve || delay > 0)
+	{
+		// If trying to remove ball in the middle of an Evolve loop
+		// don't do it, but mark it as soon to be dead...        
+		// BringOutTheDeads only calls us with delay==0 and inEvolve==false,
+		// so we never end up here from that call
+		capsule->mEffectStamp = mCurrentTime + delay;
+		moribundCapsules.insert(capsule);
+		return;
+	} 
+
+	// Last chance to kill all references etc associated with this ball
+	// We add this so that we can be more event based, rather than relying on tasklet timings
+	if( !PyOS->SendEvent( capsule->GetRawRoot(), 
+		"Destiny::Capsule::DoFinalCleanup",
+		"DoFinalCleanup", 
+		NULL,
+		"()"))
+	{
+		PyOS->PyError();
+	}
+
+	//remove from moribund balls. For safety, it should have been already removed.
+	moribundCapsules.erase(capsule);
+
+	// Get the ball out of all boxes
+	capsule->DeleteFromBoxes();
+
+	capsule->mPark = 0;
+	// remove it from the map of balls
+	capsule->mOldBubble = capsule->mNewBubble;
+	capsule->mNewBubble = -1;
+	AddToBubble(capsule);
+
+	mCapsules.erase(srcId);
+}
+
+//---------------------------------------------------------------------------------------
+// BringOutTheDeads removes all moribund collidables
+//---------------------------------------------------------------------------------------
 void Ballpark::BringOutTheDeads()
 {
-    if(inEvolve)
-        return;
+	if(inEvolve)
+		return;
 
+	BringOutDeadBalls();
+	BringOutDeadCapsules();
+}
+
+void Ballpark::BringOutDeadBalls()
+{
     int killCounter = 0;
 
     VectorOfBalls toDelete;
@@ -3884,6 +3825,58 @@ void Ballpark::BringOutTheDeads()
     }
 }
 
+void Ballpark::BringOutDeadCapsules()
+{
+	int killCounter = 0;
+
+	VectorOfCapsules toDelete;
+	if(moribundCapsules.size() > 0)
+	{
+		SetOfCapsules::iterator sit;
+		for(sit=moribundCapsules.begin(); sit != moribundCapsules.end(); ++sit)
+		{
+			Capsule* capsule = *sit;
+
+			if(!capsule)
+			{
+				CCP_LOGERR_CH( s_chPark, "BringOutTheDeads:: NULL pointer in moribund capsules.");
+				toDelete.push_back(capsule);
+				continue;
+			}
+			if(!capsule->isMoribund)
+				CCP_LOGERR_CH( s_chPark, "BringOutTheDeads:: Capsule in moribund capsules, but not flagged as such");
+
+			// Ball has reached the absolute maximum age or being removed with delay = 0
+			if(capsule->mEffectStamp - mCurrentTime < 0)
+				toDelete.push_back(capsule);
+
+			// Ball is within its buffer time to be removed
+			// Remove it if we have not reached our maximum kill count this tick
+			else if((capsule->mEffectStamp - mCurrentTime - mMoribundBallRemovalBuffer  < 0) && (killCounter < mMoribundBallRemovalCount))
+			{
+				toDelete.push_back(capsule);
+				++killCounter;
+			}
+		}
+
+		if(toDelete.size() > 0)
+		{
+			CCP_LOG_CH( s_chPark, "BringOutTheDeads:: Removing %d moribund capsules.", toDelete.size());
+			VectorOfCapsules::iterator toDelIt;
+			for(toDelIt=toDelete.begin(); toDelIt != toDelete.end(); ++toDelIt)
+			{
+				Capsule* capsule = *toDelIt;
+				if(capsule)
+				{
+					ID id = capsule->mId;
+					RemoveCapsule(id);
+				}
+				moribundCapsules.erase(capsule);
+			}
+		}
+	}
+}
+
 //---------------------------------------------------------------------------------------
 // HandleProximities udpates all proximity sensors
 //---------------------------------------------------------------------------------------
@@ -3932,7 +3925,7 @@ void Ballpark::HandleProximities()
 }
 
 //---------------------------------------------------------------------------------------
-// ClearAll clears the ballpark of all balls
+// ClearAll clears the ballpark of all balls and collidables
 //---------------------------------------------------------------------------------------
 
 void Ballpark::ClearAll(
@@ -3944,12 +3937,26 @@ void Ballpark::ClearAll(
 
     while((b = it++))
     {
-        b->DeleteBallFromBoxes();
+        b->DeleteFromBoxes();
         b->mPark = 0;
     }
 
     mBalls.Clear();
     mGlobals.Clear();
+
+	std::unordered_map<ID, StaticCollidable*>::iterator cit;
+	StaticCollidable *c;
+
+	for( cit = mStaticCollidables.begin(); cit != mStaticCollidables.end(); ++cit)
+	{
+		c = cit->second;
+		c->DeleteFromBoxes();
+		c->mPark = 0;
+	}
+	
+	mStaticCollidables.clear();
+	mCapsules.clear();
+
     if(bubbles)
     {
         Py_DECREF(bubbles);
@@ -4071,7 +4078,7 @@ void Ballpark::ResolveBubbleConflicts()
             if(ball->mOldBubble != ball->mNewBubble)
             {
                 //RemoveBallFromBubble(ball,ball->mOldBubble);
-                AddBallToBubble(ball);
+                AddToBubble(ball);
             }
             //CCP_LOG_CH( s_chPark,"PST %d: %d %d",i,ball->mOldBubble,ball->mNewBubble);
 
@@ -4094,7 +4101,7 @@ void Ballpark::ResolveBubbleConflicts()
             if(ball->mOldBubble != ball->mNewBubble)
             {
                 //RemoveBallFromBubble(ball,ball->mOldBubble);
-                AddBallToBubble(ball);
+                AddToBubble(ball);
             }
             //CCP_LOG_CH( s_chPark,"PST %d: %d %d",i,ball->mOldBubble,ball->mNewBubble);
             ((IBall*)ball)->Unlock();
@@ -4112,7 +4119,7 @@ void Ballpark::ResolveBubbleConflicts()
         if(ball->mOldBubble != ball->mNewBubble)
         {
             //RemoveBallFromBubble(ball,ball->mOldBubble);
-            AddBallToBubble(ball);
+            AddToBubble(ball);
         }
             //CCP_LOG_CH( s_chPark,"PST %d: %d %d",i,ball->mOldBubble,ball->mNewBubble);
 
@@ -4337,9 +4344,9 @@ void Ballpark::SetBallInteractive(
     }
 }
 
-void Ballpark::DecreaseInteractiveCnt(Ball *ball, long inBubble)
+void Ballpark::DecreaseInteractiveCnt(Partitionable *p, long inBubble)
 {
-    if(ball->isInteractive)
+    if(p->isInteractive)
     {
         Py_ssize_t val = 0;
         if(inBubble != -1)
@@ -4348,7 +4355,7 @@ void Ballpark::DecreaseInteractiveCnt(Ball *ball, long inBubble)
             PyObject *dict;
             if((dict = PyDict_GetItem(bubbleInteractives, key)))
             {
-                PyObject *key2 = PyLong_FromLongLong(ball->mId);
+                PyObject *key2 = PyLong_FromLongLong(p->mId);
                 PyDict_DelItem(dict, key2);
                 Py_DECREF(key2);
                 val = PyDict_Size(dict);
@@ -4363,18 +4370,18 @@ void Ballpark::DecreaseInteractiveCnt(Ball *ball, long inBubble)
     }
 }
 
-void Ballpark::UpdateInteractiveCnt(Ball *ball, long oldBubble, long newBubble)
+void Ballpark::UpdateInteractiveCnt(Partitionable *p, long oldBubble, long newBubble)
 {
-    if(!ball->isInteractive)
+    if(!p->isInteractive)
         return;
 
-    IncreaseInteractiveCnt(ball, newBubble);
-    DecreaseInteractiveCnt(ball, oldBubble);
+    IncreaseInteractiveCnt(p, newBubble);
+    DecreaseInteractiveCnt(p, oldBubble);
 }
 
-void Ballpark::IncreaseInteractiveCnt(Ball *ball, long inBubble)
+void Ballpark::IncreaseInteractiveCnt(Partitionable *p, long inBubble)
 {
-    if(ball->isInteractive)
+    if(p->isInteractive)
     {
         long val = 0;
 
@@ -4390,7 +4397,7 @@ void Ballpark::IncreaseInteractiveCnt(Ball *ball, long inBubble)
                 Py_DECREF(dict);
             }
 
-            PyObject *key2 = PyLong_FromLongLong(ball->mId);
+            PyObject *key2 = PyLong_FromLongLong(p->mId);
             PyDict_SetItem(dict, key2, Py_None);
             Py_DECREF(key2);
             Py_DECREF(key);
@@ -4399,136 +4406,135 @@ void Ballpark::IncreaseInteractiveCnt(Ball *ball, long inBubble)
     }
 }
 
-
-void Ballpark::AddBallToBubble(Ball *ball)
+void Ballpark::AddToBubble(Partitionable *p)
 {
-    if(!bubbles)
-    {
-        // Bubbles are kept as a dictionary, containing a map to ball IDs
-        bubbles = PyDict_New();
-    }
+	if(!bubbles)
+	{
+		// Bubbles are kept as a dictionary, containing a map to ball IDs
+		bubbles = PyDict_New();
+	}
 
-    PyObject *newBubbleId = PyInt_FromLong(ball->mNewBubble);
-    PyObject *oldBubbleId = PyInt_FromLong(ball->mOldBubble);
-    PyObject *ballId      = PyLong_FromLongLong(ball->mId);
+	PyObject *newBubbleId = PyInt_FromLong(p->mNewBubble);
+	PyObject *oldBubbleId = PyInt_FromLong(p->mOldBubble);
+	PyObject *ballId      = PyLong_FromLongLong(p->mId);
 
-    if(ball->mNewBubble != -1)
-    {
-        PyObject *newBubble = PyDict_GetItem(bubbles, newBubbleId);
+	if(p->mNewBubble != -1)
+	{
+		PyObject *newBubble = PyDict_GetItem(bubbles, newBubbleId);
 
-        if(!newBubble){
-            // If this bubble didn't exist, create it
-            newBubble = PyDict_New();
-            // Add the item to it
-            PyDict_SetItem(bubbles, newBubbleId, newBubble);
-            Py_DECREF(newBubble);
-        }
+		if(!newBubble){
+			// If this bubble didn't exist, create it
+			newBubble = PyDict_New();
+			// Add the item to it
+			PyDict_SetItem(bubbles, newBubbleId, newBubble);
+			Py_DECREF(newBubble);
+		}
 
-        PyObject *value = PyDict_GetItem(newBubble, ballId);
+		PyObject *value = PyDict_GetItem(newBubble, ballId);
 
-        if(!value)
-        {
-            // Need to add me to this thing
-            PyDict_SetItem(newBubble, ballId, Plus);
-        }
-        else
-        {
-            // Already in bubble. Check how.
-            long val = PyInt_AS_LONG(value);
+		if(!value)
+		{
+			// Need to add me to this thing
+			PyDict_SetItem(newBubble, ballId, Plus);
+		}
+		else
+		{
+			// Already in bubble. Check how.
+			long val = PyInt_AS_LONG(value);
 
-            if(val==-1)
-            {
-                // Someone had deleted me. Nullify that.
-                if(mProbe==ball->mId)
-                    CCP_LOGWARN_CH( s_chPark,"[%d] Nullifying add in %d", mCurrentTime, ball->mNewBubble);
+			if(val==-1)
+			{
+				// Someone had deleted me. Nullify that.
+				if(mProbe==p->mId)
+					CCP_LOGWARN_CH( s_chPark,"[%d] Nullifying add in %d", mCurrentTime, p->mNewBubble);
 
-                PyDict_SetItem(newBubble, ballId, Zero);
-            }
+				PyDict_SetItem(newBubble, ballId, Zero);
+			}
 
-        }
+		}
 
-        // I have a new bubble and I'm certainly not in it. Add myself to it.
+		// I have a new bubble and I'm certainly not in it. Add myself to it.
 
-        if(mProbe==ball->mId)
-            CCP_LOGWARN_CH( s_chPark,"[%d] ball added to bubble %d", mCurrentTime, ball->mNewBubble);
+		if(mProbe==p->mId)
+			CCP_LOGWARN_CH( s_chPark,"[%d] ball added to bubble %d", mCurrentTime, p->mNewBubble);
 
-        // Check if someone is listening for these events
-        if(PyDict_Size(mBubbleSubscriptions) > 0)
-        {
-            if(PyDict_GetItem(mBubbleSubscriptions, newBubbleId))
-            {
-                // Dispatch stuff
-                if (!PyOS->SendEvent(
-                    (IEveBallpark*)this, "Destiny::DoBubbleAdd",
-                    "DoBubbleAdd", NULL, "(iL)", ball->mNewBubble, ball->mId
-                    ))
-                {
-                    PyOS->PyError();
-                }
-            }
-        }
-    }
+		// Check if someone is listening for these events
+		if(PyDict_Size(mBubbleSubscriptions) > 0)
+		{
+			if(PyDict_GetItem(mBubbleSubscriptions, newBubbleId))
+			{
+				// Dispatch stuff
+				if (!PyOS->SendEvent(
+					(IEveBallpark*)this, "Destiny::DoBubbleAdd",
+					"DoBubbleAdd", NULL, "(iL)", p->mNewBubble, p->mId
+					))
+				{
+					PyOS->PyError();
+				}
+			}
+		}
+	}
 
 
 
-    if(ball->mOldBubble != -1)
-    {
-        PyObject *oldBubble = PyDict_GetItem(bubbles, oldBubbleId);
+	if(p->mOldBubble != -1)
+	{
+		PyObject *oldBubble = PyDict_GetItem(bubbles, oldBubbleId);
 
-        if(oldBubble)
-        {
-            PyObject *value = PyDict_GetItem(oldBubble, ballId);
+		if(oldBubble)
+		{
+			PyObject *value = PyDict_GetItem(oldBubble, ballId);
 
-            if(value)
-            {
-                // Already in bubble. Check how.
-                long val = PyInt_AS_LONG(value);
+			if(value)
+			{
+				// Already in bubble. Check how.
+				long val = PyInt_AS_LONG(value);
 
-                if(val==0)
-                {
-                    // The guy is here. Delete him
-                    if(mProbe==ball->mId)
-                        CCP_LOGWARN_CH( s_chPark,"[%d] Deleting in %d", mCurrentTime, ball->mOldBubble);
+				if(val==0)
+				{
+					// The guy is here. Delete him
+					if(mProbe==p->mId)
+						CCP_LOGWARN_CH( s_chPark,"[%d] Deleting in %d", mCurrentTime, p->mOldBubble);
 
-                    PyDict_SetItem(oldBubble, ballId, Minus);
-                }else if(val==1)
-                {
-                    // The guy has just been added. Zap him completely.
-                    if(mProbe==ball->mId)
-                        CCP_LOGWARN_CH( s_chPark,"[%d] Zapping in %d", mCurrentTime, ball->mOldBubble);
+					PyDict_SetItem(oldBubble, ballId, Minus);
+				}else if(val==1)
+				{
+					// The guy has just been added. Zap him completely.
+					if(mProbe==p->mId)
+						CCP_LOGWARN_CH( s_chPark,"[%d] Zapping in %d", mCurrentTime, p->mOldBubble);
 
-                    PyDict_DelItem(oldBubble, ballId);
-                }
+					PyDict_DelItem(oldBubble, ballId);
+				}
 
-            }
+			}
 
-            if(mProbe==ball->mId)
-                CCP_LOGWARN_CH( s_chPark,"[%d] ball removed from bubble %d", mCurrentTime, ball->mOldBubble);
+			if(mProbe==p->mId)
+				CCP_LOGWARN_CH( s_chPark,"[%d] ball removed from bubble %d", mCurrentTime, p->mOldBubble);
 
-            // Check if someone is listening for these events
-            if(PyDict_Size(mBubbleSubscriptions) > 0)
-            {
-                if(PyDict_GetItem(mBubbleSubscriptions, oldBubbleId))
-                {
-                    // Dispatch stuff
-                    if (!PyOS->SendEvent(
-                        (IEveBallpark*)this, "Destiny::DoBubbleDel",
-                        "DoBubbleDel", NULL, "(iL)", ball->mOldBubble, ball->mId
-                        ))
-                    {
-                        PyOS->PyError();
-                    }
+			// Check if someone is listening for these events
+			if(PyDict_Size(mBubbleSubscriptions) > 0)
+			{
+				if(PyDict_GetItem(mBubbleSubscriptions, oldBubbleId))
+				{
+					// Dispatch stuff
+					if (!PyOS->SendEvent(
+						(IEveBallpark*)this, "Destiny::DoBubbleDel",
+						"DoBubbleDel", NULL, "(iL)", p->mOldBubble, p->mId
+						))
+					{
+						PyOS->PyError();
+					}
 
-                }
-            }
-        }
-    }
+				}
+			}
+		}
+	}
 
-    UpdateInteractiveCnt(ball, ball->mOldBubble, ball->mNewBubble);
+	UpdateInteractiveCnt(p, p->mOldBubble, p->mNewBubble);
 
-    Py_DECREF(newBubbleId);
-    Py_DECREF(oldBubbleId);
-    Py_DECREF(ballId);
+	Py_DECREF(newBubbleId);
+	Py_DECREF(oldBubbleId);
+	Py_DECREF(ballId);
 }
 //---------------------------------------------------------------------------------------
 // InitializeBubbles recacalculates causal domains and assigns new bubble Ids
@@ -4578,7 +4584,7 @@ void Ballpark::InitializeBubbles()
             ball->mOldBubble = ball->mNewBubble;
             ball->mNewBubble = box->mBubble;
 
-            AddBallToBubble(ball);
+            AddToBubble(ball);
             continue; // aldready traversed
         }
 
@@ -4590,7 +4596,7 @@ void Ballpark::InitializeBubbles()
         ball->mOldBubble = ball->mNewBubble;
         ball->mNewBubble = mBubbleId;
 
-        AddBallToBubble(ball);
+        AddToBubble(ball);
 
         mBubbleId++;
     }

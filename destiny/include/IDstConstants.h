@@ -62,7 +62,8 @@ enum BALLFLAGS
 	DSTBALL_ISINTERACTIVE = 0x00000008,
 	DSTBALL_ISSPACEJUNK   = 0x00000010,
 	//DSTBALL_ISCLOAKED     = 0x00000020, // Not used anymore afaict
-	DSTBALL_HASMINIBALLS  = 0x00000040
+	DSTBALL_HASMINIBALLS  = 0x00000040,
+	DSTBALL_HASMINICAPSULES  = 0x00000080
 };
 
 //--------------------------------------------------------------------

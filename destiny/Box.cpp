@@ -117,6 +117,18 @@ void Box::AddBall(Ball *ball)
 	balls.insert(ball);
 }
 
+//---------------------------------------------------------------------------------------
+// Box::AddStaticCollidable
+//---------------------------------------------------------------------------------------
+void Box::AddStaticCollidable(StaticCollidable* collidable)
+{
+	if( !collidable )
+	{
+		return;
+	}
+	mStaticCollidables.insert(collidable);
+}
+
 
 //---------------------------------------------------------------------------------------
 // Box::RemoveChildren
@@ -128,7 +140,7 @@ void Box::RemoveChildren(Box *box)
 	if(it != mChildren.end())
 		mChildren.erase(it); // children found, erase it
 
-	if(mChildren.empty() && balls.empty())
+	if(mChildren.empty() && balls.empty() && mStaticCollidables.empty())
 	{
 		ReleaseBox();
 	}
@@ -144,7 +156,23 @@ void Box::RemoveBall(Ball *ball)
 	if(it != balls.end())
 		balls.erase(it); // ball found, erase it
 
-	if(mChildren.empty() && balls.empty())
+	if(mChildren.empty() && balls.empty() && mStaticCollidables.empty())
+	{
+		ReleaseBox();
+	}
+}
+
+//---------------------------------------------------------------------------------------
+// Box::RemoveStaticCollidable
+//---------------------------------------------------------------------------------------
+
+void Box::RemoveStaticCollidable(StaticCollidable *collidable)
+{
+	SetOfOrderedStaticCollidables::iterator it = mStaticCollidables.find(collidable);
+	if(it != mStaticCollidables.end())
+		mStaticCollidables.erase(it);
+
+	if(mChildren.empty() && balls.empty() && mStaticCollidables.empty())
 	{
 		ReleaseBox();
 	}

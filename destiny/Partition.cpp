@@ -247,7 +247,7 @@ void Partition::ExplodeChildren(SetOfBoxes &children,BoxVectorInsertor &ins)
         box = *it;
         ExplodeChildren(box->mChildren,ins);
 
-        if(!box->balls.empty())
+        if(!box->balls.empty() || !box->mStaticCollidables.empty())
         {
                 ins = box;
         }
@@ -258,7 +258,7 @@ void Partition::ExplodeChildren(SetOfBoxes &children,BoxVectorInsertor &ins)
 /*
     Wraps GetNearbyBalls for the context of proximity sensors
 */
-void Partition::GetProximityCandidates(Ball* ball, VectorOfBalls& uni, bool isMaster)
+void Partition::GetProximityCandidates(Ball* ball, VectorOfBalls& uni, VectorOfStaticCollidables& uniStat, bool isMaster)
 {
     // Find all free balls that are 'close' to the proximity sensor, including missiles
     // Note that if ball is cloaked we want fixed balls, otherwise not. Notice also that for 
@@ -269,15 +269,15 @@ void Partition::GetProximityCandidates(Ball* ball, VectorOfBalls& uni, bool isMa
         filter.EXCLUDE_FIXED_BALLS = 1;
     if(ball->mSensor.onlyInteractives)    
         filter.EXCLUDE_INERT_BALLS = 1;
-        
-    GetNearbyBalls(ball, uni, isMaster, filter);
+      
+    GetNearbyBalls(ball, uni, uniStat, isMaster, filter);
 }
 
 
 /*
     Wraps GetNearbyBalls for the context of collision detection
 */
-void Partition::GetCollisionCandidates(Ball* ball, VectorOfBalls& uni, bool isMaster)
+void Partition::GetCollisionCandidates(Ball* ball, VectorOfBalls& uni, VectorOfStaticCollidables& uniStat, bool isMaster)
 {
     // What we want:
     // 1. Normal objects see everything, except missiles and cloaked balls
@@ -287,7 +287,7 @@ void Partition::GetCollisionCandidates(Ball* ball, VectorOfBalls& uni, bool isMa
     {
         if(ball->mOwnerId < 0)
         {   // This is case 3
-            GetNearbyBalls(ball, uni, isMaster, collisionCase3);
+            GetNearbyBalls(ball, uni, uniStat, isMaster, collisionCase3);
         }
         else if(ball->mNewBubble==ball->mFollowPtr->mNewBubble) 
         {  // This bubble check doesn't really do much as the missile ball shouldn't be tracking something in a different bubble anyways (it would break the client if it did)
@@ -297,7 +297,7 @@ void Partition::GetCollisionCandidates(Ball* ball, VectorOfBalls& uni, bool isMa
     }
     else
     {   // This is case 1
-        GetNearbyBalls(ball, uni, isMaster, collisionCase1);
+        GetNearbyBalls(ball, uni, uniStat, isMaster, collisionCase1);
     }
 }
 
@@ -319,7 +319,7 @@ void Partition::GetCollisionCandidates(Ball* ball, VectorOfBalls& uni, bool isMa
 
         - Given that list of balls it is sorted and duplicate balls removed
 ---------------------------------------------------------------------------------------*/
-void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, bool isMaster, NearbyCriteria filter)
+void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCollidables& uniStat, bool isMaster, NearbyCriteria filter)
 {
     SetOfOrderedBoxes::iterator it;
     VectorOfBoxes::iterator lt;
@@ -356,7 +356,7 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, bool isMaster, Ne
             if(box->mHandled)
                 break;
 
-            if(!box->balls.empty()) // include parent box only if it has any balls
+            if(!box->balls.empty() || !box->mStaticCollidables.empty()) // include parent box only if it has any collidable objects
             {
                 //only include those parents that have balls that are not missiles
                 ins = box;
@@ -369,9 +369,9 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, bool isMaster, Ne
         // Now include all children and their children ad infinitum
         ExplodeChildren(box->mChildren, ins);
 
-        if(box->balls.size() > 1)
+        if(box->balls.size() > 1 || box->mStaticCollidables.size() > 0)
         {
-            ins = box; // only include box itself if there are some other ball in there
+            ins = box; // only include box itself if there are some other collidable in there
             box->mHandled = true;
         }
 
@@ -429,10 +429,35 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, bool isMaster, Ne
             otherBall->mHandled = true;
             uni.push_back(otherBall);
         }
-    }
+	
+		SetOfOrderedStaticCollidables::iterator sit;
+
+		if(!filter.EXCLUDE_FIXED_BALLS)
+		{
+			StaticCollidable *collidable;
+			for(sit = box->mStaticCollidables.begin(); sit != box->mStaticCollidables.end(); ++sit)
+			{
+				collidable = *sit;
+				if (collidable->mHandled)
+					continue;
+
+				// other bubbles
+				if(isMaster && ( collidable->mNewBubble != ball->mNewBubble ))
+					continue;
+
+				collidable->mHandled = true;
+				uniStat.push_back(collidable);
+			}
+
+			for(ssize_t i = uniStat.size()-1; i>=0; --i)
+				uniStat[i]->mHandled = false;
+		}
+	}
+    
     for(ssize_t i = uni.size()-1; i>=0; --i)
         uni[i]->mHandled = false;
 }
+
 
 PyObject * Partition::GetActiveBoxes(int level)
 {

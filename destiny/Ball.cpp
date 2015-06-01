@@ -52,11 +52,9 @@ Ball::Ball(IRoot* lockobj) :
     mPark(0),
     mRadius(0.0),
     mMass(0.0),
-    mId(0),
     isFree(false),
     isMassive(false),
     isGlobal(false),
-    isInteractive(false),
     isSpaceJunk(false),
     isCloaked(0),
     mHarmonic(-1),
@@ -66,8 +64,6 @@ Ball::Ball(IRoot* lockobj) :
     mMaxVel(0.0),
     mSpeedFraction(1.0),
     mAgility(1.0),
-    mNewBubble(-1),
-    mOldBubble(-1),
     mNewYaw(0.0),
     mOldYaw(0.0),
     mNewPitch(0.0),
@@ -84,11 +80,8 @@ Ball::Ball(IRoot* lockobj) :
     mFollowId(0),
     mOwnerId(0),
     mFollowPtr(0),
-    mEffectStamp(0),
     mTimeFactor(1.0),
     mLastCollision(-1.0),
-    isMoribund(false),
-    mMyBox(0),
     mWithinRange(false),
     mHandled(false),
     mHasProximity(false),
@@ -96,7 +89,8 @@ Ball::Ball(IRoot* lockobj) :
     mTrackingPtr(0),
     mTrackingRange(0.0),
     mWithinTrackingRange(false),
-    PARENTLOCK(mMiniBalls, IBall)
+    PARENTLOCK(mMiniBalls, IBall),
+	PARENTLOCK(mMiniCapsules, IRoot)
 {
     mNewPos = Vector3d(1.e10,1.e10,1.e10);
     mCollisions.reserve(2);
@@ -152,7 +146,7 @@ void Ball::ClearBoxes()
         mActiveBoxes[i] = false;
 
     for(i=0;i<3;i++)
-        mod[i] = -2;
+        mMod[i] = -2;
 }
 
 //---------------------------------------------------------------------------------------
@@ -349,7 +343,7 @@ void Ball::DispatchCollisions()
             if (!PyOS->SendEvent(
                 (IBall*)this, "Destiny::Ball::DoCollision",
                 "DoCollision", NULL,
-                "Lddd", mCollisions[i]->mId,mLastC.x,mLastC.y,mLastC.z
+                "Lddd", mCollisions[i],mLastC.x,mLastC.y,mLastC.z
                 ))
             {
                 PyOS->PyError();
@@ -528,7 +522,8 @@ void Ball::CheckForProximity_Sensor()
     mPark->SetBallRadius(this,mRadius + mSensor.range);
 
     VectorOfBalls uni;
-    mPark->mPartition->GetProximityCandidates(this, uni, mPark->isMaster);
+	VectorOfStaticCollidables uniStat;
+    mPark->mPartition->GetProximityCandidates(this, uni, uniStat, mPark->isMaster);
 
     // restore old ball values
     mNewVel = vel;
@@ -675,7 +670,7 @@ void Modulo2pi(double& a,double& b)
 // DeleteBallFromBoxes removes the ball from all its boxes and clears the box list
 //---------------------------------------------------------------------------------------
 
-void Ball::DeleteBallFromBoxes()
+void Ball::DeleteFromBoxes()
 {
     SetOfBoxes::iterator it;
     Box* box;
@@ -689,6 +684,31 @@ void Ball::DeleteBallFromBoxes()
 
     // Now clear the box list
     ClearBoxes();
+}
+
+void Ball::InsertInBox(Box* box)
+{
+	if( !box )
+	{
+		return;
+	}
+	box->AddBall(this);
+	mBoxes.insert(box);
+}
+
+double Ball::GetInflatedRadius(double dt)
+{
+	return mRadius + dt * mNewVel.Length();
+}
+
+float Ball::GetBoundingRadius()
+{
+	return mRadius;
+}
+
+void Ball::SetBoxActive(int boxId, bool isActive)
+{
+	mActiveBoxes[boxId] = isActive;
 }
 
 void ClientBall::CalculateYawPitchRoll(bool snap)
@@ -1399,6 +1419,86 @@ void Ball::AddMiniBall(
 
 }
 
+void Ball::AddMiniCapsules()
+{
+	if(isFree)
+		return; // Don't want to add minicapsules to a free ball
+
+	ssize_t minicapsuleSize = mMiniCapsules.GetSize();
+
+	if(minicapsuleSize > 0)
+		CCP_LOG_CH( s_ch,"Adding %d minicapsules", minicapsuleSize);
+
+	for(ssize_t i=0 ; i < minicapsuleSize ; i++)
+	{
+		MiniCapsule *mc = (MiniCapsule *)(void *)(mMiniCapsules.GetAt(i));
+		AddActualMinicapsule(mc);
+	}
+}
+
+void Ball::RemoveMiniCapsules()
+{
+	ssize_t miniCapsuleSize = mMiniCapsules.GetSize();
+	if(miniCapsuleSize > 0)
+		CCP_LOG_CH( s_ch,"Removing %d minicapsules", miniCapsuleSize);
+
+	for(ssize_t i=0 ; i < miniCapsuleSize ; i++)
+	{
+		MiniCapsule *mb = (MiniCapsule *)(void *)(mMiniCapsules.GetAt(i));
+		mPark->RemoveCapsule(mb->mId);
+	}
+}
+
+void Ball::AddActualMinicapsule(MiniCapsule* c)
+{
+	if(isFree)
+		return;
+
+	if(!mPark)
+	{
+		RegisterBallNotInPark();
+		return;
+	}
+
+	ID theId = -1;
+
+	Capsule *capsule = mPark->AddCapsule(
+		-1, 
+		mNewPos.x + c->mHemisphereA.x, mNewPos.y + c->mHemisphereA.y, mNewPos.z + c->mHemisphereA.z, 
+		mNewPos.x + c->mHemisphereB.x, mNewPos.y + c->mHemisphereB.y, mNewPos.z + c->mHemisphereB.z, 
+		c->mRadius);
+
+	c->mId = capsule->mId;
+	//capsule->mOwnerId = mId;
+}
+
+void Ball::AddMiniCapsule(
+	double ax,
+	double ay,
+	double az,
+	double bx,
+	double by,
+	double bz,
+	float r
+	)
+{
+	MiniCapsule* c = new OMiniCapsule;
+	c->mHemisphereA.x = ax;
+	c->mHemisphereA.y = ay;
+	c->mHemisphereA.z = az;
+	c->mHemisphereB.x = bx;
+	c->mHemisphereB.y = by;
+	c->mHemisphereB.z = bz;
+	c->mRadius = r;
+	mMiniCapsules.Insert(-1, c);
+
+	if(!isFree)
+	{
+		// Add the miniball as a bona fide ball
+		AddActualMinicapsule(c);
+	}
+}
+
 Vector3d* ClientBall::GetReferencePoint( Vector3d* out, Be::Time time )
 {
     if( mPark )
@@ -1644,4 +1744,179 @@ size_t BallPtrHasher::operator ()(const Ball* b) const
 bool BallPtrHasher::operator () (const Ball* r, const Ball* l) const
 {
     return r->mId == l->mId;
+}
+
+
+void Ball::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
+{
+	int q;
+	short mod[3];
+
+	double inflatedRadius = GetInflatedRadius(mPark->dt);
+	Box *box2;
+
+	for(q=0;q<3;q++)
+	{
+
+		if( box1->lo[q] + inflatedRadius - mNewPos[q] > 0.0 )
+		{
+			// Add box to the left...
+			mod[q] = -1;
+		}
+		else if ( box1->hi[q] - inflatedRadius - mNewPos[q] < 0.0f )
+		{
+			// add box  to the right
+			mod[q] = 1;
+		}
+		else
+		{
+			// don't need to include any adjacent box
+			mod[q] = 0;
+		}
+	}
+
+	if(mPark->mProbe==mId)
+		CCP_LOGWARN_CH( s_ch,"[%d] Old box is: %d - New box is: %d", mPark->mCurrentTime, mMyBox, box1);
+	if(mPark->mProbe==mId)
+		CCP_LOGWARN_CH( s_ch,"[%d] Mod state: [(%d,%d),(%d,%d),(%d,%d)]", mPark->mCurrentTime, mod[0], mod[0],mod[1], mod[1],mod[2], mod[2]);
+
+	if(mMyBox && box1->mKey == mMyBox->mKey)
+	{
+		// We have the same base box as before. Check if the mods are the same as well.
+		if(mod[0]==mMod[0] && mod[1]==mMod[1] && mod[2]==mMod[2])
+		{
+			if(mPark->mProbe==mId)
+				CCP_LOGWARN_CH( s_ch,"[%d] Skipping stuff as they are the same", mPark->mCurrentTime);
+			// Same mods. This is the same config. Bail out.
+			return;
+		}
+	}
+
+	// Now we know all the boxes we might have to add
+	// We assume that when both modifiers are non-null, then the diagonal
+	// box should be added as well. This is justified by the fact that it usually
+	// very close anyway.
+
+	// Let's run over all the boxes the ball currently thinks it is in and remove it from there
+	// Note that this might invalidate the top box and its bubble, but we will restore it
+	DeleteFromBoxes();
+
+	mMod[0] = mod[0];
+	mMod[1] = mod[1];
+	mMod[2] = mod[2];
+
+	// The box we had might well have been deleted. Create it again.
+	box1 = mPark->mPartition->GetBox(inflatedRadius,mNewPos);
+
+	int64_t ix,iy,iz;
+
+	ix = box1->mKey.ix;
+	iy = box1->mKey.iy;
+	iz = box1->mKey.iz;
+	long level = box1->mLevel;
+
+	// First the box I am in
+	InsertInBox(box1);
+
+	if(mPark->isMaster)
+	{
+		// Restore the topmost bubbleID in case it got lost
+		top = mPark->mPartition->GetTopmost(box1);
+		top->mBubble = newBubbleId;
+	}
+
+	SetBoxActive(13, true);
+	mMyBox = box1;
+
+	if (level==0 && mRadius * 2 > mPark->mPartition->mLevelWidth[0])
+	{
+		// If the ball diameter is larger than the top-level box width, then the ball probably overlaps
+		// adjacent boxes in both positive and negative directions on each axis.
+		// (One example of this is the sentry-gun sensors around stations, which have approx 300km diameter.
+		// compared to the top-level grid size of 245km)
+		// This assumption is always valid for stations and stargates for example, because they are always
+		// placed at the centre of a box.
+		// Rather than handling this in a complex way, simply insert the ball to ALL adjacent boxes
+
+		int x, y, z;
+		for (x=-1; x<2; x++)
+		{
+			for (y=-1; y<2; y++)
+			{
+				for (z=-1; z<2; z++)
+				{
+					if (x==0 && y==0 && z==0)
+					{
+						// Skip the centre box where the ball actually is, as it has been specially handled above
+						continue;
+					}
+
+					box2 = mPark->mPartition->GetBox(ix+x , iy+y , iz+z, 0);
+					InsertInBox(box2);
+					SetBoxActive(13 + x + 3*y + 9*z, true);
+				}
+			}
+		}
+	}
+	else
+	{
+		// Here we determine which neighbouring boxes the ball might overlap, and insert accordingly
+
+		// Add box in the x dimension
+		if(mod[0])
+		{
+			box2 = mPark->mPartition->GetBox( ix+mod[0] , iy , iz , level);
+			InsertInBox(box2);
+			SetBoxActive(13+mod[0], true);
+		}
+
+		// Add box in the y dimension
+		if(mod[1])
+		{
+			box2 = mPark->mPartition->GetBox( ix , iy+mod[1] , iz , level );
+			InsertInBox(box2);
+			SetBoxActive(13+3*mod[1], true);
+		}
+
+		// Add box in the z dimension
+		if(mod[2])
+		{
+			box2 = mPark->mPartition->GetBox( ix , iy , iz+mod[2] , level);
+			InsertInBox(box2);
+			SetBoxActive(13+9*mod[2], true);
+		}
+
+		// Add the corner boxes
+		// xy corner
+		if(mod[0] && mod[1])
+		{
+			box2 = mPark->mPartition->GetBox( ix+mod[0] , iy+mod[1] , iz , level);
+			InsertInBox(box2);
+			SetBoxActive(13+mod[0]+3*mod[1], true);
+		}
+
+		// xz corner
+		if(mod[0] && mod[2])
+		{
+			box2 = mPark->mPartition->GetBox(ix+mod[0] , iy , iz+mod[2], level);
+			InsertInBox(box2);
+			SetBoxActive(13+mod[0]+9*mod[2], true);
+		}
+
+		// yz corner
+		if(mod[1] && mod[2])
+		{
+			box2 = mPark->mPartition->GetBox(ix , iy+mod[1] , iz+mod[2], level);
+			InsertInBox(box2);
+			SetBoxActive(13+3*mod[1]+9*mod[2], true);
+		}
+
+		// xyz corner
+		if(mod[0] && mod[1] && mod[2])
+		{
+			box2 = mPark->mPartition->GetBox(ix+mod[0] , iy+mod[1] , iz+mod[2], level);
+			InsertInBox(box2);
+			SetBoxActive(13+mod[0]+3*mod[1]+9*mod[2], true);
+		}
+	}
 }

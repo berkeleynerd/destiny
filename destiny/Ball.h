@@ -24,12 +24,14 @@
 
 #ifndef _BALL_H_
 #define _BALL_H_
+#include "Partitionable.h"
 
 #include "include/IBall.h"
 #include "include/IDstConstants.h"
 
 #include "DstConstants.h"
 #include "MiniBall.h"
+#include "MiniCapsule.h"
 #include "Quaternion.h"
 
 struct Vector3d;
@@ -94,11 +96,13 @@ public:
 typedef std::unordered_set<Box *, BoxPtrHasher, BoxPtrHasher> SetOfOrderedBoxes;
 typedef std::vector<Ball *> VectorOfBalls;
 typedef int64_t ID;
+typedef std::vector<ID> VectorOfIDs;
 
 
 class Ball :
 	public INotify,
-	public IBall
+	public IBall,
+	public Partitionable
 {
 friend class Ballpark;
 friend class Partition;
@@ -115,7 +119,6 @@ public:
 	// Distributed state of ball.  Try to group
 	// so that it packs more tightly.
 	//--------------------------------------------------//
-	ID mId; // main id of Ball
     ID mFollowId; // the ball being followed for a DSTBALL_FOLLOW, DSTBALL_ORBIT and DSTBALL_MISSILE mode
     ID mOwnerId; // the ball that launched me for DSTBALL_MISSILE mode
     int64_t mHarmonic; // Harmonic value of the ball
@@ -123,16 +126,11 @@ public:
     Ballpark *mPark; // pointer to ball owner
     Ball *mTrackingPtr; // Var for tracking a target and notification on range.
     Ball *mFollowPtr; // Pointer to ball being followed
-    Box *mMyBox;
-
-    long mEffectStamp; // Time counter stamp for effect
-    long mNewBubble; // current bubble ID
-	long mOldBubble; // old bubble Id
 
 	int mAllianceID;
     int mCorporationID;
 
-    short mod[3];
+    short mMod[3];
 
     char mFormationID;
     char isCloaked;  //  non-zero if ball is cloaked for others
@@ -140,9 +138,7 @@ public:
     bool isFree; // true if ball can move
 	bool isGlobal; // true if ball is visible by all
 	bool isMassive; // true if ball is solid
-	bool isInteractive; // true if ball is associated with a user
 	bool isSpaceJunk; // true if ball is just a myriad of your thoughs
-	bool isMoribund; // Flags that tells whehther this ball is soon to die
     bool mWithinTrackingRange;
     bool mHasProximity;
 	bool mWithinRange;
@@ -171,8 +167,6 @@ public:
 	
 	std::bitset<16> mFormationSlots;
 	
-	Vector3d mNewPos; // current position of ball
-	Vector3d mOldPos; // position of ball one tick interval ago
 	Vector3d mNewVel; // current velocity of ball
 	Vector3d mOldVel; // velocity of ball one tick interval ago
     Vector3d mGoto; // current goto destination of ball for a DSTBALL_GOTO mode
@@ -184,7 +178,9 @@ public:
 	DSTBALLMODE mMode; // the current dynamical state of the ball	
 
 	typedef RootParentLock<BlueList<MiniBall> > MiniBallList;
+	typedef RootParentLock<BlueList<MiniCapsule> > MiniCapsuleList;
 	MiniBallList mMiniBalls;
+	MiniCapsuleList mMiniCapsules;
 	//--------------------------------------------------//
 	// Dynamic state of ball
 	//--------------------------------------------------//
@@ -194,7 +190,7 @@ public:
 
 	SetOfBalls mFollowers; // Pointers of balls following this ball
 	SetOfOrderedBoxes mBoxes; // Boxes that this ball currently intersects, ordered by Box 'key'
-	VectorOfBalls mCollisions; // Balls that have collided with me in the last time step
+	VectorOfIDs mCollisions; // Objects that have collided with me in the last time step
 	
 	bool mActiveBoxes[27];
 
@@ -236,7 +232,7 @@ public:
 	// pre: none
 	// post: remove ball from any intersecting boxes in the current space partition
 	//////////////////////////////////////////////////////////////////////////////
-	void DeleteBallFromBoxes();
+	void DeleteFromBoxes();
 
 	//////////////////////////////////////////////////////////////////////////////
 	// ClearBoxes()
@@ -244,6 +240,39 @@ public:
 	// post: All boxes have been cleared away, and their state is false
 	//////////////////////////////////////////////////////////////////////////////
 	void ClearBoxes();
+
+	//////////////////////////////////////////////////////////////////////////////
+	// InsertInBox()
+	// pre: none
+	// post: The ball and box will have references to each other
+	//////////////////////////////////////////////////////////////////////////////
+	void InsertInBox(Box* box);
+
+	//////////////////////////////////////////////////////////////////////////////
+	// InsertInBox()
+	// pre: none
+	// post: The ball will be a member of the boxes that it intersects during 
+	//       this and the previous timestep
+	//////////////////////////////////////////////////////////////////////////////
+	void InsertInBoxes(Box* box1, Box* top, long newBubbleId);
+
+	//////////////////////////////////////////////////////////////////////////////
+	// GetInflatedRadius()
+	// Get the radius of the largest sphere the object can occupy during the time step
+	//////////////////////////////////////////////////////////////////////////////
+	double GetInflatedRadius(double dt);
+
+	//////////////////////////////////////////////////////////////////////////////
+	// GetInflatedRadius()
+	// Get the radius of the ball
+	//////////////////////////////////////////////////////////////////////////////
+	float GetBoundingRadius();
+
+	//////////////////////////////////////////////////////////////////////////////
+	// SetBoxActive()
+	// Update the activity status of the box
+	//////////////////////////////////////////////////////////////////////////////
+	void SetBoxActive(int boxId, bool isActive);
 
 	//////////////////////////////////////////////////////////////////////////////
 	// CalculateYawPitchRoll()
@@ -283,6 +312,19 @@ public:
 		double x,
 		double y,
 		double z,
+		float r
+		);
+	void AddMiniCapsules();
+	void RemoveMiniCapsules();
+	void AddActualMinicapsule(MiniCapsule* c);
+
+	void AddMiniCapsule(
+		double ax,
+		double ay,
+		double az,
+		double bx,
+		double by,
+		double bz,
 		float r
 		);
 

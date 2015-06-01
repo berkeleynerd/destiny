@@ -31,12 +31,14 @@ struct Vector3d;
 ------------------------------------------------------------------------*/
 class Box;
 class Ball;
+class StaticCollidable;
 class Key;
 
 typedef int64_t ID;
 typedef std::unordered_set<Ball *> SetOfBalls;
 typedef std::unordered_map<ID, Ball *> DictOfBalls;
 typedef std::vector<Ball *> VectorOfBalls;
+typedef std::vector<StaticCollidable *> VectorOfStaticCollidables;
 typedef std::pair<ID, Ball*> DictEntry;
 typedef std::unordered_map<Key,Box *,std::hash<size_t>> MapOfBoxes;
 typedef std::unordered_set<Box *> SetOfBoxes;
@@ -160,10 +162,10 @@ public:
     PyObject *GetActiveBoxes(int level);
     
     // Gets nearby balls that are pertinent to proximity sensors
-    void GetProximityCandidates(Ball* ball, VectorOfBalls& uni, bool isMaster);
+    void GetProximityCandidates(Ball* ball, VectorOfBalls& uni, VectorOfStaticCollidables& uniStat, bool isMaster);
     
     // Gets nearby balls that are pertinent to collision detection
-    void GetCollisionCandidates(Ball* ball, VectorOfBalls& uni, bool isMaster);
+    void GetCollisionCandidates(Ball* ball, VectorOfBalls& uni, VectorOfStaticCollidables& uniStat, bool isMaster);
 
     // vector containing partitions for different levels. Zero is the coarsest level
     std::vector<MapOfBoxes> mLevels;
@@ -187,8 +189,8 @@ public:
         unsigned int EXCLUDE_CLOAKED          : 1;
         unsigned int EXCLUDE_HARMONICS_TEST   : 1;
     };
-	// Get balls that are 'close', according to the criteria specified in 'filter'
-    void GetNearbyBalls(Ball* ball, VectorOfBalls& uni, bool isMaster, NearbyCriteria filter);
+	// Get collidables that are 'close', according to the criteria specified in 'filter'
+	void GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCollidables& uniStat, bool isMaster, NearbyCriteria filter);
 
 	private:
 
