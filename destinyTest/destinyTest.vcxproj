@@ -179,6 +179,7 @@
     <ResourceCompile/>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="autoversion.h"/>
     <ClInclude Include="StdAfx.h"/>
   </ItemGroup>
   <ItemGroup>
