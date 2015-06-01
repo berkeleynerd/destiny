@@ -104,6 +104,23 @@ class TestBallBox(helpers.BallparkTestCase):
         self.assertAlmostEqual(y, 7.5)
         self.assertAlmostEqual(z, 22.5)
 
+class TestGetStaticCollidableBox(helpers.BallparkTestCase):
+    def test_box_zero_zero_zero(self):
+        capsule = self.park.AddCapsule(-1, 1.0,1.0,1.0, 2.0,2.0,2.0, 1.0)
+        box_width, (x,y,z) = self.park.GetStaticCollidableBox(capsule.id)
+        self.assertEqual(box_width, 15.0)
+        self.assertAlmostEqual(x, 7.5)
+        self.assertAlmostEqual(y, 7.5)
+        self.assertAlmostEqual(z, 7.5)
+
+    def test_box_zero_zero_one(self):
+        capsule = self.park.AddCapsule(-1, 1.0,1.0,16.0, 1.0,1.0,18.0, 1.0)
+        box_width, (x,y,z) = self.park.GetStaticCollidableBox(capsule.id)
+        self.assertEqual(box_width, 15.0)
+        self.assertAlmostEqual(x, 7.5)
+        self.assertAlmostEqual(y, 7.5)
+        self.assertAlmostEqual(z, 22.5)
+
 
 class TestGetActiveBoxes(helpers.BallparkTestCase):
     def test_returns_none_when_there_are_no_active_boxes(self):
@@ -120,6 +137,44 @@ class TestGetActiveBoxes(helpers.BallparkTestCase):
         level_width, box_low_coord_list = self.park.GetActiveBoxes(level)
         self.assertEqual(level_width, 15.0)
         self.assertEqual(box_low_coord_list, [(0.0, 0.0, 0.0)])
+
+    def test_adding_a_capsule_makes_a_box_active(self):
+        self.park.AddCapsule(0, 2.0,2.0,2.0, 3.0,3.0,3.0, 1.0)
+        level = 7
+        level_width, active_boxes = self.park.GetActiveBoxes(level)
+        expected_active_boxes =  [(0.0, 0.0, 0.0)]
+        self.assertEqual(active_boxes, expected_active_boxes)
+
+    def test_adding_a_large_capsule_makes_adjecent_boxes_active(self):
+        self.park.AddCapsule(0, 1.0,1.0,1.0, 2.0,2.0,2.0, 2.0)
+        level = 7
+        level_width, active_boxes = self.park.GetActiveBoxes(level)
+        expected_active_boxes =  [
+            (-15.0, -15.0, -15.0),
+            (-15.0, -15.0, 0.0),
+            (-15.0, 0.0, -15.0),
+            (-15.0, 0.0, 0.0),
+            (0.0, -15.0, -15.0),
+            (0.0, -15.0, 0.0),
+            (0.0, 0.0, -15.0),
+            (0.0, 0.0, 0.0)
+        ]
+        self.assertListEqual(sorted(active_boxes), expected_active_boxes)
+
+    def test_adding_a_long_capsule_makes_adjecent_boxes_active(self):
+        self.park.AddCapsule(0, 7.5,7.5,7.5, 100.0,7.5,7.5, 5.0)
+        level = 7
+        level_width, active_boxes = self.park.GetActiveBoxes(level)
+        expected_active_boxes =  [
+            (0.0, 0.0, 0.0),
+            (15.0, 0.0, 0.0),
+            (30.0, 0.0, 0.0),
+            (45.0, 0.0, 0.0),
+            (60.0, 0.0, 0.0),
+            (75.0, 0.0, 0.0),
+            (90.0, 0.0, 0.0)
+        ]
+        self.assertListEqual(sorted(active_boxes), expected_active_boxes)
 
 
 class TestGetAndSetBoxObject(helpers.BallparkTestCase):

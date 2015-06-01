@@ -46,6 +46,21 @@ class BallparkTestCase(unittest.TestCase):
         for i in xrange(n):
             yield add_ball_to_park(self.park, objectID=i+1)
 
+    def assertMiniBallEqual(self, first, second):
+        self.assertEqual(first.id, second.id)
+        self.assertEqual(first.x, second.x)
+        self.assertEqual(first.y, second.y)
+        self.assertEqual(first.z, second.z)
+
+    def assertMiniCapsuleEqual(self, first, second):
+        self.assertEqual(first.id, second.id)
+        self.assertEqual(first.ax, second.ax)
+        self.assertEqual(first.ay, second.ay)
+        self.assertEqual(first.az, second.az)
+        self.assertEqual(first.bx, second.bx)
+        self.assertEqual(first.by, second.by)
+        self.assertEqual(first.bz, second.bz)
+
     def assertBallEqual(self, first, second):
         self.assertEqual(first.Agility, second.Agility)
         self.assertEqual(first.allianceID, second.allianceID)
@@ -114,6 +129,13 @@ class BallparkTestCase(unittest.TestCase):
         elif len_first < len_second:
             msg = "Second list contains %s additional elements" % (len_second - len_first)
             self.fail(msg)
+
+    def evolve_ball_and_get_coordinates(self, ball, step_count):
+        coordinates = []
+        for i in xrange(step_count):
+            self.park.Evolve()
+            coordinates.append((ball.x, ball.y, ball.z))
+        return coordinates
 
 class BallPOPO(object):
     objectID = 0
@@ -207,6 +229,7 @@ def get_level_width(level_no):
 class BallEventSpy(decometaclass.WrapBlueClass("destiny.Ball")):
     def __init__(self, *args):
         super(BallEventSpy, self).__init__(*args)
+        self.collision_callback_args = []
         self.proximity_callback_args = []
         self.range_callback_args = []
         self.target_tracking_callback_args = []
@@ -219,3 +242,6 @@ class BallEventSpy(decometaclass.WrapBlueClass("destiny.Ball")):
 
     def DoTargetTracking(self, entered):
         self.target_tracking_callback_args.append(entered)
+
+    def DoCollision(self, id, x, y, z):
+        self.collision_callback_args.append((id, x, y, z))

@@ -155,3 +155,60 @@ class TestAddMushroom(helpers.BallparkTestCase):
         self.park.Evolve()
         self.park.Evolve()
         self.assertTrue(mushroom.isMoribund)
+
+class TestCapsule(helpers.BallparkTestCase):
+    def test_parameters_get_set_correctly(self):
+        capsule = self.park.AddCapsule(23, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 42.0)
+        self.assertEqual(capsule.id, 23)
+        self.assertEqual(capsule.ax, 1.0)
+        self.assertEqual(capsule.ay, 2.0)
+        self.assertEqual(capsule.az, 3.0)
+
+        self.assertEqual(capsule.bx, 4.0)
+        self.assertEqual(capsule.by, 5.0)
+        self.assertEqual(capsule.bz, 6.0)
+
+        self.assertEqual(capsule.radius, 42.0)
+        self.assertEqual(capsule.park, self.park)
+
+    def test_remove_capsule(self):
+        capsule = self.park.AddCapsule(23, 0,0,0, 1,0,0, 1)
+        self.park.RemoveCapsule(capsule.id)
+        self.assertTrue(capsule.isMoribund)
+
+
+class TestIdGeneration(helpers.BallparkTestCase):
+    def setUp(self):
+        super(TestIdGeneration, self).setUp()
+        self.first_id_generated = -2**30 - 1
+
+    def get_next_ball_id(self):
+        ball = self.park.AddBall(-1, 1, 1, 1, True, False, True, True, False, 1, 1, 1, 1, 1, 1, 1, 1)
+        return ball.id
+
+    def get_next_capsule_id(self):
+        capsule = self.park.AddCapsule(-1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 42.0)
+        return capsule.id
+
+    def test_ball_id_gets_generated(self):
+        ball_id = self.get_next_ball_id()
+        self.assertEqual(ball_id, self.first_id_generated)
+
+    def test_capsule_id_gets_generated(self):
+        capsule_id = self.get_next_capsule_id()
+        self.assertEqual(capsule_id, self.first_id_generated)
+
+    def test_ball_ids_get_incremented(self):
+        last_id = self.get_next_ball_id()
+        next_id = self.get_next_ball_id()
+        self.assertEqual(next_id, last_id - 1)
+
+    def test_capsule_ids_get_incremented(self):
+        last_id = self.get_next_capsule_id()
+        next_id = self.get_next_capsule_id()
+        self.assertEqual(next_id, last_id - 1)
+
+    def test_ball_and_capsule_ids_share_the_same_id_generator(self):
+        first_id = self.get_next_ball_id()
+        second_id = self.get_next_capsule_id()
+        self.assertEqual(second_id, first_id - 1)
