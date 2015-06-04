@@ -54,6 +54,8 @@ BaseConfigurations:
 
   Release:
     ClCompile:
+      PreprocessorDefinitions:
+      - NDEBUG
       Optimization: MaxSpeed
       RuntimeLibrary: MultiThreadedDLL
     Link:
