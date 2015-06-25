@@ -339,8 +339,14 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCol
             return;
     }
 
-    VectorOfBoxes boxes;
-    BoxVectorInsertor ins(boxes);
+    // Keep a static vector for accumulating boxes and clear it after we're done.
+	// This vector will grow to the largest set of boxes ever needed, which should
+	// happen fairly quickly. After that, there won't be any memory allocations needed
+	// and that is a worthwhile optimization.
+	static VectorOfBoxes s_boxes;
+	ON_BLOCK_EXIT( [=] { s_boxes.clear(); } );
+
+    BoxVectorInsertor ins(s_boxes);
 
     for(it = ball->mBoxes.begin(); it != ball->mBoxes.end(); ++it)
     {
@@ -381,7 +387,7 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCol
 
     Ball *otherBall;
 
-    for(lt = boxes.begin(); lt != boxes.end(); ++lt)
+    for(lt = s_boxes.begin(); lt != s_boxes.end(); ++lt)
     {
         // cycle over all boxes that 'ball' belongs to
         box = *lt;

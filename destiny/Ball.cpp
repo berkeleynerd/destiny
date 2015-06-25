@@ -201,7 +201,7 @@ void Ball::RemoveProximitySensor()
 
 void Ball::CalculateYawPitchRoll(bool snap)
 {
-    if(!mPark)
+	if( !mPark )
     {
         // This ball is no longer in any ballpark
         mNewYaw = 0.0;

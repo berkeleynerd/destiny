@@ -57,7 +57,11 @@ BaseConfigurations:
       PreprocessorDefinitions:
       - NDEBUG
       Optimization: MaxSpeed
+      InlineFunctionExpansion: AnySuitable
+      OmitFramePointers: true
+      IntrinsicFunctions: true
       RuntimeLibrary: MultiThreadedDLL
+      WholeProgramOptimization: true
     Link:
       AdditionalDependencies:
       - blue.lib

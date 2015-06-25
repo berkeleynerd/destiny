@@ -328,7 +328,9 @@ void Ballpark::OnTick(
 //---------------------------------------------------------------------------------------
 void Ballpark::Evolve(Be::Time timestamp)
 {
-    Ball *ball;
+	CCP_STATS_ZONE( __FUNCTION__ );
+
+	Ball *ball;
     inEvolve = true;
 
     DictOfFreeBalls::iterator sit;
@@ -462,7 +464,6 @@ void Ballpark::Evolve(Be::Time timestamp)
         //CCP_LOGWARN_CH( s_chPark,"%I64d@%d: [%f,%f,%f]",ball->mId,mCurrentTime,ball->mNewPos.x,ball->mNewPos.y,ball->mNewPos.z);
 
         {
-            TASKLET(Timer_CalculateYawPitchRoll);
             ball->CalculateYawPitchRoll();
         }
 
@@ -1049,20 +1050,26 @@ Vector3d Ballpark::GotoThrust(const Ball *ball, const Vector3d& target, bool mis
 //---------------------------------------------------------------------------------------
 void Ballpark::Gradient(Ball *ball)
 {
-    if(!ball)
+	if( !ball )
         return;
 
-    TASKLET(Timer_Gradient);
+	// Keep static vectors for accumulating balls and collidables and clear it after we're done.
+	// These vector will grow to the largest set of balls/collidables ever needed, which should
+	// happen fairly quickly. After that, there won't be any memory allocations needed
+	// and that is a worthwhile optimization.
+	static VectorOfBalls s_uni;
+	static VectorOfStaticCollidables s_staticCollidables;
+	
+	ON_BLOCK_EXIT( [=] { s_uni.clear(); } );
+	ON_BLOCK_EXIT( [=] { s_staticCollidables.clear(); } );
 
-    VectorOfBalls uni;
-    VectorOfBalls::iterator kt;
-	VectorOfStaticCollidables staticCollidables;
+	VectorOfBalls::iterator kt;
 	VectorOfStaticCollidables::iterator st;
     Ball *neighbor;
     
-    mPartition->GetCollisionCandidates(ball, uni, staticCollidables, isMaster);
+    mPartition->GetCollisionCandidates(ball, s_uni, s_staticCollidables, isMaster);
         
-    for(kt = uni.begin(); kt != uni.end(); ++kt)
+    for(kt = s_uni.begin(); kt != s_uni.end(); ++kt)
     {
         neighbor = *kt;
 
@@ -1077,7 +1084,7 @@ void Ballpark::Gradient(Ball *ball)
         Potential(ball, neighbor);
     }
 
-	for( st = staticCollidables.begin(); st != staticCollidables.end(); ++st )
+	for( st = s_staticCollidables.begin(); st != s_staticCollidables.end(); ++st )
 	{
 		if( ball->mMode==DSTBALL_MISSILE || ball->mMode == DSTBALL_MUSHROOM )
 			continue; // Don't include missile launchers and mushrooms
@@ -1135,7 +1142,7 @@ double CollideTwoSpheres(const Vector3d& p0, const Vector3d& p1, const Vector3d&
 //---------------------------------------------------------------------------------------
 void Ballpark::Potential(Ball *me, Ball *other, int recursionDepth)
 {
-    // First task is to estimate where I will be at next dt
+	// First task is to estimate where I will be at next dt
     Vector3d p0,p1,q0,q1,vp1,vq1;
     double collRadius = (double)me->mRadius + (double)other->mRadius;
 

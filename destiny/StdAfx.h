@@ -45,6 +45,7 @@ typedef Matrix D3DXMATRIX;
 #include <blue/include/IBluePython.h>
 #include <blue/include/IBlueOS.h>
 
+#include "blue/include/BlueStatistics.h"
 
               
 
