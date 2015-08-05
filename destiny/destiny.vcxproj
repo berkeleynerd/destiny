@@ -9,8 +9,12 @@
       <Configuration>Release_27</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
+    <ProjectConfiguration Include="ReleaseStatic|Win32">
+      <Configuration>ReleaseStatic</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Debug_27|x64">
@@ -25,8 +29,12 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="ReleaseStatic|x64">
+      <Configuration>ReleaseStatic</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
@@ -43,7 +51,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'" Label="Configuration">
     <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'" Label="Configuration">
@@ -55,7 +66,10 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <PlatformToolset>v100</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'" Label="Configuration">
     <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -74,7 +88,13 @@
     <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">
+    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
+    <UseOfMfc>False</UseOfMfc>
+    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
     <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
@@ -98,11 +118,17 @@
     <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
     <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">
+    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
+    <UseOfMfc>False</UseOfMfc>
+    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
@@ -130,11 +156,13 @@
   <ImportGroup Label="ExtensionSettings"/>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'" Label="PropertySheets"/>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets"/>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'" Label="PropertySheets"/>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets"/>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'" Label="PropertySheets"/>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'" Label="PropertySheets"/>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets"/>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets"/>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'" Label="PropertySheets"/>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets"/>
   <PropertyGroup>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">.pyd</TargetExt>
@@ -143,9 +171,12 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">.pyd</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">_destiny</TargetName>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">../../autobuild/$(ProjectName)/python_27/$(Platform)/$(PlatformToolset)/</OutDir>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.dll</TargetExt>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_destiny</TargetName>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">.lib</TargetExt>
+    <ConfigurationType Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">StaticLibrary</ConfigurationType>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.dll</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_destiny_d</TargetName>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">.pyd</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">_destiny_d</TargetName>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">../../autobuild/$(ProjectName)/python_27/$(Platform)/$(PlatformToolset)/</OutDir>
@@ -155,9 +186,12 @@
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.dll</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">_destiny_d</TargetName>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
-    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.dll</TargetExt>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">_destiny_d</TargetName>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.dll</TargetExt>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_destiny</TargetName>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">.lib</TargetExt>
+    <ConfigurationType Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">StaticLibrary</ConfigurationType>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.dll</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_destiny</TargetName>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
@@ -234,20 +268,19 @@
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PreprocessorDefinitions>NDEBUG;CCP_STACKLESS=1;BLUE_WITH_PYTHON=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;CCP_STACKLESS=1;BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;BLUE_WITH_PYTHON=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;$(CcpSdkPath)\telemetry\2.1A3\include;.;$(CcpBranchPath)/carbon/src;../../../../../../sdk/directx/october2004/include;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;$(CcpSdkPath)\telemetry\2.1A3\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;$(CcpSdkPath)\telemetry\2.1A3\include;.;$(CcpBranchPath)/carbon/src;../../../../../../sdk/directx/october2004/include;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <WholeProgramOptimization>True</WholeProgramOptimization>
       <TreatWarningAsError>True</TreatWarningAsError>
       <IntrinsicFunctions>True</IntrinsicFunctions>
       <Optimization>MaxSpeed</Optimization>
-      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)destiny.pch</PrecompiledHeaderOutputFile>
       <OmitFramePointers>True</OmitFramePointers>
       <BufferSecurityCheck>False</BufferSecurityCheck>
@@ -258,15 +291,47 @@
       <RuntimeTypeInfo>True</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>../../../../../../sdk/directx/october2004/lib/$(Platform);..\..\..\carbon\autobuild\stackless\$(Platform);$(CcpSdkPath)\telemetry\2.1A3\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../../../../../sdk/directx/october2004/lib/$(Platform);..\..\..\carbon\autobuild\stackless\$(Platform);$(CcpSdkPath)\telemetry\2.1A3\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform);$(CcpSdkPath)\telemetry\2.1A3\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <SuppressStartupBanner>True</SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
-      <AdditionalDependencies>d3dx9.lib;blue.lib;blue.lib;python27.lib;telemetry64.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3dx9.lib;blue.lib;python27.lib;telemetry32.link.lib;python27.lib;telemetry32.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <Culture>1039</Culture>
+      <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PreprocessorDefinitions>_DEBUG;CCP_STACKLESS=1;BLUE_WITH_PYTHON=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>True</FunctionLevelLinking>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;$(CcpSdkPath)\telemetry\2.1A3\include;.;$(CcpBranchPath)/carbon/src;../../../../../../sdk/directx/october2004/include;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>True</MultiProcessorCompilation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <TreatWarningAsError>True</TreatWarningAsError>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>$(IntDir)destiny.pch</PrecompiledHeaderOutputFile>
+      <BufferSecurityCheck>False</BufferSecurityCheck>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <CppExceptions>True</CppExceptions>
+      <WarningLevel>Level3</WarningLevel>
+      <RuntimeTypeInfo>True</RuntimeTypeInfo>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>True</GenerateDebugInformation>
+      <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
+      <SuppressStartupBanner>True</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>../../../../../../sdk/directx/october2004/lib/$(Platform);..\..\..\carbon\autobuild\stackless\$(Platform);$(CcpSdkPath)\telemetry\2.1A3\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>d3dx9dt.lib;blue_d.lib;blue_d.lib;python27_d.lib;telemetry64.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <Culture>1039</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
@@ -366,18 +431,22 @@
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <PreprocessorDefinitions>_DEBUG;CCP_STACKLESS=1;BLUE_WITH_PYTHON=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;CCP_STACKLESS=1;BLUE_WITH_PYTHON=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;$(CcpSdkPath)\telemetry\2.1A3\include;.;$(CcpBranchPath)/carbon/src;../../../../../../sdk/directx/october2004/include;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <WholeProgramOptimization>True</WholeProgramOptimization>
       <TreatWarningAsError>True</TreatWarningAsError>
-      <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <IntrinsicFunctions>True</IntrinsicFunctions>
+      <Optimization>MaxSpeed</Optimization>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>$(IntDir)destiny.pch</PrecompiledHeaderOutputFile>
+      <OmitFramePointers>True</OmitFramePointers>
       <BufferSecurityCheck>False</BufferSecurityCheck>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
@@ -386,15 +455,50 @@
       <RuntimeTypeInfo>True</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <GenerateDebugInformation>True</GenerateDebugInformation>
-      <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
-      <SuppressStartupBanner>True</SuppressStartupBanner>
       <AdditionalLibraryDirectories>../../../../../../sdk/directx/october2004/lib/$(Platform);..\..\..\carbon\autobuild\stackless\$(Platform);$(CcpSdkPath)\telemetry\2.1A3\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>d3dx9dt.lib;blue_d.lib;blue_d.lib;python27_d.lib;telemetry64.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>True</GenerateDebugInformation>
+      <SuppressStartupBanner>True</SuppressStartupBanner>
+      <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalDependencies>d3dx9.lib;blue.lib;blue.lib;python27.lib;telemetry64.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <Culture>1039</Culture>
-      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PreprocessorDefinitions>NDEBUG;CCP_STACKLESS=1;BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;BLUE_WITH_PYTHON=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>True</FunctionLevelLinking>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;$(CcpSdkPath)\telemetry\2.1A3\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;$(CcpSdkPath)\telemetry\2.1A3\include;.;$(CcpBranchPath)/carbon/src;../../../../../../sdk/directx/october2004/include;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>True</MultiProcessorCompilation>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <WholeProgramOptimization>True</WholeProgramOptimization>
+      <TreatWarningAsError>True</TreatWarningAsError>
+      <IntrinsicFunctions>True</IntrinsicFunctions>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeaderOutputFile>$(IntDir)destiny.pch</PrecompiledHeaderOutputFile>
+      <OmitFramePointers>True</OmitFramePointers>
+      <BufferSecurityCheck>False</BufferSecurityCheck>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <CppExceptions>True</CppExceptions>
+      <WarningLevel>Level3</WarningLevel>
+      <RuntimeTypeInfo>True</RuntimeTypeInfo>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>../../../../../../sdk/directx/october2004/lib/$(Platform);..\..\..\carbon\autobuild\stackless\$(Platform);$(CcpSdkPath)\telemetry\2.1A3\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform);$(CcpSdkPath)\telemetry\2.1A3\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>True</GenerateDebugInformation>
+      <SuppressStartupBanner>True</SuppressStartupBanner>
+      <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <AdditionalDependencies>d3dx9.lib;blue.lib;python27.lib;telemetry64.link.lib;python27.lib;telemetry64.link.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ResourceCompile>
+      <Culture>1039</Culture>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemDefinitionGroup>
@@ -439,20 +543,26 @@
     <ClInclude Include="Ball.h"/>
     <ClInclude Include="Ballpark.h"/>
     <ClInclude Include="Box.h"/>
+    <ClInclude Include="BoxShape.h"/>
     <ClInclude Include="Capsule.h"/>
+    <ClInclude Include="Collision.h"/>
     <ClInclude Include="DstConstants.h"/>
     <ClInclude Include="Hashers.h"/>
     <ClInclude Include="MapOfBalls.h"/>
     <ClInclude Include="MapOfLongLongs.h"/>
     <ClInclude Include="MiniBall.h"/>
+    <ClInclude Include="MiniBox.h"/>
     <ClInclude Include="MiniCapsule.h"/>
+    <ClInclude Include="OrientedBox.h"/>
     <ClInclude Include="Partition.h"/>
     <ClInclude Include="Partitionable.h"/>
+    <ClInclude Include="Plane.h"/>
     <ClInclude Include="Quaternion.h"/>
     <ClInclude Include="Random.h"/>
     <ClInclude Include="resource.h"/>
     <ClInclude Include="StaticCollidable.h"/>
     <ClInclude Include="StdAfx.h"/>
+    <ClInclude Include="Triangle.h"/>
     <ClInclude Include="Vector3.h"/>
     <ClInclude Include="Vector3d.h"/>
     <ClInclude Include="version.h"/>
@@ -467,23 +577,31 @@
     <ClCompile Include="Ballpark_Blue.cpp"/>
     <ClCompile Include="Ball_Blue.cpp"/>
     <ClCompile Include="Box.cpp"/>
+    <ClCompile Include="BoxShape.cpp"/>
     <ClCompile Include="Capsule.cpp"/>
     <ClCompile Include="Capsule_Blue.cpp"/>
+    <ClCompile Include="Collision.cpp"/>
     <ClCompile Include="destiny.cpp"/>
     <ClCompile Include="DstConstants.cpp"/>
     <ClCompile Include="erf.cpp"/>
     <ClCompile Include="MiniBall.cpp"/>
     <ClCompile Include="Miniball_Blue.cpp"/>
+    <ClCompile Include="MiniBox.cpp"/>
+    <ClCompile Include="MiniBox_Blue.cpp"/>
     <ClCompile Include="MiniCapsule.cpp"/>
     <ClCompile Include="MiniCapsule_Blue.cpp"/>
+    <ClCompile Include="OrientedBox.cpp"/>
+    <ClCompile Include="OrientedBox_Blue.cpp"/>
     <ClCompile Include="Partition.cpp"/>
     <ClCompile Include="Partitionable.cpp"/>
+    <ClCompile Include="Plane.cpp"/>
     <ClCompile Include="Random.cpp"/>
     <ClCompile Include="StaticCollidable.cpp"/>
     <ClCompile Include="StdAfx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Thunkers.cpp"/>
+    <ClCompile Include="Triangle.cpp"/>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="destiny.rc"/>

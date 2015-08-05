@@ -18,7 +18,13 @@
     <ClInclude Include="Box.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="BoxShape.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="Capsule.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Collision.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DstConstants.h">
@@ -36,13 +42,22 @@
     <ClInclude Include="MiniBall.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="MiniBox.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="MiniCapsule.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OrientedBox.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Partition.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Partitionable.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Plane.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Quaternion.h">
@@ -58,6 +73,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="StdAfx.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Triangle.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Vector3.h">
@@ -96,10 +114,16 @@
     <ClCompile Include="Box.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BoxShape.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Capsule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Capsule_Blue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Collision.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="destiny.cpp">
@@ -117,16 +141,31 @@
     <ClCompile Include="Miniball_Blue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MiniBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MiniBox_Blue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="MiniCapsule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MiniCapsule_Blue.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="OrientedBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OrientedBox_Blue.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Partition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Partitionable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Plane.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Random.cpp">
@@ -139,6 +178,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Thunkers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Triangle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ResourceCompile Include="destiny.rc">
