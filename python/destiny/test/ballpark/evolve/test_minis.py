@@ -40,6 +40,97 @@ class TestMiniCapsule(helpers.BallparkTestCase):
 
         self.assertEqual(coords, expected_coords)
 
+class TestMiniBox(helpers.BallparkTestCase):
+    def test_add(self):
+        parent, = self.add_balls(1)
+        parent.x = 100
+        parent.y = 200
+        parent.z = 300
+        parent.AddMiniBox(
+            0.0, 0.0, 0.0,
+            100.0, 0.0, 0.0,
+            0.0, 100.0, 0.0,
+            0.0, 0.0, 100.0
+        )
+        mini_box = parent.miniBoxes[0]
+
+        self.assertEqual(mini_box.c0, 0.0)
+        self.assertEqual(mini_box.c1, 0.0)
+        self.assertEqual(mini_box.c2, 0.0)
+
+        self.assertEqual(mini_box.x0, 100.0)
+        self.assertEqual(mini_box.x1, 0.0)
+        self.assertEqual(mini_box.x2, 0.0)
+
+        self.assertEqual(mini_box.y0, 0.0)
+        self.assertEqual(mini_box.y1, 100.0)
+        self.assertEqual(mini_box.y2, 0.0)
+
+        self.assertEqual(mini_box.z0, 0.0)
+        self.assertEqual(mini_box.z1, 0.0)
+        self.assertEqual(mini_box.z2, 100.0)
+
+    def test_add_with_rotation(self):
+        parent, = self.add_balls(1)
+        parent.x = 100
+        parent.y = 200
+        parent.z = 300
+
+        parent.AddMiniBox(
+            0.0, 0.0, 0.0,
+            1.0, 1.0, 1.0,
+            -1.0, 0.0, 1.0,
+            1.0, -2.0, 1.0
+        )
+        mini_box = parent.miniBoxes[0]
+
+        self.assertEqual(mini_box.c0, 0.0)
+        self.assertEqual(mini_box.c1, 0.0)
+        self.assertEqual(mini_box.c2, 0.0)
+
+        self.assertEqual(mini_box.x0, 1.0)
+        self.assertEqual(mini_box.x1, 1.0)
+        self.assertEqual(mini_box.x2, 1.0)
+
+        self.assertEqual(mini_box.y0, -1.0)
+        self.assertEqual(mini_box.y1, 0.0)
+        self.assertEqual(mini_box.y2, 1.0)
+
+        self.assertEqual(mini_box.z0, 1.0)
+        self.assertEqual(mini_box.z1, -2.0)
+        self.assertEqual(mini_box.z2, 1.0)
+
+    def test_collide(self):
+        parent, = self.add_balls(1)
+        parent.x = 0
+        parent.y = 0
+        parent.z = 0
+        parent.AddMiniBox(100.0, 0.0, 0.0,
+                          10.0, 0.0, 0.0,
+                          0.0, 10.0, 0.0,
+                          0.0, 0.0, 10.0)
+        src = helpers.create_space_ball(self.park, x=105, y=30, z=5)
+        src.radius = 10.0
+
+        self.park.GotoPoint(src.id, 105, 5, 5)
+        coords = self.evolve_ball_and_get_coordinates(src, 10)
+
+        expected_coords = [
+            (105.0, 29.60534057196273, 5.0),
+            (105.0, 28.46477715834572, 5.0),
+            (105.0, 26.639413762737924, 5.0),
+            (105.0, 24.18534878569255, 5.0),
+            (105.0, 21.15408508070178, 5.0),
+            (105.0, 20.556611603423004, 5.0),
+            (105.0, 22.110313573663948, 5.0),
+            (105.0, 22.758502970390804, 5.0),
+            (105.0, 22.575358836230418, 5.0),
+            (105.0, 21.628983511479944, 5.0)
+        ]
+        self.maxDiff = None
+        self.assertEqual(coords, expected_coords)
+
+
 
 class TestMiniBall(helpers.BallparkTestCase):
     def test_add(self):

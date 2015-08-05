@@ -177,6 +177,30 @@ class TestCapsule(helpers.BallparkTestCase):
         self.assertTrue(capsule.isMoribund)
 
 
+class TestOrientedBox(helpers.BallparkTestCase):
+    def test_parameters_get_set_correctly(self):
+        obb = self.park.AddOrientedBox(
+            23, # ID
+            0.0, 0.0, 0.0, # Corner of box
+            1.0, 0.0, 0.0, # Local X axis
+            0.0, 1.0, 0.0, # Local Y axis
+            0.0, 0.0, 1.0, # Local Z axis
+        )
+        self.assertEqual(obb.id, 23)
+
+    def test_remove(self):
+        obb = self.park.AddOrientedBox(
+            -1,
+            0.0, 0.0, 0.0, # Corner of box
+            1.0, 0.0, 0.0, # Local X axis
+            0.0, 1.0, 0.0, # Local Y axis
+            0.0, 0.0, 1.0, # Local Z axis
+        )
+        self.park.RemoveOrientedBox(obb.id)
+        self.assertTrue(obb.isMoribund)
+
+
+
 class TestIdGeneration(helpers.BallparkTestCase):
     def setUp(self):
         super(TestIdGeneration, self).setUp()
@@ -190,6 +214,16 @@ class TestIdGeneration(helpers.BallparkTestCase):
         capsule = self.park.AddCapsule(-1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 42.0)
         return capsule.id
 
+    def get_next_oriented_box_id(self):
+        obb = self.park.AddOrientedBox(
+            -1,
+            0.0, 0.0, 0.0, # Corner of box
+            1.0, 0.0, 0.0, # Local X axis
+            0.0, 1.0, 0.0, # Local Y axis
+            0.0, 0.0, 1.0, # Local Z axis
+        )
+        return obb.id
+
     def test_ball_id_gets_generated(self):
         ball_id = self.get_next_ball_id()
         self.assertEqual(ball_id, self.first_id_generated)
@@ -197,6 +231,10 @@ class TestIdGeneration(helpers.BallparkTestCase):
     def test_capsule_id_gets_generated(self):
         capsule_id = self.get_next_capsule_id()
         self.assertEqual(capsule_id, self.first_id_generated)
+
+    def test_oriented_box_id_gets_generated(self):
+        obb_id = self.get_next_oriented_box_id()
+        self.assertEqual(obb_id, self.first_id_generated)
 
     def test_ball_ids_get_incremented(self):
         last_id = self.get_next_ball_id()
@@ -206,6 +244,11 @@ class TestIdGeneration(helpers.BallparkTestCase):
     def test_capsule_ids_get_incremented(self):
         last_id = self.get_next_capsule_id()
         next_id = self.get_next_capsule_id()
+        self.assertEqual(next_id, last_id - 1)
+
+    def test_oriented_box_ids_get_incremented(self):
+        last_id = self.get_next_oriented_box_id()
+        next_id = self.get_next_oriented_box_id()
         self.assertEqual(next_id, last_id - 1)
 
     def test_ball_and_capsule_ids_share_the_same_id_generator(self):

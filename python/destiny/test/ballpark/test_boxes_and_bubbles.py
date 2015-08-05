@@ -105,7 +105,7 @@ class TestBallBox(helpers.BallparkTestCase):
         self.assertAlmostEqual(z, 22.5)
 
 class TestGetStaticCollidableBox(helpers.BallparkTestCase):
-    def test_box_zero_zero_zero(self):
+    def test_capsule_in_box_zero_zero_zero(self):
         capsule = self.park.AddCapsule(-1, 1.0,1.0,1.0, 2.0,2.0,2.0, 1.0)
         box_width, (x,y,z) = self.park.GetStaticCollidableBox(capsule.id)
         self.assertEqual(box_width, 15.0)
@@ -113,9 +113,33 @@ class TestGetStaticCollidableBox(helpers.BallparkTestCase):
         self.assertAlmostEqual(y, 7.5)
         self.assertAlmostEqual(z, 7.5)
 
-    def test_box_zero_zero_one(self):
+    def test_capsule_in_box_zero_zero_one(self):
         capsule = self.park.AddCapsule(-1, 1.0,1.0,16.0, 1.0,1.0,18.0, 1.0)
         box_width, (x,y,z) = self.park.GetStaticCollidableBox(capsule.id)
+        self.assertEqual(box_width, 15.0)
+        self.assertAlmostEqual(x, 7.5)
+        self.assertAlmostEqual(y, 7.5)
+        self.assertAlmostEqual(z, 22.5)
+
+    def test_oriented_box_in_box_zero_zero_zero(self):
+        obb = self.park.AddOrientedBox(-1,
+                                       7.0, 7.0, 7.0,
+                                       1.0, 0.0, 0.0,
+                                       0.0, 1.0, 0.0,
+                                       0.0, 0.0, 1.0)
+        box_width, (x,y,z) = self.park.GetStaticCollidableBox(obb.id)
+        self.assertEqual(box_width, 15.0)
+        self.assertAlmostEqual(x, 7.5)
+        self.assertAlmostEqual(y, 7.5)
+        self.assertAlmostEqual(z, 7.5)
+
+    def test_oriented_box_in_box_zero_zero_one(self):
+        obb = self.park.AddOrientedBox(-1,
+                                       7.0, 7.0, 22.0,
+                                       1.0, 0.0, 0.0,
+                                       0.0, 1.0, 0.0,
+                                       0.0, 0.0, 1.0)
+        box_width, (x,y,z) = self.park.GetStaticCollidableBox(obb.id)
         self.assertEqual(box_width, 15.0)
         self.assertAlmostEqual(x, 7.5)
         self.assertAlmostEqual(y, 7.5)

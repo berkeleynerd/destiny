@@ -61,6 +61,22 @@ class BallparkTestCase(unittest.TestCase):
         self.assertEqual(first.by, second.by)
         self.assertEqual(first.bz, second.bz)
 
+    def assertMiniBoxEqual(self, first, second):
+        self.assertEqual(first.id, second.id)
+        self.assertEqual(first.c0, second.c0)
+        self.assertEqual(first.c1, second.c1)
+        self.assertEqual(first.c2, second.c2)
+        self.assertEqual(first.x0, second.x0)
+        self.assertEqual(first.x1, second.x1)
+        self.assertEqual(first.x2, second.x2)
+        self.assertEqual(first.y0, second.y0)
+        self.assertEqual(first.y1, second.y1)
+        self.assertEqual(first.y2, second.y2)
+        self.assertEqual(first.z0, second.z0)
+        self.assertEqual(first.z1, second.z1)
+        self.assertEqual(first.z2, second.z2)
+
+
     def assertBallEqual(self, first, second):
         self.assertEqual(first.Agility, second.Agility)
         self.assertEqual(first.allianceID, second.allianceID)
