@@ -32,6 +32,7 @@
 #include "DstConstants.h"
 #include "MiniBall.h"
 #include "MiniCapsule.h"
+#include "MiniBox.h"
 #include "Quaternion.h"
 
 struct Vector3d;
@@ -178,8 +179,10 @@ public:
 	DSTBALLMODE mMode; // the current dynamical state of the ball	
 
 	typedef RootParentLock<BlueList<MiniBall> > MiniBallList;
+	typedef RootParentLock<BlueList<MiniBox> > MiniBoxList;
 	typedef RootParentLock<BlueList<MiniCapsule> > MiniCapsuleList;
 	MiniBallList mMiniBalls;
+	MiniBoxList mMiniBoxes;
 	MiniCapsuleList mMiniCapsules;
 	//--------------------------------------------------//
 	// Dynamic state of ball
@@ -314,6 +317,17 @@ public:
 		double z,
 		float r
 		);
+
+	void AddMiniBoxes();
+	void RemoveMiniBoxes();
+	void AddActualMiniBox(MiniBox* b);
+	void AddMiniBox(
+		Vector3d corner, 
+		Vector3d localX, 
+		Vector3d localY, 
+		Vector3d localZ
+		);
+
 	void AddMiniCapsules();
 	void RemoveMiniCapsules();
 	void AddActualMinicapsule(MiniCapsule* c);
@@ -349,6 +363,7 @@ public:
 
 	PyObject* Py__init__( PyObject* args );
 	PyObject* PyAddMiniBall( PyObject* args );
+	PyObject* PyAddMiniBox( PyObject* args );
 	PyObject* PyGetRotatedVector( PyObject* args );
 	PyObject* PyAddProximitySensor( PyObject* args );
 	PyObject* PyReserveFormationSlot( PyObject* args );

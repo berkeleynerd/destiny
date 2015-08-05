@@ -342,6 +342,7 @@ static const Be::ClassRegistration classes[] =
 	BLUECLASSFACTORY(ClientBall)
 	BLUECLASSFACTORY(Ballpark)
 	BLUECLASSFACTORY(MiniBall)
+	BLUECLASSFACTORY(MiniBox)
 	BLUECLASSFACTORY(MiniCapsule)
 #ifdef DESTINY_AUTHORING
 	BLUECLASSFACTORY(Galaxy)

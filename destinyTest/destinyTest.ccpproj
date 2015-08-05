@@ -66,4 +66,4 @@ Configurations:
     - Release
     Link:
       AdditionalDependencies:
-        - _destiny.lib
+        - destiny.lib

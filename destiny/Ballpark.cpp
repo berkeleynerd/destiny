@@ -1767,6 +1767,40 @@ Ball *Ballpark::BallExists(const ID& srcId)
     return mBalls[srcId];
 }
 
+ID Ballpark::GetIDForCollisionObject(ID objectId)
+{
+	ID theID;
+
+	theID = objectId;
+	if(isMaster)
+	{
+		// I am on a server, so the ID is mine to generate
+		if(objectId <= 0)
+		{
+			// Generate a local ball
+			if(objectId < 0)
+			{
+				// This is a pure local ball ID request
+				theID = --mLocalHiCnt;
+			}
+			else
+			{
+				// This is supposed to be a client/server non-item ball
+				theID = --mLocalCnt;
+			}
+		}
+	}
+	else
+	{
+		// I am on the client
+		if(objectId == -1)
+		{
+			theID = --mLocalHiCnt;
+		}
+	}
+	return theID;
+}
+
 //---------------------------------------------------------------------------------------
 // AddBall adds a ball with the given parameters to the current simulation
 //---------------------------------------------------------------------------------------
@@ -1791,36 +1825,7 @@ Ball * Ballpark::AddBall(
     )
 {
     bool created = false;
-    ID theID;
-
-    theID = objectId;
-    if(isMaster)
-    {
-        // I am on a server, so the ID is mine to generate
-        if(objectId <= 0)
-        {
-            // Generate a local ball
-            if(objectId < 0)
-            {
-                // This is a pure local ball ID request
-                theID = --mLocalHiCnt;
-                //CCP_LOG_CH( s_chPark,"Pure local ball request got ID: %d",theID);
-            }
-            else
-            {
-                // This is supposed to be a client/server non-item ball
-                theID = --mLocalCnt;
-            }
-        }
-    }
-    else
-    {
-        // I am on the client
-        if(objectId == -1)
-        {
-            theID = --mLocalHiCnt;
-        }
-    }
+    ID theID = GetIDForCollisionObject(objectId);
 
     //CCP_LOG_CH( s_chPark,"[ %d ] Issueing ball with ID: %I64d",mCurrentTime, theID);
     //CCP_LOG_CH( s_chPark,"[ %d ]  supplied arguments: mass %f, radius %f, maxVel %f", mCurrentTime, mass, radius, maxVel);
@@ -1965,34 +1970,7 @@ Capsule * Ballpark::AddCapsule(
 	ID theID;
 	bool created = false;
 
-	theID = objectId;
-	if(isMaster)
-	{
-		// I am on a server, so the ID is mine to generate
-		if(objectId <= 0)
-		{
-			// Generate a local ball
-			if(objectId < 0)
-			{
-				// This is a pure local ball ID request
-				theID = --mLocalHiCnt;
-				//CCP_LOG_CH( s_chPark,"Pure local ball request got ID: %d",theID);
-			}
-			else
-			{
-				// This is supposed to be a client/server non-item ball
-				theID = --mLocalCnt;
-			}
-		}
-	}
-	else
-	{
-		// I am on the client
-		if(objectId == -1)
-		{
-			theID = --mLocalHiCnt;
-		}
-	}
+	theID = GetIDForCollisionObject(objectId);
 	Capsule * capsule = nullptr;
 	auto it = mCapsules.find(theID);
 	if( it != mCapsules.end() )
@@ -2012,6 +1990,42 @@ Capsule * Ballpark::AddCapsule(
 	InsertStaticCollidableInBoxes(capsule);
 
 	return capsule;
+}
+
+OrientedBox * Ballpark::AddOrientedBox(
+	const ID& objectId,
+	double corner_0, double corner_1, double corner_2,
+	double x0, double x1, double x2,
+	double y0, double y1, double y2,
+	double z0, double z1, double z2 )
+{
+	ID theID;
+	bool created = false;
+
+	theID = GetIDForCollisionObject(objectId);
+	OrientedBox * obb = nullptr;
+	auto it = mOrientedBoxes.find(theID);
+	if( it != mOrientedBoxes.end() )
+	{
+		obb = it->second;
+	}
+	else
+	{
+		obb = new OOrientedBox();
+		obb->Initialize(theID,
+			corner_0, corner_1, corner_2,
+			x0, x1, x2,
+			y0, y1, y2,
+			z0, z1, z2);
+		mOrientedBoxes[theID] = obb;
+	}
+
+	obb->mPark = this;
+
+	// Insert the capsule into the space partition
+	InsertStaticCollidableInBoxes(obb);
+
+	return obb;
 }
 
 
@@ -3091,6 +3105,8 @@ void Ballpark::SetBallFree(
 
         // Remove miniballs if necessary
         ball->RemoveMiniBalls();
+		ball->RemoveMiniCapsules();
+		ball->RemoveMiniBoxes();
         
         // Set ball time to a tick a go so that we don't snap back and forth 
         // during first tick of client interpolation
@@ -3109,6 +3125,8 @@ void Ballpark::SetBallFree(
 
         // Add miniballs if necessary
         ball->AddMiniBalls();
+		ball->AddMiniCapsules();
+		ball->AddMiniBoxes();
     }
 
 
@@ -3661,6 +3679,17 @@ void Ballpark::RemoveBall(
 		}
 		ball->mMiniCapsules.Remove(-1); // special cased in BlueListC to clear the list.
 	}
+	ssize_t miniboxSize = ball->mMiniBoxes.GetSize();
+	if(miniboxSize > 0 && !ball->isFree)
+	{
+		CCP_LOG_CH( s_chPark,"Deleting %d miniboxes for ball %I64d", miniboxSize, srcId);
+		for(ssize_t i=miniboxSize-1 ; i >= 0; i--)
+		{
+			MiniBox *mc = (MiniBox *)(void *)(ball->mMiniBoxes.GetAt(i));
+			RemoveOrientedBox(mc->mId);
+		}
+		ball->mMiniBoxes.Remove(-1); // special cased in BlueListC to clear the list.
+	}
     if(inEvolve || delay > 0)
     {
         // If trying to remove ball in the middle of an Evolve loop
@@ -3766,6 +3795,57 @@ void Ballpark::RemoveCapsule(
 	AddToBubble(capsule);
 
 	mCapsules.erase(srcId);
+}
+
+void Ballpark::RemoveOrientedBox(
+	const ID& srcId,
+	int delay
+	)
+{
+	OrientedBox *obb = mOrientedBoxes[srcId];
+	if(!obb)
+	{
+		CCP_LOGERR_CH( s_chPark,"Ballpark::RemoveOrientedBox trying to remove non-existing box %I64d.", srcId);
+		return;
+	}
+
+	obb->isMoribund = true;
+
+	if(inEvolve || delay > 0)
+	{
+		// If trying to remove ball in the middle of an Evolve loop
+		// don't do it, but mark it as soon to be dead...        
+		// BringOutTheDeads only calls us with delay==0 and inEvolve==false,
+		// so we never end up here from that call
+		obb->mEffectStamp = mCurrentTime + delay;
+		moribundOrientedBoxes.insert(obb);
+		return;
+	} 
+
+	// Last chance to kill all references etc associated with this ball
+	// We add this so that we can be more event based, rather than relying on tasklet timings
+	if( !PyOS->SendEvent( obb->GetRawRoot(), 
+		"Destiny::OrientedBox::DoFinalCleanup",
+		"DoFinalCleanup", 
+		NULL,
+		"()"))
+	{
+		PyOS->PyError();
+	}
+
+	//remove from moribund balls. For safety, it should have been already removed.
+	moribundOrientedBoxes.erase(obb);
+
+	// Get the ball out of all boxes
+	obb->DeleteFromBoxes();
+
+	obb->mPark = 0;
+	// remove it from the map of balls
+	obb->mOldBubble = obb->mNewBubble;
+	obb->mNewBubble = -1;
+	AddToBubble(obb);
+
+	mOrientedBoxes.erase(srcId);
 }
 
 //---------------------------------------------------------------------------------------
@@ -3963,6 +4043,7 @@ void Ballpark::ClearAll(
 	
 	mStaticCollidables.clear();
 	mCapsules.clear();
+	mOrientedBoxes.clear();
 
     if(bubbles)
     {

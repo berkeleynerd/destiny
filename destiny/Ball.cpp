@@ -89,8 +89,9 @@ Ball::Ball(IRoot* lockobj) :
     mTrackingPtr(0),
     mTrackingRange(0.0),
     mWithinTrackingRange(false),
-    PARENTLOCK(mMiniBalls, IBall),
-	PARENTLOCK(mMiniCapsules, IRoot)
+    PARENTLOCK(mMiniBalls),
+	PARENTLOCK(mMiniBoxes),
+	PARENTLOCK(mMiniCapsules)
 {
     mNewPos = Vector3d(1.e10,1.e10,1.e10);
     mCollisions.reserve(2);
@@ -369,13 +370,17 @@ void Ball::CheckForProximity()
     }
 
     if(isMoribund)
+	{
         return;
+	}
 
     CheckForProximity_NotificationRange();
     CheckForProximity_TargetTracking();
 
     if(!mSensor.active)
+	{
         return;
+	}
     CheckForProximity_Sensor();
 
 }
@@ -507,7 +512,9 @@ void Ball::CheckForProximity_Sensor()
     mSensor.elapsed += mPark->dt;
 
     if(mSensor.elapsed < mSensor.period)
+	{
         return;
+	}
 
     mSensor.elapsed = 0.0;
     
@@ -726,7 +733,9 @@ void ClientBall::CalculateYawPitchRoll(bool snap)
 void ClientBall::InforceContinuity()
 {
     if(!mPark)
+	{
         return;
+	}
 
     // We should now calculate an interpolated value
     if(mLastTick != mPark->mCurrentTime)
@@ -1342,7 +1351,9 @@ bool Ball::OnModified(
 void Ball::AddMiniBalls()
 {
     if(isFree)
+	{
         return; // Don't want to add miniballs to a free ball
+	}
     
     ssize_t miniballSize = mMiniBalls.GetSize();
 
@@ -1373,7 +1384,9 @@ void Ball::RemoveMiniBalls()
 void Ball::AddActualMiniball(MiniBall *b)
 {
     if(isFree)
+	{
         return;
+	}
 	
 	if(!mPark)
 	{
@@ -1422,7 +1435,9 @@ void Ball::AddMiniBall(
 void Ball::AddMiniCapsules()
 {
 	if(isFree)
+	{
 		return; // Don't want to add minicapsules to a free ball
+	}
 
 	ssize_t minicapsuleSize = mMiniCapsules.GetSize();
 
@@ -1452,7 +1467,9 @@ void Ball::RemoveMiniCapsules()
 void Ball::AddActualMinicapsule(MiniCapsule* c)
 {
 	if(isFree)
+	{
 		return;
+	}
 
 	if(!mPark)
 	{
@@ -1494,10 +1511,91 @@ void Ball::AddMiniCapsule(
 
 	if(!isFree)
 	{
-		// Add the miniball as a bona fide ball
 		AddActualMinicapsule(c);
 	}
 }
+
+
+void Ball::AddMiniBox(
+	Vector3d corner,
+	Vector3d localX,
+	Vector3d localY,
+	Vector3d localZ
+	)
+{
+	MiniBox* b = new OMiniBox;
+	b->mCorner = corner;
+	b->mLocalX = localX;
+	b->mLocalY = localY;
+	b->mLocalZ = localZ;
+
+	mMiniBoxes.Insert(-1, b);
+
+	if(!isFree)
+	{
+		// Add the collision object into the park
+		AddActualMiniBox(b);
+	}
+
+}
+
+void Ball::AddMiniBoxes()
+{
+	if(isFree)
+	{
+		return; // Don't want to add minis to a free ball
+	}
+
+	ssize_t miniboxSize = mMiniBoxes.GetSize();
+
+	if(miniboxSize > 0)
+		CCP_LOG_CH( s_ch,"Adding %d miniboxes", miniboxSize);
+
+	for(ssize_t i=0 ; i < miniboxSize ; i++)
+	{
+		MiniBox *mb = (MiniBox*)(void *)(mMiniBoxes.GetAt(i));
+		AddActualMiniBox(mb);
+	}
+}
+
+void Ball::RemoveMiniBoxes()
+{
+	ssize_t miniBoxSize = mMiniBoxes.GetSize();
+	if(miniBoxSize > 0)
+		CCP_LOG_CH( s_ch,"Removing %d miniboxes", miniBoxSize);
+
+	for(ssize_t i=0 ; i < miniBoxSize ; i++)
+	{
+		MiniBox *mb = (MiniBox *)(void *)(mMiniBoxes.GetAt(i));
+		mPark->RemoveOrientedBox(mb->mId);
+	}
+}
+
+void Ball::AddActualMiniBox(MiniBox* b)
+{
+	if(isFree)
+	{
+		return;
+	}
+
+	if(!mPark)
+	{
+		RegisterBallNotInPark();
+		return;
+	}
+
+	ID theId = -1;
+
+	OrientedBox *box = mPark->AddOrientedBox(
+		-1, 
+		b->mCorner.x + mNewPos.x, b->mCorner.y + mNewPos.y, b->mCorner.z + mNewPos.z,
+		b->mLocalX.x, b->mLocalX.y, b->mLocalX.z,
+		b->mLocalY.x, b->mLocalY.y, b->mLocalY.z,
+		b->mLocalZ.x, b->mLocalZ.y, b->mLocalZ.z);
+
+	b->mId = box->mId;
+}
+
 
 Vector3d* ClientBall::GetReferencePoint( Vector3d* out, Be::Time time )
 {
@@ -1584,6 +1682,28 @@ PyObject* Ball::PyAddMiniBall(PyObject* args)
 
     Py_INCREF(Py_None);
     return Py_None;
+}
+
+PyObject* Ball::PyAddMiniBox(PyObject* args)
+{
+	double c0, c1, c2, x0, x1, x2, y0, y1, y2, z0, z1, z2;
+
+	if (!PyArg_ParseTuple(args, "dddddddddddd", 
+		&c0, &c1, &c2, 
+		&x0, &x1, &x2, 
+		&y0, &y1, &y2, 
+		&z0, &z1, &z2))
+	{
+		return NULL;
+	}
+
+	AddMiniBox(Vector3d(c0, c1, c2),
+		Vector3d(x0, x1, x2),
+		Vector3d(y0, y1, y2),
+		Vector3d(z0, z1, z2));
+
+	Py_INCREF(Py_None);
+	return Py_None;
 }
 
 
@@ -1717,18 +1837,26 @@ PyObject* Ball::PyFreeFormationSlot(
 void Ball::FreeFormationSlot(size_t slot)
 {
     if(mFormationID == -1)
+	{
         return; // No formation assigned
+	}
 
     if(!mPark)
+	{
         return; // Really an error...
+	}
 
     if(mFormationID > int(mPark->mFormations.size()) - 1)
+	{
         return; // Illegal formationID
+	}
 
     size_t numberOfSlots = mPark->mFormations[mFormationID].size();
 
     if(slot > numberOfSlots - 1)
+	{
         return;
+	}
 
     CCP_LOG_CH( s_ch, "[%d] Freeing formation slot %d in ball %I64d", mPark->mCurrentTime, slot, mId);
 

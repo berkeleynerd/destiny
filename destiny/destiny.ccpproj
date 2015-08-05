@@ -71,11 +71,43 @@ BaseConfigurations:
       GenerateDebugInformation: true
     General:
       TargetName: _destiny
+
+  ReleaseStatic:
+    ClCompile:
+      PreprocessorDefinitions:
+      - NDEBUG
+      Optimization: MaxSpeed
+      InlineFunctionExpansion: AnySuitable
+      OmitFramePointers: true
+      IntrinsicFunctions: true
+      WholeProgramOptimization: true
+    Link:
+      AdditionalDependencies:
+      - blue.lib
+      LinkTimeCodeGeneration: UseLinkTimeCodeGeneration
+      SuppressStartupBanner: true
+      IgnoreAllDefaultLibraries: false
+      GenerateDebugInformation: true
   
   Windows:
     Link:
       AdditionalLibraryDirectories:
         - ../../../../../../sdk/directx/october2004/lib/$(Platform)
+  
+  BlueStatic:
+    Imports:
+    - ../../../carbon/src/stackless/stackless.yaml
+    - ../../../../../../sdk/telemetry/2.1A3/telemetry_2.1A3.yaml
+
+    General:
+      OutDir: ../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/
+      ConfigurationType: StaticLibrary
+      TargetExt: .lib
+
+    Link:
+      AdditionalLibraryDirectories:
+      - ../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/
+
 
 Configurations:
   Debug|Win32,x64:
@@ -96,6 +128,14 @@ Configurations:
       - d3dx9.lib
     Imports:
       - ..\..\..\carbon\src\blue\uses_blue.yaml
+  ReleaseStatic|Win32,x64:
+    BaseConfigurations:
+      - ReleaseStatic
+      - Windows
+      - BlueStatic
+    Link:
+      AdditionalDependencies:
+      - d3dx9.lib
   Debug_27|Win32,x64:
     BaseConfigurations:
       - Debug

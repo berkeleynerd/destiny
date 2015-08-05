@@ -39,12 +39,14 @@ class Ball;
 class ClientBall;
 class Partition;
 class Box;
+class OrientedBox;
 
 TYPEDEF_BLUECLASS(Ball);
 TYPEDEF_BLUECLASS(ClientBall);
 
 #include "MapOfBalls.h"
 #include "Capsule.h"
+#include "OrientedBox.h"
 
 const double AU = .1495978707e12;
 
@@ -86,6 +88,7 @@ typedef std::vector<Box *> VectorOfBoxes;
 typedef std::back_insert_iterator< VectorOfBoxes > BoxVectorInsertor;
 typedef std::vector<Vector3d> VectorOfVectors;
 typedef std::unordered_set<Capsule *> SetOfCapsules;
+typedef std::unordered_set<OrientedBox *> SetOfOrientedBoxes;
 
 bool Quadratic(double& v1, double& v2, double a, double b, double c);
 double CollideTwoSpheres(const Vector3d& p0, const Vector3d& p1, const Vector3d& q0, const Vector3d& q1, const double collRadius);
@@ -98,6 +101,7 @@ class Ballpark :
 friend class Ball;
 friend class ClientBall;
 friend class Capsule;
+friend class OrientedBox;
 public://Exposed
 
 	static PyObject* s_ballNotInParkCallback;
@@ -139,6 +143,7 @@ private://MEMBERS
 	MapOfBalls mGlobals; // of which the following are global balls
 	std::unordered_map<ID, StaticCollidable*> mStaticCollidables;
 	std::unordered_map<ID, Capsule*> mCapsules;
+	std::unordered_map<ID, OrientedBox*> mOrientedBoxes;
 	SetOfBalls mBubbleConflicts;
 	PyObject *bubbleInteractives;
     PyObject *bubbleKeepAlives; // Per bubble, a set of ballIDs which keep the bubble alive even when no interatives are present
@@ -147,6 +152,7 @@ private://MEMBERS
 
 	SetOfBalls moribundBalls;
 	SetOfCapsules moribundCapsules;
+	SetOfOrientedBoxes moribundOrientedBoxes;
 
 	bool mHaveTicks;
 	bool mFirstTime;
@@ -219,6 +225,22 @@ public://FUNCTIONS
 		double by,
 		double bz,
 		float radius
+		);
+
+	OrientedBox * AddOrientedBox(
+		const ID& objectId,
+		double corner_0,
+		double corner_1,
+		double corner_2,
+		double x0,
+		double x1,
+		double x2,
+		double y0,
+		double y1,
+		double y2,
+		double z0,
+		double z1,
+		double z2
 		);
 
 
@@ -386,6 +408,19 @@ public://FUNCTIONS
 	//////////////////////////////////////////////////////////////////////////////
 
 	void RemoveCapsule(
+		const ID& srcId,
+		int delay =0
+		);
+
+	//////////////////////////////////////////////////////////////////////////////
+	// RemoveOrientedBox removes 'srcId' from the Ballpark.
+	//
+	// pre:  'srcId' exists and is an OBB.
+	// post: The OBB has been removed from the Ballpark.
+	//
+	//////////////////////////////////////////////////////////////////////////////
+
+	void RemoveOrientedBox(
 		const ID& srcId,
 		int delay =0
 		);
@@ -783,6 +818,7 @@ private:
 	void PetrifyTroll(Ball *ball);
 	void CapAcceleration(const Ball *ball, Vector3d& a);
 	void SetBallTimeFactor(Ball *ball);
+	ID GetIDForCollisionObject(ID objectId);
 
 	void CopyBubbles();
 	void ResolveBubbleConflicts();
@@ -836,6 +872,7 @@ public:
 	PyObject* Py__init__ ( PyObject* args );
 	PyObject* PyAddBall ( PyObject* args );
 	PyObject* PyAddCapsule( PyObject* args);
+	PyObject* PyAddOrientedBox( PyObject* args);
 	PyObject* PyFollowBall ( PyObject* args );
 	PyObject* PyMissileFollow ( PyObject* args );
 	PyObject* PyWarpTo ( PyObject* args );

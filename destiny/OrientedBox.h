@@ -1,16 +1,21 @@
-#ifndef _CAPSULE_H_
-#define _CAPSULE_H_
+#ifndef _ORIENTED_BOX_H_
+#define _ORIENTED_BOX_H_
 
 #include "Ball.h"
 #include "Ballpark.h"
 #include "StaticCollidable.h"
+#include "BoxShape.h"
 
-BLUE_CLASS( Capsule ) : public IRoot, public StaticCollidable
+BLUE_CLASS( OrientedBox ) : public IRoot, public StaticCollidable
 {
 public:
 	EXPOSE_TO_BLUE();
-	void Initialize(ID theID, double ax, double ay, double az, double bx, double by, double bz, float radius);
-	
+	void Initialize(ID theID,
+		double c0, double c1, double c2,
+		double x0, double x1, double x2,
+		double y0, double y1, double y2,
+		double z0, double z1, double z2 );
+
 	//StaticCollidable abstract functions
 	float GetBoundingRadius();
 	Vector3d GetCenter();
@@ -19,10 +24,9 @@ public:
 
 private:
 	void ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact);
-	Vector3d mHemisphereA;
-	Vector3d mHemisphereB;
-	float mRadius;
-	Vector3d mAB;
+	BoxShape m_boxShape;
+	short mMod[3];
+	float mBoundingRadius;
 };
-TYPEDEF_BLUECLASS( Capsule );
+TYPEDEF_BLUECLASS( OrientedBox );
 #endif

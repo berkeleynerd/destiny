@@ -22,6 +22,10 @@
 #include "destiny/resource.h"
 #include "destiny/Vector3.h"
 #include "destiny/Vector3d.h"
+#include "destiny/Triangle.h"
+#include "destiny/Plane.h"
+#include "destiny/Collision.h"
+#include "destiny/BoxShape.h"
 
 #include "destiny/include/destinyId.h"
 #include "destiny/include/IBall.h"

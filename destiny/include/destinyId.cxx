@@ -12,4 +12,5 @@ BLUE_DEFINE(Ballpark);
 BLUE_DEFINE(Ball);
 BLUE_DEFINE(ClientBall);
 BLUE_DEFINE(MiniBall);
+BLUE_DEFINE(MiniBox);
 BLUE_DEFINE(MiniCapsule);

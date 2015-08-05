@@ -93,7 +93,7 @@ PyObject* Ballpark::PyAddBall(
 				speedFraction
 				);
 
-	return PyOS->WrapBlueObject((IBall *)b);
+	return BlueWrapObjectForPython((IBall *)b);
 }
 
 PyObject* Ballpark::PyAddCapsule(
@@ -125,7 +125,48 @@ PyObject* Ballpark::PyAddCapsule(
 		ax, ay, az,
 		bx, by, bz,
 		radius);
-	return PyOS->WrapBlueObject((IRoot *)c);
+	return BlueWrapObjectForPython((IRoot *)c);
+}
+
+PyObject* Ballpark::PyAddOrientedBox(
+	PyObject* args
+	)
+{
+	ID srcId;
+
+	double corner_0;
+	double corner_1;
+	double corner_2;
+
+	double x0;
+	double x1;
+	double x2;
+
+	double y0;
+	double y1;
+	double y2;
+
+	double z0;
+	double z1;
+	double z2;
+
+
+	if(!PyArg_ParseTuple(args, "Ldddddddddddd",
+		&srcId,
+		&corner_0, &corner_1, &corner_2,
+		&x0, &x1, &x2,
+		&y0, &y1, &y2,
+		&z0, &z1, &z2))
+		return NULL;
+
+	OrientedBox *b = AddOrientedBox(
+		srcId,
+		corner_0, corner_1, corner_2,
+		x0, x1, x2,
+		y0, y1, y2,
+		z0, z1, z2);
+
+	return BlueWrapObjectForPython((IRoot *)b);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2489,6 +2530,13 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 				RemoveCapsule(mc->mId);
 			}
 			ball->mMiniCapsules.Remove(-1);
+
+			for(ssize_t i=ball->mMiniBoxes.GetSize()-1 ; i >= 0; i--)
+			{
+				MiniBox *mbo = (MiniBox *)(void *)(ball->mMiniBoxes.GetAt(i));
+				RemoveOrientedBox(mbo->mId);
+			}
+			ball->mMiniBoxes.Remove(-1);
         }
 
 		ball->mHarmonic = harmonic;
@@ -2631,6 +2679,27 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 				}
 			}
 		}
+		if(flags&DSTBALL_HASMINIBOXES)
+		{
+			uint16_t boxCnt;
+			byteCount += s->Read(&boxCnt, sizeof(boxCnt));
+			for(int i = 0; i < boxCnt; i++)
+			{
+				Vector3d corner;
+				Vector3d localX;
+				Vector3d localY;
+				Vector3d localZ;
+				byteCount += s->Read(&corner, sizeof(corner));
+				byteCount += s->Read(&localX, sizeof(localX));
+				byteCount += s->Read(&localY, sizeof(localY));
+				byteCount += s->Read(&localZ, sizeof(localZ));
+
+				if(partial!=1)
+				{
+					ball->AddMiniBox(corner, localX, localY, localZ);
+				}
+			}
+		}
 	}
 
 	return ball;
@@ -2653,6 +2722,7 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 	uint8_t flags = (b->isFree?DSTBALL_ISFREE:0) |(b->isGlobal?DSTBALL_ISGLOBAL:0) |(b->isMassive?DSTBALL_ISMASSIVE:0)|(b->isInteractive?DSTBALL_ISINTERACTIVE:0)|(b->isSpaceJunk?DSTBALL_ISSPACEJUNK:0);
 	int8_t isCloaked = b->isCloaked;
 	uint16_t miniBallCnt = (unsigned short)(b->mMiniBalls.GetSize());
+	uint16_t miniBoxCnt = (unsigned short)(b->mMiniBoxes.GetSize());
 	uint16_t miniCapsuleCnt = (unsigned short)(b->mMiniCapsules.GetSize());
     //CCP_LOG_CH( s_chPThunk,"WriteBallToStream: ball %d has %d miniballs", id, miniBallCnt);
 
@@ -2660,6 +2730,8 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 		flags = flags | DSTBALL_HASMINIBALLS;
 	if(miniCapsuleCnt)
 		flags = flags | DSTBALL_HASMINICAPSULES;
+	if(miniBoxCnt)
+		flags = flags | DSTBALL_HASMINIBOXES;
 
 	uint8_t mode = b->mMode;
 	float maxVel = b->mMaxVel;
@@ -2805,6 +2877,19 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 		byteCount += s->Write(&mc->mHemisphereA, sizeof(mc->mHemisphereA) );
 		byteCount += s->Write(&mc->mHemisphereB, sizeof(mc->mHemisphereB) );
 		byteCount += s->Write(&mc->mRadius, sizeof(mc->mRadius));
+	}
+
+	// Miniboxes
+	if(miniBoxCnt)
+		byteCount += s->Write(&miniBoxCnt, sizeof(miniBoxCnt));
+
+	for(int i = 0; i < miniBoxCnt; i++)
+	{
+		MiniBox *mc = (MiniBox *)(void *)(b->mMiniBoxes.GetAt(i));
+		byteCount += s->Write(&mc->mCorner, sizeof(mc->mCorner));
+		byteCount += s->Write(&mc->mLocalX, sizeof(mc->mLocalX));
+		byteCount += s->Write(&mc->mLocalY, sizeof(mc->mLocalY));
+		byteCount += s->Write(&mc->mLocalZ, sizeof(mc->mLocalZ));
 	}
 }
 

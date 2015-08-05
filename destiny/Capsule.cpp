@@ -55,6 +55,8 @@ void Capsule::CollideWithBall(Ball* ball)
 	double c = R * R - rad*rad;
 	Vector3d normal;
 
+	double radSq = rad * rad;
+
 	double s1,s2,s,time_of_impact;
 	s = -1.0;
 	time_of_impact = -1.0;
@@ -78,7 +80,7 @@ void Capsule::CollideWithBall(Ball* ball)
 			time_of_impact = s;
 			normal = mHemisphereB - p0;
 		}
-		ReactToCollision(ball, p1, vp1, m1, normal, time_of_impact, s);
+		ReactToCollision(ball, p1, vp1, m1, normal, time_of_impact);
 		return;
 	}
 
@@ -99,7 +101,6 @@ void Capsule::CollideWithBall(Ball* ball)
 	{	
 		// We don't collide with the cylinder
 		double abSq = mAB.LengthSq();
-		double radSq = rad * rad;
 
 		// Are we already inside  the cylinder ? Sphere checks already determine if we are already inside the spheres.
 		const double t = (p0 - mHemisphereA) * mAB / abSq;
@@ -112,7 +113,7 @@ void Capsule::CollideWithBall(Ball* ball)
 				// p0 was inside the cylinder
 				time_of_impact = 0.0;
 				normal = -dist;
-				ReactToCollision(ball,p1, vp1, m1, normal, time_of_impact, s);
+				ReactToCollision(ball,p1, vp1, m1, normal, time_of_impact);
 				return;
 			}
 		}
@@ -146,8 +147,13 @@ void Capsule::CollideWithBall(Ball* ball)
 		if( s != -1.0 && (time_of_impact == -1.0 || s < time_of_impact) )
 		{
 			time_of_impact = s;
-			Vector3d proj_ab_ao = (AO * mAB / (mAB * mAB)) * mAB;
+			Vector3d proj_ab_ao = (AO * mAB / (mAB.LengthSq())) * mAB;
 			normal = AO - proj_ab_ao;
+
+			if( normal.LengthSq() < radSq )
+			{
+				time_of_impact = 0.0;
+			}
 		}
 	}
 
@@ -177,23 +183,27 @@ void Capsule::CollideWithBall(Ball* ball)
 		if( s != -1.0 && (time_of_impact == -1.0 || s < time_of_impact) )
 		{
 			time_of_impact = s;
-			Vector3d proj_ab_ao = (AO * mAB / (mAB * mAB)) * mAB;
+			Vector3d proj_ab_ao = (AO * mAB / (mAB.LengthSq())) * mAB;
 			normal = AO - proj_ab_ao;
+			if( normal.LengthSq() < radSq )
+			{
+				time_of_impact = 0.0;
+			}
 		}
 	}
 	
 	
 	// We have impact. Now react.
-	ReactToCollision(ball, p1, vp1, m1, normal, time_of_impact, s);
+	ReactToCollision(ball, p1, vp1, m1, normal, time_of_impact);
 }
 
-void Capsule::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact, double s)
+void Capsule::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact)
 {
 	if( timeOfImpact == -1.0 )
 	{
 		return;
 	}
-
+	double centerDistance = normal.Length();
 	normal.Normalize();
 	Vector3d acceleration;
 
@@ -203,7 +213,7 @@ void Capsule::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vec
 		// Now given that. I would be situated at:
 		double v1 = ballVelocity*normal;
 		ballVelocity -= 2.0*v1*normal;
-		mPark->Integrate(integratedBallPosition, ballVelocity, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, (1.0-s)*mPark->dt);
+		mPark->Integrate(integratedBallPosition, ballVelocity, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, (1.0-timeOfImpact)*mPark->dt);
 		// In order to get there, my acceleration needs to be:
 		double k = mPark->mFriction;
 		acceleration = -(-m1*ball->mLastG + ball->mTimeFactor*m1*ball->mLastG - ball->mTimeFactor*ball->mNewVel*k + ballVelocity*k)/m1/(ball->mTimeFactor-1.0);
@@ -213,10 +223,15 @@ void Capsule::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vec
 		double normalComp = ball->mLastG*normal;
 		// Calculate the acceleration
 		double tmp = 1.0/(m1+mPark->dt*mPark->mFriction);
-		acceleration = ( (-1.0/(mPark->dt*tmp*m1) )*normal - ball->mNewVel)/mPark->dt -normalComp*normal;
+		double dist = mRadius + ball->mRadius + 1.0 - centerDistance; // The distance that we need to move the ball to get it out.
+		if( dist < 1.0 )
+		{
+			dist = 1.0;
+		}
+		acceleration = ( (-dist/(mPark->dt*tmp*m1) )*normal - ball->mNewVel)/mPark->dt -normalComp*normal;
 	}
 	Vector3d lastC = 0.85*acceleration;
-	if(s==ball->mLastCollision)
+	if(timeOfImpact==ball->mLastCollision)
 	{
 		// Use the stronger collision of the two
 		if(lastC.LengthSq() > ball->mLastC.LengthSq())
@@ -227,7 +242,7 @@ void Capsule::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vec
 	else
 	{
 		ball->mLastC = lastC;
-		ball->mLastCollision = s;
+		ball->mLastCollision = timeOfImpact;
 	}
 
 	ball->mCollisions.push_back(mId);

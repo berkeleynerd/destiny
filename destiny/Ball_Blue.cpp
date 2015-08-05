@@ -382,6 +382,14 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 			Be::READWRITE | Be::PERSIST
 		)
 
+		MAP_ATTRIBUTE
+		(
+			"miniBoxes",
+			mMiniBoxes,
+			"na",
+			Be::READWRITE | Be::PERSIST
+		)
+
 
 		////////////////////////////////////////////////////////////////////////////
 		//               ballpark
@@ -407,6 +415,13 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 			"AddMiniBall",
 			PyAddMiniBall,
 			"Adds a miniball to the miniballs list"
+		)
+
+		MAP_METHOD_AS_METHOD
+		(
+			"AddMiniBox",
+			PyAddMiniBox,
+			"Adds a minibox to the minibox list"
 		)
 		
 		MAP_METHOD_AND_WRAP

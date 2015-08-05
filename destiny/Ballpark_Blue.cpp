@@ -304,6 +304,12 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 		MAP_METHOD_AS_METHOD
 		(
+			"AddOrientedBox",
+			PyAddOrientedBox,
+			"Add a box shaped collision object to the ballpark. Create the object if necessary."
+		)
+		MAP_METHOD_AS_METHOD
+		(
 			"FollowBall",
 			PyFollowBall,
 			"no comment"
@@ -357,6 +363,13 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			RemoveCapsule,
 			1,
 			"Schedules the capsule for removal during the next evolution."
+		)
+		MAP_METHOD_AND_WRAP_OPTIONAL_ARGS
+		(
+			"RemoveOrientedBox",
+			RemoveOrientedBox,
+			1,
+			"Schedules the oriented box for removal during the next evolution."
 		)
 		MAP_METHOD_AS_METHOD
 		(
@@ -432,9 +445,9 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
         MAP_METHOD_AS_METHOD
         (
-        "SetTargetTracking",
-			PySetTargetTracking,
-        "(srcID, targetID, trackingRange) => Void This sets the target tracking notification that will cause a callback to DoTargetTracking when the range is crossed."
+			"SetTargetTracking",
+				PySetTargetTracking,
+			"(srcID, targetID, trackingRange) => Void This sets the target tracking notification that will cause a callback to DoTargetTracking when the range is crossed."
         )
 		MAP_METHOD_AS_METHOD
 		(
