@@ -6,6 +6,9 @@
     <Filter Include="Source Files\include"/>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AABB.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
     <ClInclude Include="autoversion.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -99,6 +102,9 @@
     <ClInclude Include="include\Quaternion.h">
       <Filter>Source Files\include</Filter>
     </ClInclude>
+    <ClCompile Include="AABB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Ball.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

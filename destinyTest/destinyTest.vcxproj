@@ -187,6 +187,7 @@
     <ClCompile Include="StdAfx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TestAABB.cpp"/>
     <ClCompile Include="TestBoxShape.cpp"/>
     <ClCompile Include="TestCollision.cpp"/>
     <ClCompile Include="TestPlane.cpp"/>

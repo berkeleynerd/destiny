@@ -539,6 +539,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AABB.h"/>
     <ClInclude Include="autoversion.h"/>
     <ClInclude Include="Ball.h"/>
     <ClInclude Include="Ballpark.h"/>
@@ -572,6 +573,7 @@
     <ClInclude Include="include\Quaternion.h"/>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AABB.cpp"/>
     <ClCompile Include="Ball.cpp"/>
     <ClCompile Include="Ballpark.cpp"/>
     <ClCompile Include="Ballpark_Blue.cpp"/>
