@@ -17,6 +17,13 @@ void OrientedBox::Initialize(
 	m_boxShape = BoxShape(corner, local_x, local_y, local_z);
 	mBoundingRadius = (float) m_boxShape.GetBoundingRadius();
 	mOldPos = mNewPos = GetCenter();
+
+	mAABB = AABB(m_boxShape.m_corners[CORNER_A], m_boxShape.m_corners[CORNER_A]);
+	
+	for(int i = CORNER_B; i < CORNER_COUNT; ++i)
+	{
+		mAABB.Update(m_boxShape.m_corners[i]);
+	}
 }
 
 //StaticCollidable abstract functions
@@ -44,6 +51,11 @@ void OrientedBox::CollideWithBall(Ball* ball)
 
 	// Get the destination point for the ball
 	mPark->Integrate(p1, vp1, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, mPark->dt);
+	
+	if( mAABB.CanExcludeCollision(p0, p1, ball->mRadius) )
+	{
+		return;
+	}
 
 	Vector3d collision_point;
 	double collision_time;
@@ -107,22 +119,22 @@ void OrientedBox::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition,
 
 void OrientedBox::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
 {
-	// Currently we are doing this exactly like we do for balls, using the bounding-radius to
-	// choose a box size and pretending we are a sphere. There may be room for optimization here.
 	int q;
 	short mod[3];
 
-	Box *box2;
+	double insertionRadius = mAABB.GetLongestWidth() / 2.0;
 
+	Box *box2;
+	box1 = mPark->mPartition->GetBox(insertionRadius, mNewPos);
 	for(q=0;q<3;q++)
 	{
 
-		if( box1->lo[q] + mBoundingRadius - mNewPos[q] > 0.0 )
+		if( box1->lo[q] - mAABB.mLowCorner[q] > 0.0 )
 		{
 			// Add box to the left...
 			mod[q] = -1;
 		}
-		else if ( box1->hi[q] - mBoundingRadius - mNewPos[q] < 0.0f )
+		else if ( box1->hi[q] - mAABB.mHighCorner[q] < 0.0f )
 		{
 			// add box  to the right
 			mod[q] = 1;
@@ -159,7 +171,7 @@ void OrientedBox::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
 	mMod[2] = mod[2];
 
 	// The box we had might well have been deleted. Create it again.
-	box1 = mPark->mPartition->GetBox(mBoundingRadius,mNewPos);
+	box1 = mPark->mPartition->GetBox(insertionRadius,mNewPos);
 
 	int64_t ix,iy,iz;
 

@@ -5,6 +5,7 @@
 #include "Ballpark.h"
 #include "StaticCollidable.h"
 #include "BoxShape.h"
+#include "AABB.h"
 
 BLUE_CLASS( OrientedBox ) : public IRoot, public StaticCollidable
 {
@@ -27,6 +28,7 @@ private:
 	BoxShape m_boxShape;
 	short mMod[3];
 	float mBoundingRadius;
+	AABB mAABB;
 };
 TYPEDEF_BLUECLASS( OrientedBox );
 #endif

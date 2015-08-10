@@ -26,6 +26,7 @@
 #include "destiny/Plane.h"
 #include "destiny/Collision.h"
 #include "destiny/BoxShape.h"
+#include "destiny/AABB.h"
 
 #include "destiny/include/destinyId.h"
 #include "destiny/include/IBall.h"

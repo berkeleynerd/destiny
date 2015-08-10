@@ -18,7 +18,7 @@ const Be::ClassInfo* OrientedBox::ExposeToBlue()
 		MAP_ATTRIBUTE
 		(
 			"corner_x",
-			m_boxShape.m_corners[A].x,
+			m_boxShape.m_corners[CORNER_A].x,
 			"x position of the origin corner in global space",
 			Be::READ
 		)
