@@ -280,3 +280,65 @@ TEST_F(CubeCollisionTest, BottomCenter)
 	ASSERT_EQ(Vector3d(5.0, 0.0, 5.0), collision_point);
 	ASSERT_EQ(Vector3d(0.0, -1.0, 0.0), normal);
 }
+
+class GetClosestPointOnBoxTest : public ::testing::Test
+{
+protected:
+	BoxShape box;
+	virtual void SetUp()
+	{
+		Vector3d corner(0.0, 0.0, 0.0);
+		Vector3d local_x(10.0, 0.0, 0.0);
+		Vector3d local_y(0.0, 10.0, 0.0);
+		Vector3d local_z(0.0, 0.0, 10.0);
+		box = BoxShape(corner, local_x, local_y, local_z);
+	}
+};
+
+TEST_F(GetClosestPointOnBoxTest, CenterOfBox)
+{
+	Vector3d actual = box.GetClosestPointOnBox(Vector3d(5.0, 5.0, 5.0));
+	ASSERT_EQ(Vector3d(5.0, 5.0, 5.0), actual);
+}
+
+TEST_F(GetClosestPointOnBoxTest, TopFrontRightCorner)
+{
+	Vector3d actual = box.GetClosestPointOnBox(Vector3d(11.0, 11.0, 11.0));
+	ASSERT_EQ(Vector3d(10.0, 10.0, 10.0), actual);
+}
+
+TEST_F(GetClosestPointOnBoxTest, Left)
+{
+	Vector3d actual = box.GetClosestPointOnBox(Vector3d(-1.0, 5.0, 5.0));
+	ASSERT_EQ(Vector3d(0.0, 5.0, 5.0), actual);
+}
+
+TEST_F(GetClosestPointOnBoxTest, Right)
+{
+	Vector3d actual = box.GetClosestPointOnBox(Vector3d(11.0, 5.0, 5.0));
+	ASSERT_EQ(Vector3d(10.0, 5.0, 5.0), actual);
+}
+
+TEST_F(GetClosestPointOnBoxTest, Top)
+{
+	Vector3d actual = box.GetClosestPointOnBox(Vector3d(5.0, 11.0, 5.0));
+	ASSERT_EQ(Vector3d(5.0, 10.0, 5.0), actual);
+}
+
+TEST_F(GetClosestPointOnBoxTest, Bottom)
+{
+	Vector3d actual = box.GetClosestPointOnBox(Vector3d(5.0, -1.0, 5.0));
+	ASSERT_EQ(Vector3d(5.0, 0.0, 5.0), actual);
+}
+
+TEST_F(GetClosestPointOnBoxTest, Back)
+{
+	Vector3d actual = box.GetClosestPointOnBox(Vector3d(5.0, 5.0, -1.0));
+	ASSERT_EQ(Vector3d(5.0, 5.0, 0.0), actual);
+}
+
+TEST_F(GetClosestPointOnBoxTest, Front)
+{
+	Vector3d actual = box.GetClosestPointOnBox(Vector3d(5.0, 5.0, 11.0));
+	ASSERT_EQ(Vector3d(5.0, 5.0, 10.0), actual);
+}

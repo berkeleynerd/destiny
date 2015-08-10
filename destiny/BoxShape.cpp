@@ -30,22 +30,22 @@ bool RectangleShape::CollideWithSphere(Vector3d sphere_position, double sphere_r
 
 BoxShape::BoxShape(Vector3d corner, Vector3d local_x, Vector3d local_y, Vector3d local_z)
 {
-	m_corners[A] = corner;
-	m_corners[B] = corner + local_x;
-	m_corners[C] = corner + local_y;
-	m_corners[D] = corner + local_z;
+	m_corners[CORNER_A] = corner;
+	m_corners[CORNER_B] = corner + local_x;
+	m_corners[CORNER_C] = corner + local_y;
+	m_corners[CORNER_D] = corner + local_z;
 
-	m_corners[E] = m_corners[B] + local_y;
-	m_corners[F] = m_corners[C] + local_z;
-	m_corners[G] = m_corners[B] + local_z;
-	m_corners[H] = m_corners[E] + local_z;
+	m_corners[CORNER_E] = m_corners[CORNER_B] + local_y;
+	m_corners[CORNER_F] = m_corners[CORNER_C] + local_z;
+	m_corners[CORNER_G] = m_corners[CORNER_B] + local_z;
+	m_corners[CORNER_H] = m_corners[CORNER_E] + local_z;
 
-	m_sides[FRONT] =  RectangleShape(m_corners[H], m_corners[F], m_corners[D], m_corners[G]);
-	m_sides[BACK] =   RectangleShape(m_corners[C], m_corners[E], m_corners[B], m_corners[A]);
-	m_sides[LEFT] =   RectangleShape(m_corners[F], m_corners[C], m_corners[A], m_corners[D]);
-	m_sides[RIGHT] =  RectangleShape(m_corners[E], m_corners[H], m_corners[G], m_corners[B]);
-	m_sides[TOP] =    RectangleShape(m_corners[C], m_corners[F], m_corners[H], m_corners[E]);
-	m_sides[BOTTOM] = RectangleShape(m_corners[B], m_corners[G], m_corners[D], m_corners[A]);
+	m_sides[SIDE_FRONT] =  RectangleShape(m_corners[CORNER_H], m_corners[CORNER_F], m_corners[CORNER_D], m_corners[CORNER_G]);
+	m_sides[SIDE_BACK] =   RectangleShape(m_corners[CORNER_C], m_corners[CORNER_E], m_corners[CORNER_B], m_corners[CORNER_A]);
+	m_sides[SIDE_LEFT] =   RectangleShape(m_corners[CORNER_F], m_corners[CORNER_C], m_corners[CORNER_A], m_corners[CORNER_D]);
+	m_sides[SIDE_RIGHT] =  RectangleShape(m_corners[CORNER_E], m_corners[CORNER_H], m_corners[CORNER_G], m_corners[CORNER_B]);
+	m_sides[SIDE_TOP] =    RectangleShape(m_corners[CORNER_C], m_corners[CORNER_F], m_corners[CORNER_H], m_corners[CORNER_E]);
+	m_sides[SIDE_BOTTOM] = RectangleShape(m_corners[CORNER_B], m_corners[CORNER_G], m_corners[CORNER_D], m_corners[CORNER_A]);
 
 	m_localX = local_x;
 	m_localY = local_y;
@@ -54,11 +54,11 @@ BoxShape::BoxShape(Vector3d corner, Vector3d local_x, Vector3d local_y, Vector3d
 
 BoxCorner BoxShape::GetClosestCornerToPoint(Vector3d p)
 {
-	BoxCorner closest_corner = A;
+	BoxCorner closest_corner = CORNER_A;
 	double dist_sq;
 	double min_dist_sq;
-	min_dist_sq = (m_corners[A] - p).LengthSq();
-	for(int i = B; i < CORNER_COUNT; ++i)
+	min_dist_sq = (m_corners[CORNER_A] - p).LengthSq();
+	for(int i = CORNER_B; i < CORNER_COUNT; ++i)
 	{
 		dist_sq = (m_corners[i] - p).LengthSq();
 		if( dist_sq < min_dist_sq )
@@ -70,15 +70,67 @@ BoxCorner BoxShape::GetClosestCornerToPoint(Vector3d p)
 	return closest_corner;
 }
 
+
+Vector3d BoxShape::GetClosestPointOnBox( Vector3d p)
+{
+	Vector3d q = GetCenter();
+	Vector3d d = p - q;
+
+	double xHalfLength = m_localX.Length() / 2.0;
+	double yHalfLength = m_localY.Length() / 2.0;
+	double zHalfLength = m_localZ.Length() / 2.0;
+
+	Vector3d x = m_localX;
+	Vector3d y = m_localY;
+	Vector3d z = m_localZ;
+	x.Normalize();
+	y.Normalize();
+	z.Normalize();
+	
+	double dist = d * x;
+	if( dist > xHalfLength )
+	{
+		dist = xHalfLength;
+	}
+	else if( dist < -xHalfLength )
+	{ 
+		dist = -xHalfLength;
+	}
+	q += dist*x;
+
+	dist = d * y;
+	if( dist > yHalfLength )
+	{
+		dist = yHalfLength;
+	}
+	else if( dist < -yHalfLength )
+	{ 
+		dist = -yHalfLength;
+	}
+	q += dist*y;
+
+	dist = d * z;
+	if( dist > zHalfLength )
+	{
+		dist = zHalfLength;
+	}
+	else if( dist < -zHalfLength )
+	{ 
+		dist = -zHalfLength;
+	}
+	q += dist*z;
+	return q;
+}
+
 static BoxSide CONNECTED_SIDES[8][3] = {
-	{BACK, LEFT, BOTTOM}, // A
-	{BACK, RIGHT, BOTTOM}, // B
-	{BACK, LEFT, TOP}, // C
-	{FRONT, LEFT, BOTTOM}, // D
-	{BACK, RIGHT, TOP}, // E
-	{FRONT, LEFT, TOP}, // F
-	{FRONT, RIGHT, BOTTOM}, // G
-	{FRONT, RIGHT, TOP}, // H
+	{SIDE_BACK, SIDE_LEFT, SIDE_BOTTOM}, // A
+	{SIDE_BACK, SIDE_RIGHT, SIDE_BOTTOM}, // B
+	{SIDE_BACK, SIDE_LEFT, SIDE_TOP}, // C
+	{SIDE_FRONT, SIDE_LEFT, SIDE_BOTTOM}, // D
+	{SIDE_BACK, SIDE_RIGHT, SIDE_TOP}, // E
+	{SIDE_FRONT, SIDE_LEFT, SIDE_TOP}, // F
+	{SIDE_FRONT, SIDE_RIGHT, SIDE_BOTTOM}, // G
+	{SIDE_FRONT, SIDE_RIGHT, SIDE_TOP}, // H
 };
 
 bool BoxShape::CollideWithSphere(Vector3d sphere_position, double sphere_radius, Vector3d sphere_velocity, Vector3d& collision_point, double& collision_time, Vector3d& normal)
@@ -110,8 +162,26 @@ bool BoxShape::CollideWithSphere(Vector3d sphere_position, double sphere_radius,
 	}
 	if(halfspaces[0] && halfspaces[1] && halfspaces[2])
 	{
+		Vector3d cp = GetClosestPointOnBox(sphere_position);
+		{
+			normal = (cp - sphere_position);
+			if ( normal.LengthSq() >= sphere_radius*sphere_radius )
+			{
+				// We are at a corner
+				return false;
+			}
+		}
 		// We are inside the box
-		normal = m_sides[closest_halfspace].m_normal * shortest_distance;
+		double extrication_distance = abs(sphere_radius - normal.Length());
+		if( extrication_distance >= sphere_radius )
+		{
+			normal = m_sides[closest_halfspace].m_normal * shortest_distance;
+		}
+		else
+		{
+			normal.Normalize();
+			normal *= extrication_distance;
+		}
 		collision_time = 0.0;
 		return true;
 	}
@@ -120,11 +190,11 @@ bool BoxShape::CollideWithSphere(Vector3d sphere_position, double sphere_radius,
 
 Vector3d BoxShape::GetCenter()
 {
-	Vector3d x = m_corners[H] - m_corners[A];
-	return m_corners[A] + x/2.0;
+	Vector3d x = m_corners[CORNER_H] - m_corners[CORNER_A];
+	return m_corners[CORNER_A] + x/2.0;
 }
 
 double BoxShape::GetBoundingRadius()
 {
-	return (m_corners[H] - m_corners[A]).Length() / 2.0;
+	return (m_corners[CORNER_H] - m_corners[CORNER_A]).Length() / 2.0;
 }

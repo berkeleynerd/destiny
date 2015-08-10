@@ -4,25 +4,25 @@
 
 enum BoxCorner
 {
-	A,
-	B,
-	C,
-	D,
-	E,
-	F,
-	G,
-	H,
+	CORNER_A,
+	CORNER_B,
+	CORNER_C,
+	CORNER_D,
+	CORNER_E,
+	CORNER_F,
+	CORNER_G,
+	CORNER_H,
 	CORNER_COUNT
 };
 
 enum BoxSide
 {
-	FRONT,
-	BACK,
-	LEFT,
-	RIGHT,
-	TOP,
-	BOTTOM,
+	SIDE_FRONT,
+	SIDE_BACK,
+	SIDE_LEFT,
+	SIDE_RIGHT,
+	SIDE_TOP,
+	SIDE_BOTTOM,
 	SIDE_COUNT
 };
 
@@ -50,6 +50,7 @@ public:
 	bool CollideWithSphere(Vector3d sphere_position, double sphere_radius, Vector3d sphere_velocity, Vector3d& collision_point, double& collision_time, Vector3d& normal);
 	Vector3d GetCenter();
 	double GetBoundingRadius();
+	Vector3d GetClosestPointOnBox(Vector3d p);
 
 	Vector3d m_corners[CORNER_COUNT];
 	RectangleShape m_sides[SIDE_COUNT];
