@@ -21,29 +21,29 @@ TEST_F(UnitCubeTest, CanCreate)
 	ASSERT_EQ(Vector3d(0.0, 1.0, 0.0), box.m_localY);
 	ASSERT_EQ(Vector3d(0.0, 0.0, 1.0), box.m_localZ);
 
-	ASSERT_EQ(Vector3d(0.0, 0.0, 0.0), box.m_corners[A]);
-	ASSERT_EQ(Vector3d(1.0, 0.0, 0.0), box.m_corners[B]);
-	ASSERT_EQ(Vector3d(0.0, 1.0, 0.0), box.m_corners[C]);
-	ASSERT_EQ(Vector3d(0.0, 0.0, 1.0), box.m_corners[D]);
+	ASSERT_EQ(Vector3d(0.0, 0.0, 0.0), box.m_corners[CORNER_A]);
+	ASSERT_EQ(Vector3d(1.0, 0.0, 0.0), box.m_corners[CORNER_B]);
+	ASSERT_EQ(Vector3d(0.0, 1.0, 0.0), box.m_corners[CORNER_C]);
+	ASSERT_EQ(Vector3d(0.0, 0.0, 1.0), box.m_corners[CORNER_D]);
 
-	ASSERT_EQ(Vector3d(1.0, 1.0, 0.0), box.m_corners[E]);
-	ASSERT_EQ(Vector3d(0.0, 1.0, 1.0), box.m_corners[F]);
-	ASSERT_EQ(Vector3d(1.0, 0.0, 1.0), box.m_corners[G]);
-	ASSERT_EQ(Vector3d(1.0, 1.0, 1.0), box.m_corners[H]);
+	ASSERT_EQ(Vector3d(1.0, 1.0, 0.0), box.m_corners[CORNER_E]);
+	ASSERT_EQ(Vector3d(0.0, 1.0, 1.0), box.m_corners[CORNER_F]);
+	ASSERT_EQ(Vector3d(1.0, 0.0, 1.0), box.m_corners[CORNER_G]);
+	ASSERT_EQ(Vector3d(1.0, 1.0, 1.0), box.m_corners[CORNER_H]);
 }
 
 TEST_F(UnitCubeTest, GetClosestCornerToPointTopRightBack)
 {
 	Vector3d p(2.0, 2.0, 0.0);
 	BoxCorner closest = box.GetClosestCornerToPoint(p);
-	ASSERT_EQ(E, closest);
+	ASSERT_EQ(CORNER_E, closest);
 }
 
 TEST_F(UnitCubeTest, GetClosestCornerToPointTopRightFront)
 {
 	Vector3d p(2.0, 2.0, 2.0);
 	BoxCorner closest = box.GetClosestCornerToPoint(p);
-	ASSERT_EQ(H, closest);
+	ASSERT_EQ(CORNER_H, closest);
 }
 
 TEST_F(UnitCubeTest, GetCenter)
