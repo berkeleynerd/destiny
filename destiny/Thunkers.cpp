@@ -1042,13 +1042,22 @@ PyObject* Ballpark::PyGetFollowers(
 	int length = (int)src->mFollowers.size();
 	PyObject* ret = PyList_New(0);
 
-	SetOfBalls::iterator foll = src->mFollowers.begin();
-	SetOfBalls::iterator end = src->mFollowers.end();
+	auto foll = src->mFollowers.begin();
+	auto end = src->mFollowers.end();
 	for(; foll != end; ++foll)
 	{
-		Ball *dst = *foll;
-		if(dst->isMoribund)
-			CCP_LOGWARN_CH( s_chPark,"Ballpark::GetFollowers follower %I64d is moribund",dst->mId);
+		auto id = *foll;
+		Ball *dst = mBalls[id];
+		if( !dst )
+		{
+			CCP_LOGERR_CH( s_chPark, "Ballpark::GetFollowers follower %I64d is not valid", id );
+			continue;
+		}
+
+		if( dst->isMoribund )
+		{
+			CCP_LOGWARN_CH( s_chPark, "Ballpark::GetFollowers follower %I64d is moribund", id );
+		}
 
 		PyObject *val = PyLong_FromLongLong(dst->mId);
 		PyList_Append(ret,val);
@@ -2061,8 +2070,7 @@ bool Ballpark::ReadFullStateFromStream(IBlueStreamPtr s, int partial)
 					b->mMode = DSTBALL_GOTO;
 				} else {
 					b->mFollowPtr = dest;
-					std::pair< SetOfBalls::iterator, bool > res;
-					res = dest->mFollowers.insert(b);
+					dest->mFollowers.insert(b->mId);
 				}
 				break;
 			}

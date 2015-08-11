@@ -210,7 +210,7 @@ void Ballpark::OnTick(
     void* cookie
     )
 {
-    BeTimer timer = BeTimer();
+	BeTimer timer = BeTimer();
 
     // This is the delta since I was last called (the first time round it equals timestamp)
     Be::Time lastDelta = simTime - mTime;
@@ -1917,18 +1917,25 @@ Ball * Ballpark::AddBall(
     // If we're replacing an existing ball, we want to ensure that mFollowers/mFollowPtr are consistent
     if(!created && ball->mFollowers.size() > 0)
     {
-        SetOfBalls followersCopy = ball->mFollowers;
-        SetOfBalls::iterator follower = followersCopy.begin();
-        SetOfBalls::iterator end = followersCopy.end();
+        auto followersCopy = ball->mFollowers;
+        auto follower = followersCopy.begin();
+        auto end = followersCopy.end();
 
-        Ball *f;
         for(;follower != end;++follower)
         {
-            f = (*follower);
-            if(f->mFollowPtr != ball)
+			auto id = *follower;
+			auto f = mBalls[id];
+			if( !f )
+			{
+				CCP_LOGWARN_CH( s_chPark, "AddBall:%I64d has non-existing follower %I64d, removing", theID, id );
+				ball->mFollowers.erase( id );
+				continue;
+			}
+
+			if( f->mFollowPtr != ball )
             {
-                CCP_LOGWARN_CH( s_chPark,"AddBall:%I64d has inconsistent follower %I64d, removing", theID, f->mId);
-                ball->mFollowers.erase(f);
+                CCP_LOGWARN_CH( s_chPark,"AddBall:%I64d has inconsistent follower %I64d, removing", theID, id );
+                ball->mFollowers.erase( id );
             }
         }
     }
@@ -2159,7 +2166,7 @@ void Ballpark::MissileFollow(
     missile->SetMode(DSTBALL_MISSILE);
 
     // Declare this ball a follower
-    target->mFollowers.insert(missile);
+    target->mFollowers.insert(missile->mId);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2222,8 +2229,7 @@ void Ballpark::FollowBall(
     ball->SetMode(DSTBALL_FOLLOW);
 
     // Declare this ball a follower
-    std::pair< SetOfBalls::iterator, bool > res;
-    res = dest->mFollowers.insert(ball);
+    auto res = dest->mFollowers.insert(ball->mId);
     if(!res.second)
         CCP_LOGERR_CH( s_chPark,"ball %I64d already flagged as follower of %I64d", ball->mId, dest->mId);
 }
@@ -2285,7 +2291,7 @@ void Ballpark::FormationFollow(
     ball->SetMode(DSTBALL_FORMATION);
 
     // Declare this ball a follower
-    dest->mFollowers.insert(ball);
+    dest->mFollowers.insert(ball->mId);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2347,7 +2353,7 @@ void Ballpark::Orbit(
     ball->SetMode(DSTBALL_ORBIT);
 
     // Declare this ball a follower
-    dest->mFollowers.insert(ball);
+    dest->mFollowers.insert(ball->mId);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2854,7 +2860,7 @@ void Ballpark::Stop(
         size_t found = 0;
         if(isMaster)
         {
-            found = ball->mFollowPtr->mFollowers.erase(ball);
+            found = ball->mFollowPtr->mFollowers.erase(ball->mId);
         }
         else
         {
@@ -2878,7 +2884,7 @@ void Ballpark::Stop(
                 else
                 {
                     // Everything is good
-                    found = ball->mFollowPtr->mFollowers.erase(ball);
+                    found = ball->mFollowPtr->mFollowers.erase(ball->mId);
                 }
             }
         }
@@ -3610,15 +3616,37 @@ void Ballpark::StopAllFollowers(Ball *ball)
     if(ball->mFollowers.size()==0)
         return;
 
-    SetOfBalls followersCopy = ball->mFollowers;
-    SetOfBalls::iterator follower = followersCopy.begin();
-    SetOfBalls::iterator end = followersCopy.end();
+    auto followersCopy = ball->mFollowers;
+    auto follower = followersCopy.begin();
+    auto end = followersCopy.end();
 
-    Ball *f;
     for(;follower != end;++follower)
     {
-        f = (*follower);
-        if(f->mMode==DSTBALL_MISSILE || (f->isInteractive && f->mMode==DSTBALL_ORBIT))
+		auto id = *follower;
+		auto f = mBalls[id];
+
+		if( !f )
+		{
+			CCP_LOGERR_CH( s_chPark, "Ball::StopAllFollowers: ball %I64d has an invalid follower %I64d (invalid id)", ball->mId, id );
+			ball->mFollowers.erase( id );
+			continue;
+		}
+
+		if( f->mFollowId != ball->mId )
+		{
+			CCP_LOGERR_CH( s_chPark, "Ball::StopAllFollowers: ball %I64d has an invalid follower %I64d (mismatched followId %I64d)", ball->mId, id, f->mFollowId );
+			ball->mFollowers.erase( id );
+			continue;
+		}
+
+		if( f->mFollowPtr != ball )
+		{
+			CCP_LOGERR_CH( s_chPark, "Ball::StopAllFollowers: ball %I64d has an invalid follower %I64d (followPtr doesn't match followId)", ball->mId, id );
+			ball->mFollowers.erase( id );
+			continue;
+		}
+
+		if( f->mMode == DSTBALL_MISSILE || (f->isInteractive && f->mMode == DSTBALL_ORBIT) )
         {
             if(f->mMode==DSTBALL_MISSILE)
             {
@@ -3632,8 +3660,7 @@ void Ballpark::StopAllFollowers(Ball *ball)
         {
             Stop(f);
         }
-    }
-
+	}
 }
 
 void Ballpark::RemoveBall(
@@ -3653,7 +3680,12 @@ void Ballpark::RemoveBall(
     // Stop any followers as well
     StopAllFollowers(ball);
 
-    ball->isMoribund = true;
+	if( !ball->mFollowers.empty() )
+	{
+		CCP_LOGERR_CH( s_chPark, "Ballpark::RemoveBall[%I64d], ball still has followers after stopping", ball->mId );
+	}
+
+	ball->isMoribund = true;
 
     // miniballs should be removed regardless of delay
     ssize_t miniballSize = ball->mMiniBalls.GetSize();
@@ -3896,8 +3928,8 @@ void Ballpark::BringOutDeadBalls()
     
         if(toDelete.size() > 0)
         {
-            CCP_LOG_CH( s_chPark, "BringOutTheDeads:: Removing %d moribund balls.", toDelete.size());
-            VectorOfBalls::iterator toDelIt;
+			CCP_LOG_CH( s_chPark, "BringOutTheDeads:: Removing %d moribund balls (out of %d).", toDelete.size(), moribundBalls.size() );
+			VectorOfBalls::iterator toDelIt;
             for(toDelIt=toDelete.begin(); toDelIt != toDelete.end(); ++toDelIt)
             {
                 Ball* ball = *toDelIt;
@@ -4772,12 +4804,12 @@ void Ballpark::SetBallFormation(const ID& srcId, char formationID)
                 // Cycle over followers and stop those with higher slots
                 size_t numberOfFollowers = ball->mFollowers.size();
                 VectorOfBalls stopCandidates;
-                SetOfBalls::iterator foll = ball->mFollowers.begin();
-                SetOfBalls::iterator end = ball->mFollowers.end();
+                auto foll = ball->mFollowers.begin();
+                auto end = ball->mFollowers.end();
                 size_t i;
                 for(; foll != end; ++foll)
                 {
-                    Ball *follower = *foll;
+                    Ball *follower = mBalls[*foll];
                     if(follower->mMode != DSTBALL_FORMATION)
                         continue;
 

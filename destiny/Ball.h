@@ -98,6 +98,8 @@ typedef std::unordered_set<Box *, BoxPtrHasher, BoxPtrHasher> SetOfOrderedBoxes;
 typedef std::vector<Ball *> VectorOfBalls;
 typedef int64_t ID;
 typedef std::vector<ID> VectorOfIDs;
+typedef std::unordered_set<ID> SetOfIDs;
+
 
 
 class Ball :
@@ -191,7 +193,7 @@ public:
 	Be::Time mNewTime; // timestamp of new destiny state
 	Be::Time mOldTime; // timestamp of old destiny state
 
-	SetOfBalls mFollowers; // Pointers of balls following this ball
+	SetOfIDs mFollowers; // IDs of balls following this ball
 	SetOfOrderedBoxes mBoxes; // Boxes that this ball currently intersects, ordered by Box 'key'
 	VectorOfIDs mCollisions; // Objects that have collided with me in the last time step
 	
