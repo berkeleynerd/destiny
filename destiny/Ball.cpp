@@ -1122,12 +1122,10 @@ Vector3* ClientBall::GetValueAt(
     }
     if(!theEgo)
     {
-        // This ball is no longer in any ballpark
+        // The ballpark no longer has an ego ball
         // This should never happen really
         *in = Vector3(0.0f, -std::numeric_limits<float>::max(), 0.0f);
         CCP_LOGERR_CH( s_ch,"Ball: No valid ego, GetValueAt(Vector3)");
-        //DSTCSTACKTRACE();
-        PyOS->DoStackTrace();
         return in;
     }
 
