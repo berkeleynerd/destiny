@@ -172,7 +172,7 @@ bool BoxShape::CollideWithSphere(Vector3d sphere_position, double sphere_radius,
 			}
 		}
 		// We are inside the box
-		double extrication_distance = abs(sphere_radius - normal.Length());
+		double extrication_distance = std::abs(sphere_radius - normal.Length());
 		if( extrication_distance >= sphere_radius )
 		{
 			normal = m_sides[closest_halfspace].m_normal * shortest_distance;
