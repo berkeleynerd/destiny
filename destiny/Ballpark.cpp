@@ -3731,7 +3731,7 @@ void Ballpark::RemoveBall(
         ball->isMassive = false;
         ball->mEffectStamp = mCurrentTime + delay;
         moribundBalls.insert(ball);
-        return;
+		return;
     } 
 
     // Last chance to kill all references etc associated with this ball
@@ -3910,12 +3910,19 @@ void Ballpark::BringOutDeadBalls()
                 toDelete.push_back(ball);
                 continue;
             }
-            if(!ball->isMoribund)
-                CCP_LOGERR_CH( s_chPark, "BringOutTheDeads:: Ball in moribund balls, but not flagged as such");
+			
+			if( !ball->isMoribund )
+			{
+				CCP_LOGERR_CH( s_chPark, "BringOutTheDeads:: Ball %I64d in moribund balls, but not flagged as such.", ball->mId );
+				toDelete.push_back( ball );
+				continue;
+			}
 
             // Ball has reached the absolute maximum age or being removed with delay = 0
-            if(ball->mEffectStamp - mCurrentTime < 0)
-                toDelete.push_back(ball);
+			if( ball->mEffectStamp - mCurrentTime < 0 )
+			{
+				toDelete.push_back( ball );
+			}
 
             // Ball is within its buffer time to be removed
             // Remove it if we have not reached our maximum kill count this tick
@@ -3933,7 +3940,7 @@ void Ballpark::BringOutDeadBalls()
             for(toDelIt=toDelete.begin(); toDelIt != toDelete.end(); ++toDelIt)
             {
                 Ball* ball = *toDelIt;
-                if(ball)
+                if( ball && ball->isMoribund )
                 {
                     ID id = ball->mId;
                     RemoveBall(id);
