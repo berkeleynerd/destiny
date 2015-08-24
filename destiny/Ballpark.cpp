@@ -1847,12 +1847,12 @@ Ball * Ballpark::AddBall(
         }
 
         ball->mId = theID;
-        //CCP_LOG_CH( s_chPark, "Ball: %d created\n",mLocalHiCnt);
+        //CCP_LOG_CH( s_chPark, "Ball: %I64d created\n", mLocalHiCnt );
         created = true;
     }else{
         // This ball already exists.  Clear its boxes to be sure
         ball->DeleteFromBoxes();
-        //CCP_LOG_CH( s_chPark, "Ball: %d updated\n",objectId);
+        //CCP_LOG_CH( s_chPark, "Ball: %I64d updated\n", objectId );
     }
 
     // I now have a valid ball pointer. Put in values.
@@ -1884,6 +1884,12 @@ Ball * Ballpark::AddBall(
         ball->mCorporationID = -1;
         ball->mAllianceID    = -1;
         ball->mHarmonic      = -1;
+		if( ball->isMoribund )
+		{
+			ball->isMoribund = false;
+			moribundBalls.erase( ball );
+			CCP_LOGWARN_CH( s_chPark, "AddBall: Existing ball %I64d was moribund", objectId );
+		}
     }
 
     ball->mRadius        = (radius < 0.0f ?  0.0f : radius);
