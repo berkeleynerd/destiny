@@ -69,7 +69,7 @@ void Capsule::CollideWithBall(Ball* ball)
 		if( s != -1.0 && (time_of_impact == -1.0 || s < time_of_impact) )
 		{
 			time_of_impact = s;
-			normal = mHemisphereA - p0;
+			normal = p0 - mHemisphereA;
 		}
 
 
@@ -78,7 +78,7 @@ void Capsule::CollideWithBall(Ball* ball)
 		if( s != -1.0 && (time_of_impact == -1.0 || s < time_of_impact) )
 		{
 			time_of_impact = s;
-			normal = mHemisphereB - p0;
+			normal = p0 - mHemisphereB;
 		}
 		ReactToCollision(ball, p1, vp1, m1, normal, time_of_impact);
 		return;
@@ -112,8 +112,9 @@ void Capsule::CollideWithBall(Ball* ball)
 			{
 				// p0 was inside the cylinder
 				time_of_impact = 0.0;
-				normal = -dist;
-				ReactToCollision(ball,p1, vp1, m1, normal, time_of_impact);
+				normal = dist;
+				vp1 = ball->mNewVel;
+				ReactToCollision(ball,p0, vp1, m1, normal, time_of_impact);
 				return;
 			}
 		}
@@ -129,7 +130,7 @@ void Capsule::CollideWithBall(Ball* ball)
 		if( s != -1.0 && (time_of_impact == -1.0 || s < time_of_impact) )
 		{
 			time_of_impact = s;
-			normal = mHemisphereA - p0;
+			normal = p0 - mHemisphereA;
 		}
 	}
 	else if( t_k1 > 1.0 )
@@ -139,7 +140,7 @@ void Capsule::CollideWithBall(Ball* ball)
 		if( s != -1.0 && (time_of_impact == -1.0 || s < time_of_impact) )
 		{
 			time_of_impact = s;
-			normal = mHemisphereB - p0;
+			normal = p0 - mHemisphereB;
 		}
 	}
 	else
@@ -164,7 +165,7 @@ void Capsule::CollideWithBall(Ball* ball)
 		if( s != -1.0 && (time_of_impact == -1.0 || s < time_of_impact) )
 		{
 			time_of_impact = s;
-			normal = mHemisphereA - p0;
+			normal = p0 - mHemisphereA;
 		}
 
 	}
@@ -175,7 +176,7 @@ void Capsule::CollideWithBall(Ball* ball)
 		if( s != -1.0 && (time_of_impact == -1.0 || s < time_of_impact) )
 		{
 			time_of_impact = s;
-			normal = mHemisphereB - p0;
+			normal = p0 - mHemisphereB;
 		}
 	}
 	else
@@ -194,10 +195,11 @@ void Capsule::CollideWithBall(Ball* ball)
 	
 	
 	// We have impact. Now react.
-	ReactToCollision(ball, p1, vp1, m1, normal, time_of_impact);
+	vp1 = ball->mNewVel;
+	ReactToCollision(ball, p0, vp1, m1, normal, time_of_impact);
 }
 
-void Capsule::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact)
+void Capsule::ReactToCollision(Ball* ball, Vector3d& ballPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact)
 {
 	if( timeOfImpact == -1.0 )
 	{
@@ -206,31 +208,34 @@ void Capsule::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vec
 	double centerDistance = normal.Length();
 	normal.Normalize();
 	Vector3d acceleration;
-
+	double normalComp = ball->mLastG*normal;
 	if( timeOfImpact > 0.0 )
 	{
-		// This is the simple case of someone hitting a fixed object. Speed is thus inverted along the radial direction
-		// Now given that. I would be situated at:
+		if( normalComp > 0.0 )
+		{
+			// We are colliding on our way out of the object
+			return;
+		}
+
+		// This is the simple case of someone hitting a fixed object. Speed is thus inverted along the normal.
+		mPark->Integrate(ballPosition, ballVelocity, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, timeOfImpact*mPark->dt);
 		double v1 = ballVelocity*normal;
 		ballVelocity -= 2.0*v1*normal;
-		mPark->Integrate(integratedBallPosition, ballVelocity, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, (1.0-timeOfImpact)*mPark->dt);
+		
+		mPark->Integrate(ballPosition, ballVelocity, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, (1.0-timeOfImpact)*mPark->dt);
 		// In order to get there, my acceleration needs to be:
 		double k = mPark->mFriction;
 		acceleration = -(-m1*ball->mLastG + ball->mTimeFactor*m1*ball->mLastG - ball->mTimeFactor*ball->mNewVel*k + ballVelocity*k)/m1/(ball->mTimeFactor-1.0);
 	}
 	else
 	{
-		double normalComp = ball->mLastG*normal;
 		// Calculate the acceleration
 		double tmp = 1.0/(m1+mPark->dt*mPark->mFriction);
-		double dist = mRadius + ball->mRadius + 1.0 - centerDistance; // The distance that we need to move the ball to get it out.
-		if( dist < 1.0 )
-		{
-			dist = 1.0;
-		}
-		acceleration = ( (-dist/(mPark->dt*tmp*m1) )*normal - ball->mNewVel)/mPark->dt -normalComp*normal;
+		double dist = mRadius + ball->mRadius - centerDistance + 1.0; // The distance that we need to move the ball to get it out.
+		acceleration = ( (dist/(mPark->dt*tmp*m1) )*normal - ball->mNewVel)/mPark->dt -normalComp*normal;
 	}
-	Vector3d lastC = 0.85*acceleration;
+	Vector3d lastC = 0.85 * acceleration;
+	
 	if(timeOfImpact==ball->mLastCollision)
 	{
 		// Use the stronger collision of the two

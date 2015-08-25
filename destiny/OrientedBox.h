@@ -24,7 +24,7 @@ public:
 	void InsertInBoxes(Box* box1, Box* top, long newBubbleId);
 
 private:
-	void ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact);
+	void ReactToCollision(Ball* ball, Vector3d& ballPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact);
 	BoxShape m_boxShape;
 	short mMod[3];
 	float mBoundingRadius;

@@ -164,7 +164,7 @@ bool BoxShape::CollideWithSphere(Vector3d sphere_position, double sphere_radius,
 	{
 		Vector3d cp = GetClosestPointOnBox(sphere_position);
 		{
-			normal = (cp - sphere_position);
+			normal = (sphere_position - cp);
 			if ( normal.LengthSq() >= sphere_radius*sphere_radius )
 			{
 				// We are at a corner

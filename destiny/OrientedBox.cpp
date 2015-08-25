@@ -64,11 +64,12 @@ void OrientedBox::CollideWithBall(Ball* ball)
 	if( collision_exists )
 	{
 		// We have impact. Now react.
-		ReactToCollision(ball, p1, vp1, m1, normal, collision_time);
+		vp1 = ball->mNewVel;
+		ReactToCollision(ball, p0, vp1, m1, normal, collision_time);
 	}
 }
 
-void OrientedBox::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact)
+void OrientedBox::ReactToCollision(Ball* ball, Vector3d& ballPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact)
 {
 	if( timeOfImpact == -1.0 )
 	{
@@ -81,11 +82,13 @@ void OrientedBox::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition,
 
 	if( timeOfImpact > 0.0 )
 	{
+		mPark->Integrate(ballPosition, ballVelocity, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, timeOfImpact*mPark->dt);
 		// This is the simple case of someone hitting a fixed object. Speed is thus inverted along the radial direction
 		// Now given that. I would be situated at:
 		double v1 = ballVelocity*normal;
 		ballVelocity -= 2.0*v1*normal;
-		mPark->Integrate(integratedBallPosition, ballVelocity, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, (1.0-timeOfImpact)*mPark->dt);
+		
+		mPark->Integrate(ballPosition, ballVelocity, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, (1.0-timeOfImpact)*mPark->dt);
 		// In order to get there, my acceleration needs to be:
 		double k = mPark->mFriction;
 		acceleration = -(-m1*ball->mLastG + ball->mTimeFactor*m1*ball->mLastG - ball->mTimeFactor*ball->mNewVel*k + ballVelocity*k)/m1/(ball->mTimeFactor-1.0);
@@ -97,7 +100,7 @@ void OrientedBox::ReactToCollision(Ball* ball, Vector3d& integratedBallPosition,
 		// Calculate the acceleration
 		double tmp = 1.0/(m1+mPark->dt*mPark->mFriction);
 		double dist = collisionDepth + 1.0;
-		acceleration = ( (-dist/(mPark->dt*tmp*m1) )*normal - ball->mNewVel)/mPark->dt -normalComp*normal;
+		acceleration = ( (dist/(mPark->dt*tmp*m1) )*normal - ball->mNewVel)/mPark->dt -normalComp*normal;
 	}
 	Vector3d lastC = 0.85*acceleration;
 	if(timeOfImpact==ball->mLastCollision)
