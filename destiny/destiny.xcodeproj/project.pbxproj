@@ -1,0 +1,1039 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+		};
+	objects = {
+		0000004900004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000004A00004db8c4e7c17e;
+			};
+		0000007500004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000007600004db8c4e7c17e;
+			};
+		0000004000004db8c4e7c17e = {
+			name = Ball.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Ball.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000900004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000000A00004db8c4e7c17e;
+			};
+		0000005C00004db8c4e7c17e = {
+			name = Partition.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Partition.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000002200004db8c4e7c17e = {
+			name = MiniBox_Blue.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = MiniBox_Blue.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000300004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000000400004db8c4e7c17e;
+			};
+		0000006800004db8c4e7c17e = {
+			name = StaticCollidable.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = StaticCollidable.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000001C00004db8c4e7c17e = {
+			name = MiniBall.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = MiniBall.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000006E00004db8c4e7c17e = {
+			name = Vector3.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Vector3.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000002B00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000002C00004db8c4e7c17e;
+			};
+		0000003D00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000003E00004db8c4e7c17e;
+			};
+		0000002A00004db8c4e7c17e = {
+			name = OrientedBox_Blue.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = OrientedBox_Blue.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000008800004db8c4e7c17e = {
+			isa = XCConfigurationList;
+			defaultConfigurationName = Release;
+			buildConfigurations = (
+				0000008C00004db8c4e7c17e,
+				);
+			defaultConfigurationIsVisible = 0;
+			};
+		0000008600004db8c4e7c17e = {
+			files = (
+				0000000100004db8c4e7c17e,
+				0000000300004db8c4e7c17e,
+				0000000500004db8c4e7c17e,
+				0000000700004db8c4e7c17e,
+				0000000900004db8c4e7c17e,
+				0000000B00004db8c4e7c17e,
+				0000000D00004db8c4e7c17e,
+				0000000F00004db8c4e7c17e,
+				0000001100004db8c4e7c17e,
+				0000001300004db8c4e7c17e,
+				0000001500004db8c4e7c17e,
+				0000001700004db8c4e7c17e,
+				0000001900004db8c4e7c17e,
+				0000001B00004db8c4e7c17e,
+				0000001D00004db8c4e7c17e,
+				0000001F00004db8c4e7c17e,
+				0000002100004db8c4e7c17e,
+				0000002300004db8c4e7c17e,
+				0000002500004db8c4e7c17e,
+				0000002700004db8c4e7c17e,
+				0000002900004db8c4e7c17e,
+				0000002B00004db8c4e7c17e,
+				0000002D00004db8c4e7c17e,
+				0000002F00004db8c4e7c17e,
+				0000003100004db8c4e7c17e,
+				0000003300004db8c4e7c17e,
+				0000003500004db8c4e7c17e,
+				0000003700004db8c4e7c17e,
+				0000003900004db8c4e7c17e,
+				);
+			buildActionMask = 2147483647;
+			isa = PBXSourcesBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+			};
+		0000006700004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000006800004db8c4e7c17e;
+			};
+		0000008A00004db8c4e7c17e = {
+			projectDirPath = "";
+			targets = (
+				0000008700004db8c4e7c17e,
+				);
+			knownRegions = (
+				en,
+				);
+			developmentRegion = English;
+			projectRoot = "";
+			hasScannedForEncodings = 0;
+			compatibilityVersion = "Xcode 3.2";
+			mainGroup = 0000008500004db8c4e7c17e;
+			attributes = {
+				ORGANIZATIONNAME = CCP;
+				LastUpgradeCheck = 0460;
+				};
+			isa = PBXProject;
+			buildConfigurationList = 0000008B00004db8c4e7c17e;
+			};
+		0000005000004db8c4e7c17e = {
+			name = MapOfBalls.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = MapOfBalls.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000600004db8c4e7c17e = {
+			name = Ball_Blue.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Ball_Blue.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000008400004db8c4e7c17e = {
+			path = _destiny.so;
+			isa = PBXFileReference;
+			includeInIndex = 0;
+			explicitFileType = "compiled.mach-o.dylib";
+			sourceTree = BUILT_PRODUCTS_DIR;
+			};
+		0000008300004db8c4e7c17e = {
+			isa = PBXGroup;
+			sourceTree = "<group>";
+			children = (
+				0000007C00004db8c4e7c17e,
+				0000007E00004db8c4e7c17e,
+				0000008000004db8c4e7c17e,
+				);
+			name = Dependencies;
+			};
+		0000008100004db8c4e7c17e = {
+			isa = PBXGroup;
+			sourceTree = "<group>";
+			children = (
+				0000008200004db8c4e7c17e,
+				0000000200004db8c4e7c17e,
+				0000003C00004db8c4e7c17e,
+				0000000400004db8c4e7c17e,
+				0000004000004db8c4e7c17e,
+				0000000600004db8c4e7c17e,
+				0000000800004db8c4e7c17e,
+				0000004200004db8c4e7c17e,
+				0000000A00004db8c4e7c17e,
+				0000000C00004db8c4e7c17e,
+				0000004400004db8c4e7c17e,
+				0000000E00004db8c4e7c17e,
+				0000004600004db8c4e7c17e,
+				0000001000004db8c4e7c17e,
+				0000004800004db8c4e7c17e,
+				0000001200004db8c4e7c17e,
+				0000001400004db8c4e7c17e,
+				0000004A00004db8c4e7c17e,
+				0000001800004db8c4e7c17e,
+				0000004C00004db8c4e7c17e,
+				0000004E00004db8c4e7c17e,
+				0000005000004db8c4e7c17e,
+				0000005200004db8c4e7c17e,
+				0000001C00004db8c4e7c17e,
+				0000005400004db8c4e7c17e,
+				0000002000004db8c4e7c17e,
+				0000005600004db8c4e7c17e,
+				0000002200004db8c4e7c17e,
+				0000002400004db8c4e7c17e,
+				0000005800004db8c4e7c17e,
+				0000002600004db8c4e7c17e,
+				0000001E00004db8c4e7c17e,
+				0000002800004db8c4e7c17e,
+				0000005A00004db8c4e7c17e,
+				0000002A00004db8c4e7c17e,
+				0000002C00004db8c4e7c17e,
+				0000005C00004db8c4e7c17e,
+				0000002E00004db8c4e7c17e,
+				0000005E00004db8c4e7c17e,
+				0000003000004db8c4e7c17e,
+				0000006000004db8c4e7c17e,
+				0000006200004db8c4e7c17e,
+				0000003200004db8c4e7c17e,
+				0000006400004db8c4e7c17e,
+				0000003400004db8c4e7c17e,
+				0000006800004db8c4e7c17e,
+				0000003600004db8c4e7c17e,
+				0000006A00004db8c4e7c17e,
+				0000003800004db8c4e7c17e,
+				0000003A00004db8c4e7c17e,
+				0000006C00004db8c4e7c17e,
+				0000006E00004db8c4e7c17e,
+				0000007000004db8c4e7c17e,
+				0000003E00004db8c4e7c17e,
+				0000001600004db8c4e7c17e,
+				0000001A00004db8c4e7c17e,
+				0000006600004db8c4e7c17e,
+				0000007200004db8c4e7c17e,
+				);
+			name = "Source Files";
+			};
+		0000003100004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000003200004db8c4e7c17e;
+			};
+		0000007200004db8c4e7c17e = {
+			name = version.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = version.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000001000004db8c4e7c17e = {
+			name = Capsule.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Capsule.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000002700004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000002800004db8c4e7c17e;
+			};
+		0000000F00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000001000004db8c4e7c17e;
+			};
+		0000004100004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000004200004db8c4e7c17e;
+			};
+		0000004D00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000004E00004db8c4e7c17e;
+			};
+		0000006100004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000006200004db8c4e7c17e;
+			};
+		0000007E00004db8c4e7c17e = {
+			name = libpython2.7.dylib;
+			fileEncoding = 4;
+			lastKnownFileType = "compiled.mach-o.dylib";
+			path = "../../../../../../shared_tools/python/27_mac/lib/libpython2.7.dylib";
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000002D00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000002E00004db8c4e7c17e;
+			};
+		0000003700004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000003800004db8c4e7c17e;
+			};
+		0000004700004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000004800004db8c4e7c17e;
+			};
+		0000004600004db8c4e7c17e = {
+			name = BoxShape.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = BoxShape.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000002900004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000002A00004db8c4e7c17e;
+			};
+		0000001500004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000001600004db8c4e7c17e;
+			};
+		0000003B00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000003C00004db8c4e7c17e;
+			};
+		0000004400004db8c4e7c17e = {
+			name = Box.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Box.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000004800004db8c4e7c17e = {
+			name = Capsule.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Capsule.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000002500004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000002600004db8c4e7c17e;
+			};
+		0000008200004db8c4e7c17e = {
+			isa = PBXGroup;
+			sourceTree = "<group>";
+			children = (
+				0000007600004db8c4e7c17e,
+				0000007800004db8c4e7c17e,
+				0000007A00004db8c4e7c17e,
+				0000007400004db8c4e7c17e,
+				);
+			name = include;
+			};
+		0000004C00004db8c4e7c17e = {
+			name = DstConstants.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = DstConstants.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000200004db8c4e7c17e = {
+			name = AABB.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = AABB.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000700004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000000800004db8c4e7c17e;
+			};
+		0000007600004db8c4e7c17e = {
+			name = IBall.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = "include/IBall.h";
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000006300004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000006400004db8c4e7c17e;
+			};
+		0000006B00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000006C00004db8c4e7c17e;
+			};
+		0000005B00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000005C00004db8c4e7c17e;
+			};
+		0000002F00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000003000004db8c4e7c17e;
+			};
+		0000003500004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000003600004db8c4e7c17e;
+			};
+		0000001800004db8c4e7c17e = {
+			name = DstConstants.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = DstConstants.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000003000004db8c4e7c17e = {
+			name = Plane.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Plane.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000E00004db8c4e7c17e = {
+			name = BoxShape.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = BoxShape.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000001900004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000001A00004db8c4e7c17e;
+			};
+		0000002000004db8c4e7c17e = {
+			name = MiniBox.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = MiniBox.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000005700004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000005800004db8c4e7c17e;
+			};
+		0000001200004db8c4e7c17e = {
+			name = Capsule_Blue.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Capsule_Blue.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000003F00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000004000004db8c4e7c17e;
+			};
+		0000001400004db8c4e7c17e = {
+			name = Collision.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Collision.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000C00004db8c4e7c17e = {
+			name = Box.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Box.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000001B00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000001C00004db8c4e7c17e;
+			};
+		0000007300004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000007400004db8c4e7c17e;
+			};
+		0000004A00004db8c4e7c17e = {
+			name = Collision.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Collision.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000005100004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000005200004db8c4e7c17e;
+			};
+		0000000500004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000000600004db8c4e7c17e;
+			};
+		0000008D00004db8c4e7c17e = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				};
+			name = Release;
+			};
+		0000004500004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000004600004db8c4e7c17e;
+			};
+		0000005A00004db8c4e7c17e = {
+			name = OrientedBox.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = OrientedBox.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000004300004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000004400004db8c4e7c17e;
+			};
+		0000007900004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000007A00004db8c4e7c17e;
+			};
+		0000005D00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000005E00004db8c4e7c17e;
+			};
+		0000005F00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000006000004db8c4e7c17e;
+			};
+		0000006F00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000007000004db8c4e7c17e;
+			};
+		0000007D00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000007E00004db8c4e7c17e;
+			};
+		0000001E00004db8c4e7c17e = {
+			name = Miniball_Blue.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Miniball_Blue.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000003400004db8c4e7c17e = {
+			name = StaticCollidable.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = StaticCollidable.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000002400004db8c4e7c17e = {
+			name = MiniCapsule.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = MiniCapsule.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000002100004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000002200004db8c4e7c17e;
+			};
+		0000006600004db8c4e7c17e = {
+			name = resource.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = resource.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000A00004db8c4e7c17e = {
+			name = Ballpark_Blue.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Ballpark_Blue.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000006500004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000006600004db8c4e7c17e;
+			};
+		0000002800004db8c4e7c17e = {
+			name = OrientedBox.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = OrientedBox.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000001600004db8c4e7c17e = {
+			name = destiny.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = destiny.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000008900004db8c4e7c17e = {
+			files = (
+				0000007B00004db8c4e7c17e,
+				0000007D00004db8c4e7c17e,
+				0000007F00004db8c4e7c17e,
+				);
+			buildActionMask = 2147483647;
+			isa = PBXFrameworksBuildPhase;
+			runOnlyForDeploymentPostprocessing = 0;
+			};
+		0000005300004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000005400004db8c4e7c17e;
+			};
+		0000003200004db8c4e7c17e = {
+			name = Random.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Random.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000005600004db8c4e7c17e = {
+			name = MiniBox.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = MiniBox.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000004B00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000004C00004db8c4e7c17e;
+			};
+		0000002C00004db8c4e7c17e = {
+			name = Partition.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Partition.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000007A00004db8c4e7c17e = {
+			name = Quaternion.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = "include/Quaternion.h";
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000003300004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000003400004db8c4e7c17e;
+			};
+		0000004E00004db8c4e7c17e = {
+			name = Hashers.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Hashers.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000003C00004db8c4e7c17e = {
+			name = AABB.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = AABB.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000005E00004db8c4e7c17e = {
+			name = Partitionable.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Partitionable.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000006C00004db8c4e7c17e = {
+			name = Triangle.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Triangle.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000007000004db8c4e7c17e = {
+			name = Vector3d.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Vector3d.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000008000004db8c4e7c17e = {
+			name = libCcpMath.a;
+			fileEncoding = 4;
+			lastKnownFileType = archive.ar;
+			path = "../../../carbon/autobuild/CcpMath/MacOsXx86_64/clang4.2/libCcpMath.a";
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000007100004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000007200004db8c4e7c17e;
+			};
+		0000002E00004db8c4e7c17e = {
+			name = Partitionable.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Partitionable.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000001300004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000001400004db8c4e7c17e;
+			};
+		0000001A00004db8c4e7c17e = {
+			name = erf.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = erf.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000006000004db8c4e7c17e = {
+			name = Plane.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Plane.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000001D00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000001E00004db8c4e7c17e;
+			};
+		0000007F00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000008000004db8c4e7c17e;
+			};
+		0000002300004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000002400004db8c4e7c17e;
+			};
+		0000008C00004db8c4e7c17e = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"../../../../../../sdk/telemetry/2.1A3/include",
+					"../../../../../../shared_tools/python/27_mac/include/python2.7",
+					.,
+					"../../../carbon/src",
+					"../../../../../../sdk/directx/october2004/include",
+					"../../../carbon/src/CcpUtils",
+					);
+				CLANG_WARN_INT_CONVERSION = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				OTHER_LDFLAGS = "-headerpad_max_install_names";
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				PRODUCT_NAME = _destiny;
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				CONFIGURATION_BUILD_DIR = "$(BUILD_DIR)/";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				GCC_OPTIMIZATION_LEVEL = s;
+				ONLY_ACTIVE_ARCH = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				LIBRARY_SEARCH_PATHS = (
+					"../../../../../../sdk/telemetry/2.1A3/lib",
+					"../../../carbon/autobuild/blue/python_27/MacOsX$(ARCHS)/clang4.2/",
+					"../../../../../../shared_tools/python/27_mac/lib",
+					"../../../carbon/autobuild/CcpMath/MacOsX$(ARCHS)/clang4.2/",
+					);
+				SYMROOT = "../../autobuild/destiny/python_27/MacOsX$(ARCHS)/clang4.2";
+				OBJROOT = "../temp/destiny/MacOsX$(ARCHS)/$(CONFIGURATION)/clang4.2";
+				LD_DYLIB_INSTALL_NAME = "@rpath/$(PRODUCT_NAME).so";
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				CONFIGURATION_TEMP_DIR = "../temp/destiny/MacOsX$(ARCHS)/$(CONFIGURATION)/clang4.2";
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					NDEBUG,
+					"BLUE_WITH_PYTHON=1",
+					"$(inherited)",
+					);
+				COPY_PHASE_STRIP = NO;
+				CLANG_CXX_LIBRARY = "libc++";
+				GCC_PREFIX_HEADER = stdafx.h;
+				EXECUTABLE_EXTENSION = so;
+				GCC_DYNAMIC_NO_PIC = NO;
+				SDKROOT = macosx;
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				};
+			name = Release;
+			};
+		0000001F00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000002000004db8c4e7c17e;
+			};
+		0000008B00004db8c4e7c17e = {
+			isa = XCConfigurationList;
+			defaultConfigurationName = Release;
+			buildConfigurations = (
+				0000008D00004db8c4e7c17e,
+				);
+			defaultConfigurationIsVisible = 0;
+			};
+		0000007C00004db8c4e7c17e = {
+			name = blue.so;
+			fileEncoding = 4;
+			lastKnownFileType = "compiled.mach-o.dylib";
+			path = "../../../carbon/autobuild/blue/python_27/MacOsXx86_64/clang4.2/blue.so";
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000005900004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000005A00004db8c4e7c17e;
+			};
+		0000003E00004db8c4e7c17e = {
+			name = autoversion.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = autoversion.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000800004db8c4e7c17e = {
+			name = Ballpark.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Ballpark.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000007B00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000007C00004db8c4e7c17e;
+			};
+		0000000400004db8c4e7c17e = {
+			name = Ball.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Ball.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000006A00004db8c4e7c17e = {
+			name = StdAfx.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = StdAfx.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000004F00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000005000004db8c4e7c17e;
+			};
+		0000003800004db8c4e7c17e = {
+			name = Thunkers.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Thunkers.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000008700004db8c4e7c17e = {
+			dependencies = (
+				);
+			productReference = 0000008400004db8c4e7c17e;
+			name = Release_27_Mac64;
+			productType = "com.apple.product-type.library.dynamic";
+			buildRules = (
+				);
+			isa = PBXNativeTarget;
+			productName = destiny;
+			buildConfigurationList = 0000008800004db8c4e7c17e;
+			buildPhases = (
+				0000008600004db8c4e7c17e,
+				0000008900004db8c4e7c17e,
+				);
+			};
+		0000005200004db8c4e7c17e = {
+			name = MapOfLongLongs.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = MapOfLongLongs.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000003A00004db8c4e7c17e = {
+			name = Triangle.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = Triangle.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000000D00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000000E00004db8c4e7c17e;
+			};
+		0000002600004db8c4e7c17e = {
+			name = MiniCapsule_Blue.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = MiniCapsule_Blue.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000007800004db8c4e7c17e = {
+			name = IDstConstants.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = "include/IDstConstants.h";
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000007700004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000007800004db8c4e7c17e;
+			};
+		0000004200004db8c4e7c17e = {
+			name = Ballpark.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Ballpark.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000007400004db8c4e7c17e = {
+			name = destinyId.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = "include/destinyId.h";
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000006200004db8c4e7c17e = {
+			name = Quaternion.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Quaternion.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000005400004db8c4e7c17e = {
+			name = MiniBall.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = MiniBall.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000005500004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000005600004db8c4e7c17e;
+			};
+		0000003600004db8c4e7c17e = {
+			name = StdAfx.cpp;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.cpp;
+			path = StdAfx.cpp;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000006D00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000006E00004db8c4e7c17e;
+			};
+		0000006900004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000006A00004db8c4e7c17e;
+			};
+		0000001700004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000001800004db8c4e7c17e;
+			};
+		0000000100004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000000200004db8c4e7c17e;
+			};
+		0000006400004db8c4e7c17e = {
+			name = Random.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = Random.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000001100004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000001200004db8c4e7c17e;
+			};
+		0000005800004db8c4e7c17e = {
+			name = MiniCapsule.h;
+			fileEncoding = 4;
+			lastKnownFileType = sourcecode.cpp.h;
+			path = MiniCapsule.h;
+			isa = PBXFileReference;
+			sourceTree = "<group>";
+			};
+		0000003900004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000003A00004db8c4e7c17e;
+			};
+		0000008500004db8c4e7c17e = {
+			isa = PBXGroup;
+			children = (
+				0000008100004db8c4e7c17e,
+				0000008300004db8c4e7c17e,
+				);
+			sourceTree = "<group>";
+			};
+		0000000B00004db8c4e7c17e = {
+			isa = PBXBuildFile;
+			fileRef = 0000000C00004db8c4e7c17e;
+			};
+		};
+	objectVersion = 46;
+	rootObject = 0000008A00004db8c4e7c17e;
+	}
