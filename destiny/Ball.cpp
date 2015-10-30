@@ -1774,6 +1774,7 @@ void ClientBall::ProcessImpact(float dt)
 	
 	// Apply the rotation around the axis axis so we get the new rotation
 	D3DXQuaternionRotationAxis( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), &rotationAxis, rotationAngle );	
+	D3DXQuaternionNormalize( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ) );
 	D3DXQuaternionMultiply( reinterpret_cast<D3DXQUATERNION*>( &mLastRot ), reinterpret_cast<D3DXQUATERNION*>( &mLastRot ), reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ) );
 }
 
