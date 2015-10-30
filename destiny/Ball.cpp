@@ -40,12 +40,22 @@ ClientBall::ClientBall(IRoot *lockobj) :
     mElapsed(0.0),
     mCenterDist(0.0),
     mSurfaceDist(0.0),
+	mMaxAngle(0.25f),
+	mMaxAngularVelocity(0.5f * D3DX_PI),
+	mInvInertiaTensor(-1.0),
+	mCurrentVelocityInfluence(1.0f),
     mLastTick(-1),
-    mShowBoxes(false)
+	mShowBoxes(false),
+	mProcessingImpact(false),
+	mMinimumAngularVelocity(0.01f),
+	mSpeedModifier(10.0f)
 {
     //CCP_LOG_CH( s_ch,"New Ball:%d. Total is: %d\n",int(this),++ballCount);
     mBoxList = PyList_New(27);
     mLastRot = Quaternion(0.0f,0.0f,0.0f,-1.0f);
+	mImpactRotation = Quaternion(0.0f,0.0f,0.0f, 1.0f);
+	mImpactVelocity = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
+	mImpactVelocityGoal = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 };
 
 Ball::Ball(IRoot* lockobj) :
@@ -895,7 +905,7 @@ Quaternion* ClientBall::GetValueAt(
 
         mYawSpeed = mLastYaw;
         mPitchSpeed = mLastPitch;
-
+				
         double tmp = 1.0/(1.0 + friction*dT);
         mLastYaw = (mLastYaw + friction*dT*aYaw)*tmp;
         mLastPitch = (mLastPitch + 1.3*friction*dT*aPitch)/(1.0 + 1.3*friction*dT);
@@ -905,8 +915,13 @@ Quaternion* ClientBall::GetValueAt(
         mYawSpeed = (mLastYaw-mYawSpeed)*tmp;
         mPitchSpeed = (mLastPitch-mPitchSpeed)*tmp;
 
-
         D3DXQuaternionRotationYawPitchRoll(reinterpret_cast<D3DXQUATERNION*>( &mLastRot ), float(mLastYaw), float(mLastPitch), float(mLastRoll));
+
+		if( mProcessingImpact )
+		{
+			ProcessImpact((float) dT);
+		}
+
         *in = mLastRot;
         mRotUpdateTime = shiftedTime;
     }
@@ -1663,6 +1678,122 @@ PyObject* ClientBall::PyGetPartitionBoxes(PyObject* args)
     PyObject *ret =  Py_BuildValue("fffffffO", mMyBox->lo[0]-mNewPos.x,mMyBox->lo[1]-mNewPos.y,mMyBox->lo[2]-mNewPos.z, mMyBox->hi[0]-mNewPos.x,mMyBox->hi[1]-mNewPos.y,mMyBox->hi[2]-mNewPos.z, mRadius + mPark->dt*mNewVel.Length(), boxes);
     Py_DECREF(boxes);
     return ret;
+}
+
+void ClientBall::ApplyImpulsiveForceAtPosition( const Vector3 &impactForce, const Vector3 &pos )
+{
+	if( mInvInertiaTensor < 0.0f )
+	{
+		mInvInertiaTensor = 5.0f / ( 2.0f * (float)mMass * this->GetBoundingRadius() );
+	}
+
+	D3DXVECTOR3 axis;
+	D3DXVECTOR3 posFromCenter = D3DXVECTOR3( pos.x, pos.y, pos.z );
+	D3DXVECTOR3 force = D3DXVECTOR3( impactForce.x, impactForce.y, impactForce.z );
+	D3DXVec3Cross( &axis, &posFromCenter, &force );
+	D3DXVec3Scale( &axis, &axis, mInvInertiaTensor );
+	
+	D3DXQUATERNION newVelocityAroundAxis;
+	// Apply the acceleration for 0.05 seconds to get the velocity
+	float angularVelocity = D3DXVec3Length( &axis ) * 0.05f;
+	
+	// Early exit
+	if( angularVelocity < mMinimumAngularVelocity )
+	{
+		CCP_LOGNOTICE("ClientBall Impact: Angular velocity goal too low %.6f. Exiting early.",  angularVelocity);
+		return;
+	}
+
+	CCP_LOGNOTICE("ClientBall Impact: Angular velocity goal: %.6f. Processing impact.",  angularVelocity);
+
+	D3DXQuaternionRotationAxis( &newVelocityAroundAxis, &axis, std::min( angularVelocity, mMaxAngularVelocity) );
+	
+	// Add the new velocity to the velocity goal
+	D3DXQuaternionMultiply( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal ), reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal), &newVelocityAroundAxis );
+	
+	if( mImpactVelocityGoal.w != 0.0f )
+	{
+		// Cap the velocity to the max
+		float angularVelocity;
+		D3DXQuaternionToAxisAngle( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal ), &axis, &angularVelocity);
+		D3DXQuaternionRotationAxis( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal ), &axis, std::min( angularVelocity, mMaxAngularVelocity) );
+	} 
+
+	mCurrentVelocityInfluence = 1.0f;
+	mProcessingImpact = true;	
+	mImpactVelocityAtImpact = mImpactVelocity;
+}
+
+void ClientBall::ProcessImpact(float dt)
+{
+	D3DXQUATERNION qi = D3DXQUATERNION( 0.0f, 0.0f, 0.0f, 1.0f );
+	
+	D3DXVECTOR3 rotationAxis;
+	float rotationAngle;
+	
+	// Velocity going up
+	if( mCurrentVelocityInfluence > 0.0f )
+	{
+		// Move the current impact velocity to the goal
+		float deterioration = mSpeedModifier * mInvInertiaTensor * (float)mMass * (dt * dt) * mMaxVel;
+		deterioration = std::min( 0.1f, std::max( deterioration, 0.002f ) ); // limit the deterioration
+		mCurrentVelocityInfluence = std::max( 0.0f, mCurrentVelocityInfluence - deterioration );
+		float influence = mCurrentVelocityInfluence * mCurrentVelocityInfluence;
+
+		D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocity ), 
+			reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal ), 
+			reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityAtImpact ), 
+			influence );
+
+		ApplyAngularVelocityToRotation( dt );
+
+		mVelocityAtVelocityPeak = mImpactVelocity;
+		mVelocityGoalAtVelocityPeak = mImpactVelocityGoal;
+		mRotationAtVelocityPeak = mImpactRotation;
+		mImpactRotationDeterioration = 1.0f;
+	}
+
+	// Counter rotation
+	float deterioration = mInvInertiaTensor * (float)mMass * (dt * dt) * mMaxVel;
+	deterioration = std::min(dt, std::max(deterioration, 0.002f)); // limit the deterioration
+	
+	mImpactRotationDeterioration = std::max(0.0f, mImpactRotationDeterioration - deterioration);
+	float influence = mImpactRotationDeterioration * mImpactRotationDeterioration;
+
+	D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mVelocityGoalAtVelocityPeak ), influence );	
+	D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocity ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mVelocityAtVelocityPeak ), influence );
+	D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mRotationAtVelocityPeak ), influence );
+	
+	mProcessingImpact = mImpactRotationDeterioration != 0.0f;
+
+	D3DXQuaternionNormalize( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ) );
+	D3DXQuaternionToAxisAngle( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), &rotationAxis, &rotationAngle );
+	
+	// Cap the angle to the maximum
+	rotationAngle = rotationAngle*mMaxAngle / ( rotationAngle + mMaxAngle );
+	
+	// Apply the rotation around the axis axis so we get the new rotation
+	D3DXQuaternionRotationAxis( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), &rotationAxis, rotationAngle );	
+	D3DXQuaternionMultiply( reinterpret_cast<D3DXQUATERNION*>( &mLastRot ), reinterpret_cast<D3DXQUATERNION*>( &mLastRot ), reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ) );
+}
+
+void ClientBall::ApplyAngularVelocityToRotation( float dt )
+{
+	D3DXQUATERNION deltaAngle = D3DXQUATERNION( 0.0f, 0.0f, 0.0f, 1.0f );
+	D3DXQuaternionNormalize(reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocity ), reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocity ));
+	D3DXVECTOR3 velocityAxis;
+	float rotationVelocity;
+	if( mImpactVelocity.w != 1.0f )
+	{
+		// Get the current velocity axis and velocity
+		D3DXQuaternionToAxisAngle( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocity ), &velocityAxis, &rotationVelocity );
+
+		// Apply the angular velocity around the velocity axis so we get the new angle
+		D3DXQuaternionRotationAxis(&deltaAngle, &velocityAxis, rotationVelocity * dt );
+		// Add the new angle to the current rotation
+		D3DXQuaternionMultiply( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), &deltaAngle);			
+		D3DXQuaternionNormalize(reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ));	
+	}
 }
 
 //---------------------------------------------------------------------------------------

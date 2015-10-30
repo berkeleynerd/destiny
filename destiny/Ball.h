@@ -408,6 +408,22 @@ public:
 	Vector3d mLastVel;
 	Vector3d mDeltaPos;
 	Vector3d mIntAcc;
+	float mInvInertiaTensor;
+
+	float mMaxAngularVelocity;
+	float mMaxAngle;
+	Quaternion mImpactRotation;
+	float mCurrentVelocityInfluence;
+	float mImpactRotationDeterioration;
+	bool mProcessingImpact;
+	Quaternion mImpactVelocityAtImpact;
+	Quaternion mImpactVelocity;
+	Quaternion mImpactVelocityGoal;
+	Quaternion mRotationAtVelocityPeak;
+	Quaternion mVelocityAtVelocityPeak;
+	Quaternion mVelocityGoalAtVelocityPeak;
+	float mSpeedModifier;
+	float mMinimumAngularVelocity;
 
 	double mElapsed;
 	
@@ -438,6 +454,11 @@ public:
 	void InforceContinuity();
 
 	void DispatchPartition();
+
+	float GetImpactRotation( float dt );
+	void ProcessImpact( float dt );
+	void ApplyImpulsiveForceAtPosition( const Vector3 &impulsiveForce, const Vector3 &pos );
+	void ApplyAngularVelocityToRotation( float dt );
 
 	////////////////////////////////
 	// IBall

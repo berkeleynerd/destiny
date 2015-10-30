@@ -490,6 +490,38 @@ const Be::ClassInfo* ClientBall::ExposeToBlue()
 			mSurfaceDist,
 			"surface-surface distance from ego",
 			Be::READ
+		)		
+
+		MAP_ATTRIBUTE
+		(
+		"maxAngle",
+		mMaxAngle,
+		"max impact angle",
+		Be::READWRITE
+		)
+		
+		MAP_ATTRIBUTE
+		(
+		"maxAngularVelocity",
+		mMaxAngularVelocity,
+		"max angular velocity",
+		Be::READWRITE
+		)
+
+		MAP_ATTRIBUTE
+		(
+		"speedModifier",
+		mSpeedModifier,
+		"How much faster does the ship move when it is hit versus when it is recovering",
+		Be::READWRITE
+		)
+
+		MAP_ATTRIBUTE
+		(
+		"minimumAngularVelocity",
+		mMinimumAngularVelocity,
+		"Minimum angular velocity, impacts producing angular velocity less than this will not be processed",
+		Be::READWRITE
 		)
 
 		MAP_METHOD_AS_METHOD
@@ -497,6 +529,13 @@ const Be::ClassInfo* ClientBall::ExposeToBlue()
 			"GetPartitionBoxes",
 			PyGetPartitionBoxes,
 			"Testing python method call."
+		)
+
+		MAP_METHOD_AND_WRAP
+		(
+			"ApplyImpulsiveForceAtPosition",
+			ApplyImpulsiveForceAtPosition,
+			"Apply impulsive force at a position"
 		)
 
 	EXPOSURE_CHAINTO(Ball)
