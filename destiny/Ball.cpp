@@ -41,7 +41,7 @@ ClientBall::ClientBall(IRoot *lockobj) :
     mCenterDist(0.0),
     mSurfaceDist(0.0),
 	mMaxAngle(0.25f),
-	mMaxAngularVelocity(0.5f * D3DX_PI),
+	mMaxAngularVelocity(0.5f * float( _PI_ )),
 	mInvInertiaTensor(-1.0),
 	mCurrentVelocityInfluence(1.0f),
     mLastTick(-1),
