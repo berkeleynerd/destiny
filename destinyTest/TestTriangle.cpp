@@ -76,6 +76,18 @@ TEST(GetClosestPoint, PointAboveTriangle)
 	ASSERT_EQ(expected, actual);
 }
 
+TEST(GetClosestPoint, PointBelowTriangle)
+{
+	Vector3d a(0.0, 1.0, 0.0);
+	Vector3d b(1.0, 2.0, 0.0);
+	Vector3d c(2.0, 1.0, 0.0);
+	Triangle t(a, b, c);
+	Vector3d p(1.0, 1.5, -1.0);
+	Vector3d expected(1.0, 1.5, 0.0);
+	Vector3d actual = t.GetClosestPoint(p);
+	ASSERT_EQ(expected, actual);
+}
+
 TEST(GetClosestPoint, PointLeftOfTriangle)
 {
 	Vector3d a(10.0, 10.0, 0.0);

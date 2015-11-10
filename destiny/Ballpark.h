@@ -847,6 +847,7 @@ private:
             double &warpSpeed
             );
 	PyObject* GetBallIdsInRange(PyObject* args, bool includeDist);
+	PyObject* GetBallIdsInRangeOfTriangle(PyObject* args);
 	// Calculates the avoidance contribution to the dynamical state
 	void Gradient(Ball *b);
 	void Potential(Ball *me,Ball *other, int recurionsDepth=0);

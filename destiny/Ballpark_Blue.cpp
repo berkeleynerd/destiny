@@ -373,6 +373,12 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 		MAP_METHOD_AS_METHOD
 		(
+		    "GetBallIdsInRangeOfTriangle",
+			GetBallIdsInRangeOfTriangle,
+			"Gets the balls that are within the given range of the triangle specified by the balls position and two vectors that point from the center of the ball to the other two points in the triangle."
+		)
+		MAP_METHOD_AS_METHOD
+		(
 			"ClearAll",
 			PyClearAll,
 			"no comment"

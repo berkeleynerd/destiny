@@ -4,6 +4,7 @@
 #include "Ball.h"
 #include "Box.h"
 #include "Vector3.h"
+#include "Triangle.h"
 #define ABS(X) ((X)<0.0?-(X):(X))
 
 
@@ -1349,6 +1350,98 @@ PyObject* Ballpark::GetBallIdsInRange(
 			}
 		}
 
+	}
+
+	Py_DECREF(newBubbleId);
+
+	return ret;
+}
+
+PyObject* Ballpark::GetBallIdsInRangeOfTriangle(
+	PyObject* args
+	)
+{
+	ID srcId;
+	Vector3d u;
+	Vector3d v;
+	double range;
+
+	if (!PyArg_ParseTuple(args, "Lddddddd",
+		&srcId,
+		&u.x,
+		&u.y,
+		&u.z,
+		&v.x,
+		&v.y,
+		&v.z,
+		&range
+		))
+	{
+		return 0;
+	}
+
+	Ball *otherBall=0;
+	Ball *refBall = mBalls[srcId];
+	if(!refBall)
+	{
+		PyErr_Format(PyExc_RuntimeError, "GetBallIdsInRangeOfTriangle: Ball %" CCP_INT64_FORMAT " not in park", srcId);
+		return 0;
+	}
+
+	const Vector3d center = refBall->mNewPos;
+	const long bubbleID = refBall->mNewBubble;
+
+	if(!bubbles)
+	{
+		PyErr_Format(PyExc_RuntimeError, "GetBallIdsInRangeOfTriangle: bubbles not initialized yet");
+		return 0;
+	}
+
+	PyObject* ret = PyList_New(0);
+
+	// If we don't have a bubble at the current location, return an empty list
+	if(bubbleID==-1)
+		return ret;
+
+	Triangle t(center, center + u, center + v);
+	// Cycle over all balls in same bubble
+	PyObject *newBubbleId = PyInt_FromLong(bubbleID);
+	PyObject *theBubble = PyDict_GetItem(bubbles, newBubbleId);
+
+	if(theBubble)
+	{
+		// Cycle over all balls
+		Py_ssize_t pos = 0;
+		PyObject *key;
+		PyObject *value;
+		while (PyDict_Next(theBubble, &pos, &key, &value))
+		{
+			ID ballID = PyLong_AsLongLong(key);
+			if (ballID == -1 && PyErr_Occurred()) {
+				//bogus ball?  continue.
+				PyErr_Clear();
+				continue;
+			}
+
+			otherBall = mBalls[ballID];
+			if(!otherBall)
+				continue;
+
+			if(otherBall->isMoribund)
+				continue;
+
+			if(otherBall==refBall)
+				continue;
+			
+			Vector3d closestPoint = t.GetClosestPoint(otherBall->mNewPos);
+			double rangeChecked = (otherBall->mNewPos - closestPoint).LengthSq();
+			if (rangeChecked <= (range + otherBall->mRadius) * (range + otherBall->mRadius))
+			{
+				PyObject *val = PyLong_FromLongLong(otherBall->mId);
+				PyList_Append(ret,val);
+				Py_DECREF(val);
+			}
+		}
 	}
 
 	Py_DECREF(newBubbleId);
