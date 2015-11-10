@@ -81,6 +81,70 @@ class TestGetBallIdsAndDistInRange(helpers.BallparkTestCase):
         self.assertListEqual(result, [(0.0, ball.id), (0.0, other.id)])
 
 
+class TestGetBallIdInRangeOfTriangle(helpers.BallparkTestCase):
+    def test_no_other_ball(self):
+        ball, = self.add_balls(1)
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInRangeOfTriangle(
+            ball.id, 
+            10.0, 0.0, 0.0,
+            0.0, 10.0, 0.0,
+            5.0)
+        self.assertListEqual(result, [])
+    
+    def test_other_ball_in_triangle(self):
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.x += 5.0
+        other.y += 5.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInRangeOfTriangle(
+            ball.id, 
+            10.0, 0.0, 0.0,
+            0.0, 10.0, 0.0,
+            5.0)
+        self.assertListEqual(result, [other.id])
+    
+    def test_other_ball_out_of_range(self):
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.x += 10.0
+        other.y += 10.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInRangeOfTriangle(
+            ball.id, 
+            10.0, 0.0, 0.0,
+            0.0, 10.0, 0.0,
+            5.0)
+        self.assertListEqual(result, [])
+    
+    def test_other_ball_on_edge_of_range(self):
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.x += 16.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInRangeOfTriangle(
+            ball.id, 
+            10.0, 0.0, 0.0,
+            0.0, 10.0, 0.0,
+            5.0)
+        self.assertListEqual(result, [other.id])
+    
+    def test_multiple_balls_in_triangle(self):
+        ball, a, b = self.add_balls(3)
+        a.radius = 1.0
+        b.radius = 1.0
+        a.x += 5.0
+        b.y += 5.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInRangeOfTriangle(
+            ball.id, 
+            10.0, 0.0, 0.0,
+            0.0, 10.0, 0.0,
+            5.0)
+        self.assertEqual(set(result), set([a.id, b.id]))
+
+
 class TestBallBox(helpers.BallparkTestCase):
     def test_box_zero_zero_zero(self):
         ball, = self.add_balls(1)
