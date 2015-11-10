@@ -53,7 +53,7 @@ ClientBall::ClientBall(IRoot *lockobj) :
     //CCP_LOG_CH( s_ch,"New Ball:%d. Total is: %d\n",int(this),++ballCount);
     mBoxList = PyList_New(27);
     mLastRot = Quaternion(0.0f,0.0f,0.0f,-1.0f);
-	mImpactRotation = Quaternion(0.0f,0.0f,0.0f, 1.0f);
+	mImpactRotation = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 	mImpactVelocity = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 	mImpactVelocityGoal = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 };
@@ -1680,6 +1680,9 @@ PyObject* ClientBall::PyGetPartitionBoxes(PyObject* args)
     return ret;
 }
 
+//---------------------------------------------------------------------------------------
+// Physical impact methods
+//---------------------------------------------------------------------------------------
 void ClientBall::ApplyImpulsiveForceAtPosition( const Vector3 &impactForce, const Vector3 &pos )
 {
 	if( mInvInertiaTensor < 0.0f )
@@ -1700,11 +1703,8 @@ void ClientBall::ApplyImpulsiveForceAtPosition( const Vector3 &impactForce, cons
 	// Early exit
 	if( angularVelocity < mMinimumAngularVelocity )
 	{
-		CCP_LOGNOTICE("ClientBall Impact: Angular velocity goal too low %.6f. Exiting early.",  angularVelocity);
 		return;
 	}
-
-	CCP_LOGNOTICE("ClientBall Impact: Angular velocity goal: %.6f. Processing impact.",  angularVelocity);
 
 	D3DXQuaternionRotationAxis( &newVelocityAroundAxis, &axis, std::min( angularVelocity, mMaxAngularVelocity) );
 	

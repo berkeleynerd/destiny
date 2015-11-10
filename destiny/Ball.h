@@ -455,7 +455,6 @@ public:
 
 	void DispatchPartition();
 
-	float GetImpactRotation( float dt );
 	void ProcessImpact( float dt );
 	void ApplyImpulsiveForceAtPosition( const Vector3 &impulsiveForce, const Vector3 &pos );
 	void ApplyAngularVelocityToRotation( float dt );
