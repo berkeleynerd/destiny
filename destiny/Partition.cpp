@@ -16,7 +16,7 @@ Partition::NearbyCriteria collisionCase1(1), collisionCase3(3);
 //---------------------------------------------------------------------------------------
 Partition::Partition():
     mNumberOfLevels(8),
-    mGridUnit(15.0) // base unit of small-scale partition
+    mGridUnit(480.0) // base unit of small-scale partition
 {
 	
     // create as many grids as there are scales in the partition
@@ -30,7 +30,7 @@ Partition::Partition():
         width = bigbox/(1 << 2*i);
         mLevelWidth.push_back( width );
         grid = 1;
-        grid = grid << (2*i - 2*mNumberOfLevels + 44);
+        grid = grid << (2*i - 2*mNumberOfLevels + 39);
 
         // Note that the following is pretty much designed for the 15.0 meter level to scan a 200 AU sphere
         mLevelGrid.push_back( grid );
