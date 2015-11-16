@@ -7,6 +7,7 @@ import destiny
 MAX_FORMATION_SLOTS_FOR_BALLS = 16
 TEN_BILLION = 10000000000.0
 AU = .1495978707e12
+MIN_BOX_SIZE = 480.0
 
 FORMATIONS = (
 
@@ -236,7 +237,7 @@ def reinterpret_double_as_int(d):
 
 def get_level_width(level_no):
     no_levels = 8
-    base_width = 15.0
+    base_width = MIN_BOX_SIZE
     if level_no >= no_levels:
         return None
     return base_width * 4 ** (no_levels - level_no - 1)
