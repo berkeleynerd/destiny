@@ -1736,10 +1736,9 @@ void ClientBall::ProcessImpact(float dt)
 	{
 		// Move the current impact velocity to the goal
 		float deterioration = mSpeedModifier * mInvInertiaTensor * (float)mMass * (dt * dt) * mMaxVel;
-		deterioration = std::min( 0.1f, std::max( deterioration, 0.002f ) ); // limit the deterioration
+		deterioration = std::min( 0.08f, std::max( deterioration, 0.002f ) ); // limit the deterioration
 		mCurrentVelocityInfluence = std::max( 0.0f, mCurrentVelocityInfluence - deterioration );
-		float influence = mCurrentVelocityInfluence * mCurrentVelocityInfluence;
-
+		float influence = sin( D3DX_PI/2.0f * ( mCurrentVelocityInfluence - 1.0f ) ) + 1.0f;
 		D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocity ), 
 			reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal ), 
 			reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityAtImpact ), 
@@ -1752,18 +1751,18 @@ void ClientBall::ProcessImpact(float dt)
 		mRotationAtVelocityPeak = mImpactRotation;
 		mImpactRotationDeterioration = 1.0f;
 	}
-
-	// Counter rotation
-	float deterioration = mInvInertiaTensor * (float)mMass * (dt * dt) * mMaxVel;
-	deterioration = std::min(dt, std::max(deterioration, 0.002f)); // limit the deterioration
+	if( mCurrentVelocityInfluence == 0.0f ) {
+		// Counter rotation
+		float deterioration = mInvInertiaTensor * (float)mMass * (dt * dt) * mMaxVel;
+		deterioration = std::min(0.08f, std::max(deterioration, 0.002f)); // limit the deterioration
 	
-	mImpactRotationDeterioration = std::max(0.0f, mImpactRotationDeterioration - deterioration);
-	float influence = mImpactRotationDeterioration * mImpactRotationDeterioration;
-
-	D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mVelocityGoalAtVelocityPeak ), influence );	
-	D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocity ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mVelocityAtVelocityPeak ), influence );
-	D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mRotationAtVelocityPeak ), influence );
-	
+		mImpactRotationDeterioration = std::max( 0.0f, mImpactRotationDeterioration - deterioration );
+		float influence = ( cos( D3DX_PI * ( 0.9f * mImpactRotationDeterioration - 1.0f ) ) + 1.0f ) * 0.5f;
+		
+		D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocityGoal ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mVelocityGoalAtVelocityPeak ), influence );	
+		D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactVelocity ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mVelocityAtVelocityPeak ), influence );
+		D3DXQuaternionSlerp( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), &qi, reinterpret_cast<D3DXQUATERNION*>( &mRotationAtVelocityPeak ), influence );
+	}
 	mProcessingImpact = mImpactRotationDeterioration != 0.0f;
 
 	D3DXQuaternionNormalize( reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ), reinterpret_cast<D3DXQUATERNION*>( &mImpactRotation ) );
