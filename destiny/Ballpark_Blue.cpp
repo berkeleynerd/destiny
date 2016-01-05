@@ -379,6 +379,12 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 		MAP_METHOD_AS_METHOD
 		(
+		    "GetBallIdsInCapsule",
+			GetBallIdsInCapsule,
+			"Gets the balls that are within the capsule specified by the balls position, a vector that points from the center of the ball to the other end of the capsule, and a radius."
+		)
+		MAP_METHOD_AS_METHOD
+		(
 			"ClearAll",
 			PyClearAll,
 			"no comment"

@@ -1450,6 +1450,101 @@ PyObject* Ballpark::GetBallIdsInRangeOfTriangle(
 }
 
 
+PyObject* Ballpark::GetBallIdsInCapsule(
+	PyObject* args
+	)
+{
+	ID srcId;
+	Vector3d v;
+	double radius;
+
+	if (!PyArg_ParseTuple(args, "Ldddd",
+		&srcId,
+		&v.x,
+		&v.y,
+		&v.z,
+		&radius
+		))
+	{
+		return 0;
+	}
+
+	Ball *otherBall=0;
+	Ball *refBall = mBalls[srcId];
+	if(!refBall)
+	{
+		PyErr_Format(PyExc_RuntimeError, "GetBallIdsInCapsule: Ball %" CCP_INT64_FORMAT " not in park", srcId);
+		return 0;
+	}
+
+	const Vector3d center = refBall->mNewPos;
+	const long bubbleID = refBall->mNewBubble;
+
+	if(!bubbles)
+	{
+		PyErr_Format(PyExc_RuntimeError, "GetBallIdsInCapsule: bubbles not initialized yet");
+		return 0;
+	}
+
+	PyObject* ret = PyList_New(0);
+
+	// If we don't have a bubble at the current location, return an empty list
+	if(bubbleID==-1)
+		return ret;
+
+	
+	// Cycle over all balls in same bubble
+	PyObject *newBubbleId = PyInt_FromLong(bubbleID);
+	PyObject *theBubble = PyDict_GetItem(bubbles, newBubbleId);
+
+	if(theBubble)
+	{
+		// Cycle over all balls
+		Py_ssize_t pos = 0;
+		PyObject *key;
+		PyObject *value;
+		while (PyDict_Next(theBubble, &pos, &key, &value))
+		{
+			ID ballID = PyLong_AsLongLong(key);
+			if (ballID == -1 && PyErr_Occurred()) {
+				//bogus ball?  continue.
+				PyErr_Clear();
+				continue;
+			}
+
+			otherBall = mBalls[ballID];
+			if(!otherBall)
+				continue;
+
+			if(otherBall->isMoribund)
+				continue;
+
+			if(otherBall==refBall)
+				continue;
+			
+			// Calculate closest point to the other ball on the line segment defined by the origin
+			// ball and the vector
+			Vector3d toOther = otherBall->mNewPos - center;
+			double componentProduct = toOther * v;
+			componentProduct = std::max(std::min(componentProduct, 1.0), 0.0);
+			Vector3d closestPoint = center + componentProduct * v;
+
+			double rangeChecked = (otherBall->mNewPos - closestPoint).LengthSq();
+			if (rangeChecked <= (radius + otherBall->mRadius) * (radius + otherBall->mRadius))
+			{
+				PyObject *val = PyLong_FromLongLong(otherBall->mId);
+				PyList_Append(ret,val);
+				Py_DECREF(val);
+			}
+		}
+	}
+
+	Py_DECREF(newBubbleId);
+
+	return ret;
+}
+
+
 PyObject* Ballpark::PyGetCenterDist(
     PyObject* args
 	)
