@@ -146,6 +146,64 @@ class TestGetBallIdInRangeOfTriangle(helpers.BallparkTestCase):
         self.assertEqual(set(result), set([a.id, b.id]))
 
 
+class TestGetBallIdsInCapsule(helpers.BallparkTestCase):
+    def test_no_other_ball(self):
+        ball, = self.add_balls(1)
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInCapsule(
+            ball.id,
+            0.0, 0.0, 10.0,
+            5.0)
+        self.assertListEqual(result, [])
+
+    def test_other_ball_in_capsule(self):
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.z += 5.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInCapsule(
+            ball.id,
+            0.0, 0.0, 10.0,
+            5.0)
+        self.assertListEqual(result, [other.id])
+
+    def test_other_ball_not_in_capsule(self):
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.x += 10.0
+        other.y += 10.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInCapsule(
+            ball.id,
+            0.0, 0.0, 10.0,
+            5.0)
+        self.assertListEqual(result, [])
+
+    def test_other_ball_on_edge_of_capsule(self):
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.z += 16.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInCapsule(
+            ball.id,
+            0.0, 0.0, 10.0,
+            5.0)
+        self.assertListEqual(result, [other.id])
+
+    def test_multiple_balls_in_capsule(self):
+        ball, a, b = self.add_balls(3)
+        a.radius = 1.0
+        b.radius = 1.0
+        a.z += 0.0
+        b.z += 10.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInCapsule(
+            ball.id,
+            0.0, 0.0, 10.0,
+            5.0)
+        self.assertEqual(set(result), set([a.id, b.id]))
+
+
 class TestBallBox(helpers.BallparkTestCase):
     def test_box_zero_zero_zero(self):
         ball, = self.add_balls(1)
