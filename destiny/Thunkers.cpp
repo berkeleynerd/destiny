@@ -1308,28 +1308,12 @@ PyObject* Ballpark::GetBallIdsInRange(
 		Py_ssize_t pos = 0;
 		PyObject *key;
 		PyObject *value;
-		while (PyDict_Next(theBubble, &pos, &key, &value))
+		while (GetNextValidBallInBubble(theBubble, pos, key, value, otherBall, refBall))
 		{
-			ID ballID = PyLong_AsLongLong(key);
-			if (ballID == -1 && PyErr_Occurred()) {
-				//bogus ball?  continue.
-				PyErr_Clear();
+			if( otherBall->isCloaked && !includeCloaked )
+			{
 				continue;
 			}
-
-			otherBall = mBalls[ballID];
-			if(!otherBall)
-				continue;
-
-			if(otherBall->isMoribund)
-				continue; // don't handle dead balls
-
-			if(useBall && otherBall==refBall)
-				continue;
-
-			if(otherBall->isCloaked && !includeCloaked)
-				continue;
-
 			double rangeChecked = (otherBall->mNewPos - center).LengthSq();
 			if (rangeChecked <= (range + otherBall->mRadius) * (range + otherBall->mRadius))
 			{
@@ -1380,59 +1364,23 @@ PyObject* Ballpark::GetBallIdsInRangeOfTriangle(
 		return 0;
 	}
 
-	Ball *otherBall=0;
+	Ball *otherBall = NULL;
 	Ball *refBall = mBalls[srcId];
-	if(!refBall)
-	{
-		PyErr_Format(PyExc_RuntimeError, "GetBallIdsInRangeOfTriangle: Ball %" CCP_INT64_FORMAT " not in park", srcId);
-		return 0;
-	}
-
-	const Vector3d center = refBall->mNewPos;
-	const long bubbleID = refBall->mNewBubble;
-
-	if(!bubbles)
-	{
-		PyErr_Format(PyExc_RuntimeError, "GetBallIdsInRangeOfTriangle: bubbles not initialized yet");
-		return 0;
-	}
-
+	PyObject *theBubble = GetActiveBubbleForBall(refBall);
 	PyObject* ret = PyList_New(0);
-
-	// If we don't have a bubble at the current location, return an empty list
-	if(bubbleID==-1)
-		return ret;
-
-	Triangle t(center, center + u, center + v);
-	// Cycle over all balls in same bubble
-	PyObject *newBubbleId = PyInt_FromLong(bubbleID);
-	PyObject *theBubble = PyDict_GetItem(bubbles, newBubbleId);
-
+	const Vector3d center = refBall->mNewPos;
+	
 	if(theBubble)
 	{
 		// Cycle over all balls
 		Py_ssize_t pos = 0;
 		PyObject *key;
 		PyObject *value;
-		while (PyDict_Next(theBubble, &pos, &key, &value))
-		{
-			ID ballID = PyLong_AsLongLong(key);
-			if (ballID == -1 && PyErr_Occurred()) {
-				//bogus ball?  continue.
-				PyErr_Clear();
-				continue;
-			}
 
-			otherBall = mBalls[ballID];
-			if(!otherBall)
-				continue;
+		Triangle t(center, center + u, center + v);
 
-			if(otherBall->isMoribund)
-				continue;
-
-			if(otherBall==refBall)
-				continue;
-			
+		while (GetNextValidBallInBubble(theBubble, pos, key, value, otherBall, refBall))
+		{	
 			Vector3d closestPoint = t.GetClosestPoint(otherBall->mNewPos);
 			double rangeChecked = (otherBall->mNewPos - closestPoint).LengthSq();
 			if (rangeChecked <= (range + otherBall->mRadius) * (range + otherBall->mRadius))
@@ -1444,11 +1392,86 @@ PyObject* Ballpark::GetBallIdsInRangeOfTriangle(
 		}
 	}
 
-	Py_DECREF(newBubbleId);
-
 	return ret;
 }
 
+PyObject* Ballpark::GetActiveBubbleForBall(const Ball* ball)
+{
+	if(!ball)
+	{
+		PyErr_Format(PyExc_RuntimeError, "GetActiveBubbleForBall: Ball %" CCP_INT64_FORMAT " not in park", ball->mId);
+		return 0;
+	}
+
+	const long bubbleID = ball->mNewBubble;
+
+	if(!bubbles)
+	{
+		PyErr_Format(PyExc_RuntimeError, "GetActiveBubbleForBall: bubbles not initialized yet");
+		return 0;
+	}
+
+	// If we don't have a bubble at the current location, return an empty dict
+	if(bubbleID==-1)
+	{
+		return PyDict_New();
+	}
+	
+	PyObject *newBubbleId = PyInt_FromLong(bubbleID);
+	PyObject *theBubble = PyDict_GetItem(bubbles, newBubbleId);
+	Py_DECREF(newBubbleId);
+	return theBubble;
+}
+
+bool Ballpark::BallIsValidForIteration(ID ballID, Ball*& ball, const Ball* refBall)
+{
+	if (ballID == -1 && PyErr_Occurred()) 
+	{
+		//bogus ball?  continue.
+		PyErr_Clear();
+		return false;
+	}
+
+	ball = mBalls[ballID];
+	if(!ball)
+	{
+		return false;
+	}
+
+	if(ball->isMoribund)
+	{
+		return false;
+	}
+
+	if(ball==refBall)
+	{
+		return false;
+	}
+	
+	return true;
+}
+
+int Ballpark::GetNextValidBallInBubble(PyObject* theBubble, Py_ssize_t& pos, PyObject*& key, PyObject*& value, Ball*& otherBall, const Ball* refBall)
+{
+	int validBallIndexInDict = 0;
+	while(!validBallIndexInDict)
+	{
+		validBallIndexInDict = PyDict_Next(theBubble, &pos, &key, &value);
+		if(validBallIndexInDict)
+		{
+			ID ballID = PyLong_AsLongLong(key);
+			if(!BallIsValidForIteration(ballID, otherBall, refBall))
+			{
+				validBallIndexInDict = 0;
+			}
+		}
+		else
+		{
+			return validBallIndexInDict;
+		}
+	}
+	return validBallIndexInDict;
+}
 
 PyObject* Ballpark::GetBallIdsInCapsule(
 	PyObject* args
@@ -1468,60 +1491,22 @@ PyObject* Ballpark::GetBallIdsInCapsule(
 	{
 		return 0;
 	}
-
-	Ball *otherBall=0;
+	Ball *otherBall = NULL;
 	Ball *refBall = mBalls[srcId];
-	if(!refBall)
-	{
-		PyErr_Format(PyExc_RuntimeError, "GetBallIdsInCapsule: Ball %" CCP_INT64_FORMAT " not in park", srcId);
-		return 0;
-	}
 
-	const Vector3d center = refBall->mNewPos;
-	const long bubbleID = refBall->mNewBubble;
-
-	if(!bubbles)
-	{
-		PyErr_Format(PyExc_RuntimeError, "GetBallIdsInCapsule: bubbles not initialized yet");
-		return 0;
-	}
-
+	PyObject *theBubble = GetActiveBubbleForBall(refBall);
 	PyObject* ret = PyList_New(0);
-
-	// If we don't have a bubble at the current location, return an empty list
-	if(bubbleID==-1)
-		return ret;
-
+	const Vector3d center = refBall->mNewPos;
 	
-	// Cycle over all balls in same bubble
-	PyObject *newBubbleId = PyInt_FromLong(bubbleID);
-	PyObject *theBubble = PyDict_GetItem(bubbles, newBubbleId);
-
 	if(theBubble)
 	{
 		// Cycle over all balls
 		Py_ssize_t pos = 0;
 		PyObject *key;
 		PyObject *value;
-		while (PyDict_Next(theBubble, &pos, &key, &value))
-		{
-			ID ballID = PyLong_AsLongLong(key);
-			if (ballID == -1 && PyErr_Occurred()) {
-				//bogus ball?  continue.
-				PyErr_Clear();
-				continue;
-			}
 
-			otherBall = mBalls[ballID];
-			if(!otherBall)
-				continue;
-
-			if(otherBall->isMoribund)
-				continue;
-
-			if(otherBall==refBall)
-				continue;
-			
+		while (GetNextValidBallInBubble(theBubble, pos, key, value, otherBall, refBall))
+		{	
 			// Calculate closest point to the other ball on the line segment defined by the origin
 			// ball and the vector
 			Vector3d toOther = otherBall->mNewPos - center;
@@ -1539,11 +1524,8 @@ PyObject* Ballpark::GetBallIdsInCapsule(
 		}
 	}
 
-	Py_DECREF(newBubbleId);
-
 	return ret;
 }
-
 
 PyObject* Ballpark::PyGetCenterDist(
     PyObject* args

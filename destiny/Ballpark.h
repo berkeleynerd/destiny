@@ -846,6 +846,9 @@ private:
             double &decelRate,
             double &warpSpeed
             );
+	bool BallIsValidForIteration(ID ballID, Ball*& ball, const Ball* refBall);
+	int GetNextValidBallInBubble(PyObject* theBubble, Py_ssize_t& pos, PyObject*& key, PyObject*& value, Ball*& otherBall, const Ball* refBall);
+	PyObject* GetActiveBubbleForBall(const Ball* ball);
 	PyObject* GetBallIdsInRange(PyObject* args, bool includeDist);
 	PyObject* GetBallIdsInRangeOfTriangle(PyObject* args);
 	PyObject* GetBallIdsInCapsule(PyObject* args);
