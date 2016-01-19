@@ -1395,6 +1395,94 @@ PyObject* Ballpark::GetBallIdsInRangeOfTriangle(
 	return ret;
 }
 
+
+PyObject* Ballpark::GetBallIdsInCone(
+	PyObject* args
+	)
+{
+	ID srcId;
+	Vector3d v;
+	double angle;
+
+	if (!PyArg_ParseTuple(args, "Ldddd",
+		&srcId,
+		&v.x,
+		&v.y,
+		&v.z,
+		&angle
+		))
+	{
+		return 0;
+	}
+
+	Ball *otherBall = NULL;
+	Ball *refBall = mBalls[srcId];
+	PyObject *theBubble = GetActiveBubbleForBall(refBall);
+	PyObject* ret = PyList_New(0);
+	const Vector3d center = refBall->mNewPos;
+	double coneHeight = v.Length();
+	v.Normalize();
+	
+	if(theBubble)
+	{
+		// Cycle over all balls
+		Py_ssize_t pos = 0;
+		PyObject *key;
+		PyObject *value;
+
+		Vector3d u;
+		Vector3d d;
+		
+		double sinAngle = sin(angle);
+		double cosAngle = cos(angle);
+		double sinReciprocal;
+		if( sinAngle > 0.0 )
+		{
+			sinReciprocal = 1.0 / sinAngle;
+		}
+		else
+		{
+			sinReciprocal = 0;
+		}
+		double sinSq = sinAngle * sinAngle;
+		double cosSq = cosAngle * cosAngle;
+
+		while (GetNextValidBallInBubble(theBubble, pos, key, value, otherBall, refBall))
+		{	
+			double ballRadSq = otherBall->mRadius * otherBall->mRadius;
+			double maxDist = (coneHeight + otherBall->mRadius);
+			if( maxDist*maxDist < (refBall->mNewPos - otherBall->mNewPos).LengthSq() ) // The cone has a rounded bottom, not a flat one.
+			{
+				continue; // We are too far away from the apex (The cone is not big enough to reach us).
+			}
+
+			// Check if we are inside the infinite cone defined by the source vector, normalized direction and angle.
+			// Reference documentation on the algorithm for the curious: http://www.geometrictools.com/Documentation/IntersectionSphereCone.pdf
+			u = refBall->mNewPos - v * (otherBall->mRadius * sinReciprocal);
+			d = otherBall->mNewPos - u;
+			double dSq = d*d;
+			double e = v*d;
+			if( e>0 && e*e > dSq * cosSq)
+			{
+				d = otherBall->mNewPos - refBall->mNewPos;
+				dSq = d*d;
+				e = -(v*d);
+				if( e>0 &&  e*e >= dSq * sinSq )
+				{
+					if( dSq > ballRadSq )
+					{
+						continue;
+					}
+				}
+				PyObject *val = PyLong_FromLongLong(otherBall->mId);
+				PyList_Append(ret,val);
+				Py_DECREF(val);
+			}
+		}
+	}
+	return ret;
+}
+
 PyObject* Ballpark::GetActiveBubbleForBall(const Ball* ball)
 {
 	if(!ball)

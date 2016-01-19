@@ -385,6 +385,12 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 		MAP_METHOD_AS_METHOD
 		(
+		    "GetBallIdsInCone",
+			GetBallIdsInCone,
+			"Gets the balls that are within the spherical cone specified by the balls position, a vector that points from the center of the ball to the far end of the cone, and the angle from that vector that the cone should cover, in radians."
+		)
+		MAP_METHOD_AS_METHOD
+		(
 			"ClearAll",
 			PyClearAll,
 			"no comment"

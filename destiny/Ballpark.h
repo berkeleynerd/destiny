@@ -851,6 +851,7 @@ private:
 	PyObject* GetActiveBubbleForBall(const Ball* ball);
 	PyObject* GetBallIdsInRange(PyObject* args, bool includeDist);
 	PyObject* GetBallIdsInRangeOfTriangle(PyObject* args);
+	PyObject* GetBallIdsInCone(PyObject* args);
 	PyObject* GetBallIdsInCapsule(PyObject* args);
 	// Calculates the avoidance contribution to the dynamical state
 	void Gradient(Ball *b);
