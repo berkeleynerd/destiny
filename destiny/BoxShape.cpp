@@ -136,54 +136,69 @@ static BoxSide CONNECTED_SIDES[8][3] = {
 bool BoxShape::CollideWithSphere(Vector3d sphere_position, double sphere_radius, Vector3d sphere_velocity, Vector3d& collision_point, double& collision_time, Vector3d& normal)
 {
 	BoxCorner closest_corner = GetClosestCornerToPoint(sphere_position);
-	bool halfspaces[3];
+	BoxSide collision_side;
+	bool could_already_be_in_collision = true;
 	double shortest_distance = -1.0;
 	int closest_halfspace;
-	for(int i = 0; i < 3; ++i)
+	
+	for( int i = 0; i < 3; ++i )
 	{
-		BoxSide collision_side = CONNECTED_SIDES[closest_corner][i];
+		collision_side = CONNECTED_SIDES[closest_corner][i];
+
+		// Check which sides of the plane we are on to see if we might already be inside the box
+		// Note that even if we intersect all three planes we might still be at a corner and still not be in collision.
+		Vector3d colliding_point_on_sphere = GetPointOnBallThatFirstIntersectsPlane(sphere_position, sphere_radius, m_sides[collision_side].m_normal);
+		Vector3d from_sphere = m_sides[collision_side].m_a - colliding_point_on_sphere;
+		double halfspace_distance = (m_sides[collision_side].m_normal * from_sphere);
+		if( halfspace_distance >= 0.0 )
+		{
+			if( halfspace_distance < shortest_distance || shortest_distance == -1.0 )
+			{
+				shortest_distance = halfspace_distance;
+				closest_halfspace = collision_side;
+			}
+		}
+		else
+		{
+			could_already_be_in_collision = false;
+			break;
+		}
+
+	}
+	if( could_already_be_in_collision )
+	{
+		Vector3d cp = GetClosestPointOnBox(sphere_position);
+		normal = (sphere_position - cp);
+		double normal_len = normal.Length();
+		if( normal_len < sphere_radius )
+		{
+			// Some part of the sphere is inside the box
+			if( normal_len == 0.0 )
+			{
+				// Our center is inside the box
+				normal = m_sides[closest_halfspace].m_normal * shortest_distance;
+			}
+			else
+			{
+				// Our center must be outside the box
+				double extrication_distance = std::abs(sphere_radius - normal_len);
+				normal.Normalize();
+				normal = normal * extrication_distance;
+			}
+			collision_time = 0.0;
+			return true;
+		}
+	}
+	
+	// Check for collision with the sides.
+	for( int i = 0; i < 3; ++i )
+	{
+		collision_side = CONNECTED_SIDES[closest_corner][i];
 		bool collision_exists = m_sides[collision_side].CollideWithSphere(sphere_position, sphere_radius, sphere_velocity, collision_point, collision_time, normal);
 		if( collision_exists )
 		{
 			return true;
 		}
-		
-		// Check which sides of the plane we are on to see if we are already inside the box
-		Vector3d colliding_point_on_sphere = GetPointOnBallThatFirstIntersectsPlane(sphere_position, sphere_radius, m_sides[collision_side].m_normal);
-		Vector3d to_sphere = colliding_point_on_sphere - m_sides[collision_side].m_a;
-		double halfspace_distance = (m_sides[collision_side].m_normal * to_sphere);
-		halfspaces[i] = (halfspace_distance < 0.0);
-		if ( halfspace_distance > shortest_distance || shortest_distance == -1.0 )
-		{
-			shortest_distance = halfspace_distance;
-			closest_halfspace = collision_side;
-		}
-
-	}
-	if(halfspaces[0] && halfspaces[1] && halfspaces[2])
-	{
-		Vector3d cp = GetClosestPointOnBox(sphere_position);
-		{
-			normal = (sphere_position - cp);
-			if ( normal.LengthSq() >= sphere_radius*sphere_radius )
-			{
-				// We are at a corner
-				return false;
-			}
-		}
-		// We are inside the box
-		double extrication_distance = std::abs(sphere_radius - normal.Length());
-		if( extrication_distance >= sphere_radius )
-		{
-			normal = m_sides[closest_halfspace].m_normal * shortest_distance;
-		}
-		else
-		{
-			normal.Normalize();
-			normal *= extrication_distance;
-		}
-		collision_time = 0.0;
-		return true;
 	}
 	return false;
 }
