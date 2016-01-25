@@ -1,6 +1,7 @@
 import destiny
 from destiny.test import helpers
 from destiny.test.helpers import MIN_BOX_SIZE
+import math
 
 class TestInitialize_bubbles(helpers.BallparkTestCase):
     def test_can_initialize_bubbles(self):
@@ -202,6 +203,55 @@ class TestGetBallIdsInCapsule(helpers.BallparkTestCase):
             0.0, 0.0, 10.0,
             5.0)
         self.assertEqual(set(result), set([a.id, b.id]))
+
+
+class TestGetBallIdsInCone(helpers.BallparkTestCase):
+    def setUp(self):
+        super(TestGetBallIdsInCone, self).setUp()
+        self.ball, self.other = self.add_balls(2)
+
+    def _get_colliding_balls(self):
+        self.park.InitializeBubbles()
+        return self.park.GetBallIdsInCone(
+            self.ball.id,
+            0.0, 0.0, 10.0,
+            math.radians(45.0))
+
+    def test_no_other_ball(self):
+        result = self._get_colliding_balls()
+        self.assertListEqual(result, [])
+
+    def test_ball_in_cone(self):
+        self.other.radius = 1.0
+        self.other.z += 5.0
+        result = self._get_colliding_balls()
+        self.assertListEqual(result, [self.other.id])
+
+    def test_ball_too_far_away(self):
+        self.other.radius = 1.0
+        self.other.z += 12.0
+        result = self._get_colliding_balls()
+        self.assertListEqual(result, [])
+
+    def test_ball_intersects_front_of_cone(self):
+        self.other.radius = 1.0
+        self.other.z += 11.0
+        result = self._get_colliding_balls()
+        self.assertListEqual(result, [self.other.id])
+
+    def test_ball_intersects_cone(self):
+        self.other.radius = 1.0
+        self.other.z += 5.0
+        self.other.x += 6.0
+        result = self._get_colliding_balls()
+        self.assertListEqual(result, [self.other.id])
+
+    def test_ball_does_not_intersect_cone(self):
+        self.other.radius = 1.0
+        self.other.z += 5.0
+        self.other.x += 7.0
+        result = self._get_colliding_balls()
+        self.assertListEqual(result, [])
 
 
 class TestBallBox(helpers.BallparkTestCase):
