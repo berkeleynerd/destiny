@@ -1561,6 +1561,35 @@ int Ballpark::GetNextValidBallInBubble(PyObject* theBubble, Py_ssize_t& pos, PyO
 	return validBallIndexInDict;
 }
 
+double GetSquaredDistanceFromClosestPointOnLineSegment(const Vector3d& a, const Vector3d& ab, const Vector3d& p)
+/*
+	A is the start point of the line segment AB
+	AB is the vector from A to B
+	P is the point for which we want to find the squared distance
+*/
+{
+	Vector3d ap = p - a;
+	double c1 = ap * ab;
+			
+	if(c1 <= 0)
+	{
+		// A is the closest point
+		return ap.LengthSq();
+	}
+	double c2 = ab * ab;
+	if( c2 <= c1 )
+	{
+		// B is the closest point
+		Vector3d b = a + ab;
+		return (p - b).LengthSq();
+	}
+	
+	// The closest point is between the ends of the line segment
+	double b = c1 / c2;
+	Vector3d closestPoint = a + b * ab;
+	return (closestPoint - p).LengthSq();
+}
+
 PyObject* Ballpark::GetBallIdsInCapsule(
 	PyObject* args
 	)
@@ -1585,7 +1614,7 @@ PyObject* Ballpark::GetBallIdsInCapsule(
 	PyObject *theBubble = GetActiveBubbleForBall(refBall);
 	PyObject* ret = PyList_New(0);
 	const Vector3d center = refBall->mNewPos;
-	
+
 	if(theBubble)
 	{
 		// Cycle over all balls
@@ -1595,15 +1624,9 @@ PyObject* Ballpark::GetBallIdsInCapsule(
 
 		while (GetNextValidBallInBubble(theBubble, pos, key, value, otherBall, refBall))
 		{	
-			// Calculate closest point to the other ball on the line segment defined by the origin
-			// ball and the vector
-			Vector3d toOther = otherBall->mNewPos - center;
-			double componentProduct = toOther * v;
-			componentProduct = std::max(std::min(componentProduct, 1.0), 0.0);
-			Vector3d closestPoint = center + componentProduct * v;
-
-			double rangeChecked = (otherBall->mNewPos - closestPoint).LengthSq();
-			if (rangeChecked <= (radius + otherBall->mRadius) * (radius + otherBall->mRadius))
+			double distanceSq = GetSquaredDistanceFromClosestPointOnLineSegment(center, v, otherBall->mNewPos);
+			double inflatedRadiusSq = (radius + otherBall->mRadius) * (radius + otherBall->mRadius);
+			if (distanceSq <= inflatedRadiusSq)
 			{
 				PyObject *val = PyLong_FromLongLong(otherBall->mId);
 				PyList_Append(ret,val);
