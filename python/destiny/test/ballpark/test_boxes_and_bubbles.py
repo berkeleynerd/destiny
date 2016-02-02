@@ -168,6 +168,30 @@ class TestGetBallIdsInCapsule(helpers.BallparkTestCase):
             5.0)
         self.assertListEqual(result, [other.id])
 
+    def test_other_ball_in_capsule_and_on_the_edge_of_one_side(self):
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.z += 5.0
+        other.x += 6.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInCapsule(
+            ball.id,
+            0.0, 0.0, 10.0,
+            5.0)
+        self.assertListEqual(result, [other.id])
+
+    def test_other_ball_not_in_capsule_too_far_from_the_edge_of_one_side(self):
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.z += 5.0
+        other.x += 7.0
+        self.park.InitializeBubbles()
+        result = self.park.GetBallIdsInCapsule(
+            ball.id,
+            0.0, 0.0, 10.0,
+            5.0)
+        self.assertListEqual(result, [])
+
     def test_other_ball_not_in_capsule(self):
         ball, other = self.add_balls(2)
         other.radius = 1.0
