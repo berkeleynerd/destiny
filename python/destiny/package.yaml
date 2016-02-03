@@ -4,3 +4,4 @@ testing:
   binaries:
     - DLL_BLUE
     - DLL_DESTINY
+  skipci: True
