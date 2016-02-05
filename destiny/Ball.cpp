@@ -1008,7 +1008,10 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
     if(mOldTime==mNewTime)
     {
         // No interpolation possible. Just return the newest value
-        CCP_LOG_CH( s_ch,"Time span zero in Ball:%I64d interpolation",  mId);
+		if(isFree)
+		{
+	        CCP_LOG_CH( s_ch,"Time span zero in Ball:%I64d interpolation",  mId);
+		}
         mLastPos = mNewPos;
         mPosUpdateTime = shiftedTime;
         *out = mLastPos;
