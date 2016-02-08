@@ -64,6 +64,9 @@ double WARP_FACTOR_TO_DECELERATION = 1.0 / 3000; // Higher value means shorter m
 // The acceleration:deceleration ratio approx follows the ratio of time spent acceleration vs time spent decelerating
 // ('Approx' is because the scaling isn't totally linear, but is reasonably close for the scales we use)
 
+// Used in ORBIT move-mode - Controls how quickly the rotational axis itself will rotate (rad/s)
+double ORBITAL_PRECESSION = 0.001;
+
 #ifndef _MSC_VER
 namespace
 {
@@ -862,35 +865,22 @@ Vector3d Ballpark::EvolveOrbit(Ball* ball, long currentTime)
 
     // This is the current distance between the two
     Vector3d toVector = (otherPos - ball->mNewPos);
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit toVector (%.14f,%.14f,%.14f)", currentTime, ball->mId, toVector.x, toVector.y, toVector.z);
     double dist = toVector.Length();
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit distance %.14f", currentTime, ball->mId, dist);
     // Make it unit
     toVector.Normalize();
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit toVector normalized (%.14f,%.14f,%.14f)", currentTime, ball->mId, toVector.x, toVector.y, toVector.z);
 
-    // This is (some) radial vector
-    double precession = 0.0;
-    if(r!=0.0)
-        precession = dt*0.01*cruiseVelocity/r;
-
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit precession %.14f", currentTime, ball->mId, precession);
-    double phi1 = currentTime*precession;
+    double phi1 = currentTime * ORBITAL_PRECESSION;
     // only use the last 16 bits of the mId
-    double phi2 = (ball->mId&0x000000000000ffff)+currentTime*precession*0.7;
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit phis  %.14f  %.14f", currentTime, ball->mId, phi1, phi2);
-    Vector3d radialVector = Vector3d(cos(phi1)*cos(phi2),sin(phi2),sin(phi1)*cos(phi2));
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit original radialvector (%.14f,%.14f,%.14f)", currentTime, ball->mId, radialVector.x, radialVector.y, radialVector.z);
+    // this ensures that different ships orbiting the same target will have different orbital planes
+    double phi2 = (ball->mId&0x000000000000ffff) + currentTime * ORBITAL_PRECESSION;
+    Vector3d radialVector = Vector3d(cos(phi1) * cos(phi2), sin(phi2), sin(phi1) * cos(phi2));
     // shitround the components to 7 decimal digits
     radialVector.x =  (double)((int64_t)(radialVector.x*10000000))/10000000;
     radialVector.y =  (double)((int64_t)(radialVector.y*10000000))/10000000;
     radialVector.z =  (double)((int64_t)(radialVector.z*10000000))/10000000;
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit rounded radialvector (%.14f,%.14f,%.14f)", currentTime, ball->mId, radialVector.x, radialVector.y, radialVector.z);
                 
     radialVector.Cross(toVector);
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit radialvector crossed (%.14f,%.14f,%.14f)", currentTime, ball->mId, radialVector.x, radialVector.y, radialVector.z);
     radialVector.Normalize();
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit radialvector (%.14f,%.14f,%.14f)", currentTime, ball->mId, radialVector.x, radialVector.y, radialVector.z);
     // radial is now transverse to the toVector
 
     // Now I am going to choose a goto point that is tangent to the orbit
@@ -903,25 +893,20 @@ Vector3d Ballpark::EvolveOrbit(Ball* ball, long currentTime)
         toVector.Normalize();
     }
 
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit toVector (%.14f,%.14f,%.14f)", currentTime, ball->mId, toVector.x, toVector.y, toVector.z);
     // This is the ratio of thrust to put into radial component
     double radialFactor = exp(-(r-dist)*(r-dist)/40000.0);
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit radialFactor %.14f", currentTime, ball->mId, radialFactor);
 
     // Shitfix, exp() returns slightly different results depending on target platform (32bit or 64bit) so 
     // we round to 7 significant decimal digits.
     radialFactor =  (double)((int64_t)(radialFactor*10000000))/10000000;
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Corrected radialFactor %.14f", currentTime, ball->mId, radialFactor);
 
     // Now use the law of cosine rule to get the other factor
     // First dot product of these guys is equal to the cosine of the angle between them,
     // but we are interested in the pi-angle, whence the minus sign
     phi1 =  -toVector*radialVector;
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit phi1 %.14f", currentTime, ball->mId, phi1);
 
     // Now this is the determinant for the solutions
     double transverseFactor = 1.0+radialFactor*radialFactor *(phi1*phi1-1.0);
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit transverseFactor %.14f", currentTime, ball->mId, transverseFactor);
 
     if(transverseFactor > 0.0)
     {
@@ -935,13 +920,10 @@ Vector3d Ballpark::EvolveOrbit(Ball* ball, long currentTime)
     }
 
     transverseFactor *=SIGNUM(dist-r);
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit transverseFactor 2 %.14f", currentTime, ball->mId, transverseFactor);
 
     // Now calculate the actual acceleration
     Vector3d a = (radialFactor*radialVector + transverseFactor*toVector)*maxThrust;
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit a (%.14f,%.14f,%.14f)", currentTime, ball->mId, a.x, a.y, a.z);
     ball->mGoto = ball->mNewPos + 10.0*AU*a;
-    //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d: Orbit mGoto (%f,%f,%f)", currentTime, ball->mId, ball->mGoto.x, ball->mGoto.y, ball->mGoto.z);
 
     return a;
 }
