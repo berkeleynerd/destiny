@@ -22,6 +22,11 @@ extern ITaskletTimer *TheTimer;
 
 static size_t byteCount = 0;
 
+void RaiseBallNotInParkError(const char* callerName, ID ballID)
+{
+	PyErr_Format(PyExc_RuntimeError, "%s: Ball %lld not in park", callerName, ballID);
+}
+
 //---------------------------------------------------------------------------------------
 // PYTHON THUNKERS
 
@@ -1366,6 +1371,11 @@ PyObject* Ballpark::GetBallIdsInRangeOfTriangle(
 
 	Ball *otherBall = NULL;
 	Ball *refBall = mBalls[srcId];
+	if(!refBall)
+	{
+		RaiseBallNotInParkError("GetBallIdsInRangeOfTriangle", srcId);
+		return 0;
+	}
 	PyObject *theBubble = GetActiveBubbleForBall(refBall);
 	PyObject* ret = PyList_New(0);
 	const Vector3d center = refBall->mNewPos;
@@ -1417,6 +1427,11 @@ PyObject* Ballpark::GetBallIdsInCone(
 
 	Ball *otherBall = NULL;
 	Ball *refBall = mBalls[srcId];
+	if(!refBall)
+	{
+		RaiseBallNotInParkError("GetBallIdsInCone", srcId);
+		return 0;
+	}
 	PyObject *theBubble = GetActiveBubbleForBall(refBall);
 	PyObject* ret = PyList_New(0);
 	const Vector3d center = refBall->mNewPos;
@@ -1487,7 +1502,7 @@ PyObject* Ballpark::GetActiveBubbleForBall(const Ball* ball)
 {
 	if(!ball)
 	{
-		PyErr_Format(PyExc_RuntimeError, "GetActiveBubbleForBall: Ball %" CCP_INT64_FORMAT " not in park", ball->mId);
+		PyErr_Format(PyExc_RuntimeError, "GetActiveBubbleForBall: Ball is NULL");
 		return 0;
 	}
 
@@ -1610,7 +1625,11 @@ PyObject* Ballpark::GetBallIdsInCapsule(
 	}
 	Ball *otherBall = NULL;
 	Ball *refBall = mBalls[srcId];
-
+	if(!refBall)
+	{
+		RaiseBallNotInParkError("GetBallIdsInCapsule", srcId);
+		return 0;
+	}
 	PyObject *theBubble = GetActiveBubbleForBall(refBall);
 	PyObject* ret = PyList_New(0);
 	const Vector3d center = refBall->mNewPos;
