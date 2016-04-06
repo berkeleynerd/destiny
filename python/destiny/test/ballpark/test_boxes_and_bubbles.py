@@ -84,6 +84,15 @@ class TestGetBallIdsAndDistInRange(helpers.BallparkTestCase):
 
 
 class TestGetBallIdInRangeOfTriangle(helpers.BallparkTestCase):
+    def test_source_does_not_exist_raises_runtime_error(self):
+        self.park.InitializeBubbles()
+        ballNotInPark = 12345
+        self.assertRaises(RuntimeError, self.park.GetBallIdsInRangeOfTriangle,
+            ballNotInPark,
+            10.0, 0.0, 0.0,
+            0.0, 10.0, 0.0,
+            5.0)
+
     def test_no_other_ball(self):
         ball, = self.add_balls(1)
         self.park.InitializeBubbles()
@@ -148,6 +157,14 @@ class TestGetBallIdInRangeOfTriangle(helpers.BallparkTestCase):
 
 
 class TestGetBallIdsInCapsule(helpers.BallparkTestCase):
+    def test_source_does_not_exist_raises_runtime_error(self):
+        self.park.InitializeBubbles()
+        ballNotInPark = 12345
+        self.assertRaises(RuntimeError, self.park.GetBallIdsInCapsule,
+            ballNotInPark,
+            0.0, 0.0, 10.0,
+            5.0)
+
     def test_no_other_ball(self):
         ball, = self.add_balls(1)
         self.park.InitializeBubbles()
@@ -244,6 +261,15 @@ class TestGetBallIdsInCone(helpers.BallparkTestCase):
     def test_no_other_ball(self):
         result = self._get_colliding_balls()
         self.assertListEqual(result, [])
+
+    def test_source_does_not_exist_raises_runtime_error(self):
+        self.park.InitializeBubbles()
+        ballNotInPark = 12345
+        self.assertRaises(RuntimeError, self.park.GetBallIdsInCone,
+            ballNotInPark,
+            0.0, 0.0, 10.0,
+            math.radians(45.0)
+        )
 
     def test_ball_in_cone(self):
         self.other.radius = 1.0
