@@ -39,6 +39,25 @@ class TestClearAll(helpers.BallparkTestCase):
 
 
 class TestAdditionsAndDeletions(helpers.BallparkTestCase):
+    def test_addition_of_invalid_ball_id_raises_typeerror(self):
+        ball, = self.add_balls(1)
+        ball.isInteractive = True
+        additions_per_player = {}
+        deletions_per_player = {}
+        additions_per_bubble = {}
+        deletions_per_bubble = {}
+        user_ships = [None]
+        self.park.InitializeBubbles()
+        self.assertRaises(
+            TypeError,
+            self.park.AdditionsAndDeletions,
+            additions_per_player,
+            deletions_per_player,
+            additions_per_bubble,
+            deletions_per_bubble,
+            user_ships
+        )
+
     def test_addition(self):
         ball, = self.add_balls(1)
         ball.isInteractive = True
