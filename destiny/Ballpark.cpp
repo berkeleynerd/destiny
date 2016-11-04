@@ -4018,13 +4018,16 @@ void Ballpark::HandleProximities()
         {
             if(ball->mSensor.balls.size() > 0)
             {
+                // Some sensors don't run every tick.
+                // We need to make sure this one definitely runs the next time we call CheckForProximity()
                 // This ensures that the sensor gets one last chance to handle nearby balls when its bubble has become dead
+                ball->mSensor.elapsed = ball->mSensor.period;
                 ((IBall*)ball)->Lock();
                 ball->CheckForProximity();
                 ((IBall*)ball)->Unlock();
             }
-            ball->mSensor.balls.clear(); // The last guy to leave the bubble will still be in there.
-            continue;                // If he's the first guy to enter it again, then there would be no proximity event...
+            ball->mSensor.balls.clear();
+            continue;                
         }
 
         if(!ball->mHasProximity)
