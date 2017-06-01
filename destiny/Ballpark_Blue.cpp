@@ -232,6 +232,16 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			Be::READ
 		)
 
+		////////////////////////////////////////////////////////////////////////////
+		//               keys
+		MAP_ATTRIBUTE
+		(
+			"bubbleKeepAliveBalls",
+			bubbleKeepAliveBalls,
+			"Set of ballIDs that automatically keep bubbles alive",
+			Be::READ
+		)
+
         ////////////////////////////////////////////////////////////////////////////
 		//               keys
 		MAP_ATTRIBUTE

@@ -121,6 +121,7 @@ Ballpark::Ballpark(IRoot* lockobj) :
     mBubbleSubscriptions = PyDict_New();
     bubbleInteractives = PyDict_New();
     bubbleKeepAlives = PyDict_New();
+	bubbleKeepAliveBalls = PySet_New(NULL);
 
     if (ballparkCounter == 0)
     {   // these strings are really static and we make sure that they are only allocated one time
@@ -188,6 +189,9 @@ Ballpark::~Ballpark()
 
     if(bubbleKeepAlives)
         Py_DECREF(bubbleKeepAlives);
+
+	if(bubbleKeepAliveBalls)
+        Py_DECREF(bubbleKeepAliveBalls);
 
     Py_XDECREF( Ballpark::s_ballNotInParkCallback );
     Ballpark::s_ballNotInParkCallback = NULL;
@@ -4098,6 +4102,8 @@ void Ballpark::ClearAll(
         PyDict_Clear(bubbleInteractives);
     if(bubbleKeepAlives)
         PyDict_Clear(bubbleKeepAlives);
+    if(bubbleKeepAliveBalls)
+        PySet_Clear(bubbleKeepAliveBalls);
     mLocalCnt = -1;
     mLocalHiCnt = DSTLOCALBALLS;
 
@@ -4649,6 +4655,7 @@ void Ballpark::AddToBubble(Partitionable *p)
 	}
 
 	UpdateInteractiveCnt(p, p->mOldBubble, p->mNewBubble);
+	UpdateKeepAliveBalls(p, p->mOldBubble, p->mNewBubble);
 
 	Py_DECREF(newBubbleId);
 	Py_DECREF(oldBubbleId);
@@ -4677,6 +4684,12 @@ void Ballpark::InitializeBubbles()
 
     if(bubbleInteractives)
         PyDict_Clear(bubbleInteractives);
+
+	if(bubbleKeepAlives)
+        PyDict_Clear(bubbleKeepAlives);
+
+	if(bubbleKeepAliveBalls)
+        PySet_Clear(bubbleKeepAliveBalls);
 
     //BeTimer timer = BeTimer();
     //timer.Reset();
@@ -4844,4 +4857,51 @@ PyObject* Ballpark::PySetBallNotInParkCallback(
 
     Py_INCREF( Py_None );
     return Py_None;
+}
+
+void Ballpark::UpdateKeepAliveBalls(Partitionable *p, long oldBubble, long newBubble)
+{
+	PyObject *ballId = PyLong_FromLongLong(p->mId);
+    if(!(PySet_Contains(bubbleKeepAliveBalls, ballId) > 0))
+    {
+        return;
+	}
+    AddKeepAliveBall(ballId, newBubble);
+    RemoveKeepAliveBall(ballId, oldBubble);
+	Py_DECREF(ballId);
+}
+
+void Ballpark::AddKeepAliveBall(PyObject *ballId, long inBubble)
+{
+    if(inBubble != -1)
+    {
+        PyObject *keepAliveBallsInBubbleSet;
+        PyObject *bubbleId = PyLong_FromLong(inBubble);
+		if(!(keepAliveBallsInBubbleSet = PyDict_GetItem(bubbleKeepAlives, bubbleId)))
+        {
+            keepAliveBallsInBubbleSet = PySet_New(NULL);
+            PyDict_SetItem(bubbleKeepAlives, bubbleId, keepAliveBallsInBubbleSet);
+			Py_DECREF(keepAliveBallsInBubbleSet);
+        }
+        PySet_Add(keepAliveBallsInBubbleSet, ballId);
+        Py_DECREF(bubbleId);
+    }
+}
+
+void Ballpark::RemoveKeepAliveBall(PyObject *ballId, long inBubble)
+{
+    if(inBubble != -1)
+    {
+        PyObject *bubbleId = PyLong_FromLong(inBubble);
+        PyObject *keepAliveBallsInBubbleSet;
+        if((keepAliveBallsInBubbleSet = PyDict_GetItem(bubbleKeepAlives, bubbleId)))
+        {
+            PySet_Discard(keepAliveBallsInBubbleSet, ballId);
+            if(PySet_Size(keepAliveBallsInBubbleSet) == 0)
+			{
+                PyDict_DelItem(bubbleKeepAlives, bubbleId);
+			}
+        }
+        Py_DECREF(bubbleId);
+    }
 }

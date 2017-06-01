@@ -147,6 +147,7 @@ private://MEMBERS
 	SetOfBalls mBubbleConflicts;
 	PyObject *bubbleInteractives;
     PyObject *bubbleKeepAlives; // Per bubble, a set of ballIDs which keep the bubble alive even when no interatives are present
+	PyObject *bubbleKeepAliveBalls; // balls that automatically keep their current bubbles alive
 	PyObject *bubbles;
 	PyObject *mBubbleSubscriptions;
 
@@ -814,6 +815,9 @@ private:
 	void IncreaseInteractiveCnt(Partitionable *p, long inBubble);
 	void DecreaseInteractiveCnt(Partitionable *p, long inBubble);
 	void UpdateInteractiveCnt(Partitionable *p, long oldBubble, long newBubble);
+	void AddKeepAliveBall(PyObject *ballId, long inBubble);
+	void RemoveKeepAliveBall(PyObject *ballId, long inBubble);
+	void UpdateKeepAliveBalls(Partitionable *p, long oldBubble, long newBubble);
 	bool TrollReady(Ball *ball);
 	void PetrifyTroll(Ball *ball);
 	void CapAcceleration(const Ball *ball, Vector3d& a);
