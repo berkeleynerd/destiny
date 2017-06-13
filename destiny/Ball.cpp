@@ -294,7 +294,7 @@ void Ball::CalculateYawPitchRoll(bool snap)
     // Same thing with pitch
     double r = direction.Length();
     if(r > 0.0)
-        mNewPitch = -asin(direction.y/r);
+        mNewPitch = -asin(std::min(1.0, std::max(-1.0, direction.y/r)));
     else
         mNewPitch = 0.0;
 
