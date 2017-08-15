@@ -42,7 +42,7 @@ void Capsule::CollideWithBall(Ball* ball)
 	mPark->Integrate(p1, vp1, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, mPark->dt);
 
 	// Calculate if and when collision occurs
-	float rad = ball->mRadius + mRadius;
+	double rad = (double)ball->mRadius + (double)mRadius;
 	Vector3d d = vp1;
 	Vector3d AO = p0 - mHemisphereA; // From A to the center of the ball
 	double m = mAB * d / (mAB * mAB);
@@ -231,7 +231,7 @@ void Capsule::ReactToCollision(Ball* ball, Vector3d& ballPosition, Vector3d& bal
 	{
 		// Calculate the acceleration
 		double tmp = 1.0/(m1+mPark->dt*mPark->mFriction);
-		double dist = mRadius + ball->mRadius - centerDistance + 1.0; // The distance that we need to move the ball to get it out.
+		double dist = (double)mRadius + (double)ball->mRadius - centerDistance + 1.0; // The distance that we need to move the ball to get it out.
 		acceleration = ( (dist/(mPark->dt*tmp*m1) )*normal - ball->mNewVel)/mPark->dt -normalComp*normal;
 	}
 	Vector3d lastC = 0.85 * acceleration;
@@ -296,7 +296,7 @@ void Capsule::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
 	Vector3d interpolatedPos = mHemisphereA;
 	Vector3d direction = mHemisphereB - mHemisphereA;
 	float length = (float)direction.Length();
-	direction = direction.Normalize() * mRadius * 2.0f;
+	direction = direction.Normalize() * (double)mRadius * 2.0f;
 	while(length >= 0.0f)
 	{
 		boxA = mPark->mPartition->GetBox(mRadius, interpolatedPos);
@@ -306,12 +306,12 @@ void Capsule::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
 
 		for(q=0;q<3;q++)
 		{
-			if( boxA->lo[q] + mRadius - interpolatedPos[q] > 0.0f )
+			if( boxA->lo[q] + (double)mRadius - interpolatedPos[q] > 0.0f )
 			{
 				// Add box to the left...
 				mod[q] = -1;
 			}
-			else if ( boxA->hi[q] - mRadius - interpolatedPos[q] < 0.0f )
+			else if ( boxA->hi[q] - (double)mRadius - interpolatedPos[q] < 0.0f )
 			{
 				// add box  to the right
 				mod[q] = 1;
