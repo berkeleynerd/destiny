@@ -1,6 +1,6 @@
 # These are the SDKs that are used by all configurations
 Imports:
-- ..\..\..\carbon\src\core_project.yaml
+- ..\..\..\carbon\src\core_project\core_project.yaml
 
 # Settings from the General section, for all configurations
 General:
