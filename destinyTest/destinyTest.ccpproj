@@ -4,7 +4,7 @@ ProjectGuid: a5770cb2-f08d-4162-b512-964ca65f00e2
 Imports:
 - ..\..\..\carbon\src\core_project\core_project.yaml
 - ../../../../../../sdk/GoogleTest/1.6.0/gtest.yaml
-- ..\..\..\carbon\src\blue\uses_blue.yaml
+- ..\..\..\carbon\src\blue\Include\uses_blue.yaml
 
 # Settings from the General section, for all configurations
 General:

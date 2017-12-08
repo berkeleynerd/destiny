@@ -118,7 +118,7 @@ Configurations:
       AdditionalDependencies:
       - d3dx9dt.lib
     Imports:
-      - ..\..\..\carbon\src\blue\uses_blue.yaml
+      - ..\..\..\carbon\src\blue\Include\uses_blue.yaml
   Release|Win32,x64:
     BaseConfigurations:
       - Release
@@ -127,7 +127,7 @@ Configurations:
       AdditionalDependencies:
       - d3dx9.lib
     Imports:
-      - ..\..\..\carbon\src\blue\uses_blue.yaml
+      - ..\..\..\carbon\src\blue\Include\uses_blue.yaml
   ReleaseStatic|Win32,x64:
     BaseConfigurations:
       - ReleaseStatic
@@ -144,7 +144,7 @@ Configurations:
       AdditionalDependencies:
       - d3dx9.lib
     Imports:
-      - ../../../carbon/src/blue/uses_blue_27.yaml
+      - ../../../carbon/src/blue/Include/uses_blue_27.yaml
   Release_27|Win32,x64:
     BaseConfigurations:
       - Release
@@ -153,12 +153,12 @@ Configurations:
       AdditionalDependencies:
       - d3dx9.lib
     Imports:
-      - ../../../carbon/src/blue/uses_blue_27.yaml
+      - ../../../carbon/src/blue/Include/uses_blue_27.yaml
   Release_27|Mac64:
     BaseConfigurations:
       - Release
     Imports:
-      - ../../../carbon/src/blue/uses_blue_27.yaml
+      - ../../../carbon/src/blue/Include/uses_blue_27.yaml
       - ../../../carbon/src/CcpMath/uses_CcpMath.yaml
 
 ProjectGuid: 9545E741-2B03-40CE-8505-80032EC308F6
