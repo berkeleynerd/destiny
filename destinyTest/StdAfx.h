@@ -2,7 +2,6 @@
 #include "gtest/gtest.h"
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
-#define CCP_MATH_USE_OWN_XNA_MATH 1
 
 #include "CcpMath/include/CcpMath.h"
 #include "BlueExposure/include/BlueExposure.h"

@@ -25,7 +25,6 @@ using std::exception;
 #define _HAS_EXCEPTIONS 1
 #endif
 
-#define CCP_MATH_USE_OWN_XNA_MATH
 #include <CcpMath/include/CcpMath.h>
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
