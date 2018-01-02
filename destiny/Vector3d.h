@@ -3,14 +3,14 @@
 #define Vector3d_H
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
-#include "Vector3.h"
 
 struct Vector3d
 {
 public:
 	Vector3d() : x(0.0),y(0.0),z(0.0) {};
 	Vector3d( const double * c) { x = c[0]; y = c[1]; z = c[2];};
-	Vector3d( const Vector3d& v) { x = v.x; y = v.y; z = v.z; };
+	Vector3d( const Vector3d& v ) { x = v.x; y = v.y; z = v.z; };
+	Vector3d( const Vector3& v ) { x = v.x; y = v.y; z = v.z; };
 	Vector3d( double _x, double _y, double _z ) { x = _x; y = _y; z = _z;};
 	Vector3d( const float* v ){x = v[0]; y = v[1]; z = v[2];};
 

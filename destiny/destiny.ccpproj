@@ -1,6 +1,7 @@
 # These are the SDKs that are used by all configurations
 Imports:
-- ..\..\..\carbon\src\core_project\core_project.yaml
+- ../../../carbon/src/core_project/core_project.yaml
+- ../../../carbon/src/CcpMath/uses_CcpMath.yaml
 
 # Settings from the General section, for all configurations
 General:
@@ -20,7 +21,6 @@ ClCompile:
   TreatWarningAsError: true
   BufferSecurityCheck: false
   AdditionalIncludeDirectories:
-  - ../../../../../../sdk/directx/october2004/include
   - ../../../carbon/src/CcpUtils
   CppExceptions: true
   RuntimeTypeInfo: true
@@ -89,11 +89,6 @@ BaseConfigurations:
       IgnoreAllDefaultLibraries: false
       GenerateDebugInformation: true
   
-  Windows:
-    Link:
-      AdditionalLibraryDirectories:
-        - ../../../../../../sdk/directx/october2004/lib/$(Platform)
-  
   BlueStatic:
     Imports:
     - ../../../carbon/src/stackless/Include/stackless.yaml
@@ -113,52 +108,26 @@ Configurations:
   Debug|Win32,x64:
     BaseConfigurations:
       - Debug
-      - Windows
-    Link:
-      AdditionalDependencies:
-      - d3dx9dt.lib
     Imports:
       - ..\..\..\carbon\src\blue\Include\uses_blue.yaml
   Release|Win32,x64:
     BaseConfigurations:
       - Release
-      - Windows
-    Link:
-      AdditionalDependencies:
-      - d3dx9.lib
     Imports:
       - ..\..\..\carbon\src\blue\Include\uses_blue.yaml
   ReleaseStatic|Win32,x64:
     BaseConfigurations:
       - ReleaseStatic
-      - Windows
       - BlueStatic
-    Link:
-      AdditionalDependencies:
-      - d3dx9.lib
   Debug_27|Win32,x64:
     BaseConfigurations:
       - Debug
-      - Windows
-    Link:
-      AdditionalDependencies:
-      - d3dx9.lib
     Imports:
       - ../../../carbon/src/blue/Include/uses_blue_27.yaml
-  Release_27|Win32,x64:
-    BaseConfigurations:
-      - Release
-      - Windows
-    Link:
-      AdditionalDependencies:
-      - d3dx9.lib
-    Imports:
-      - ../../../carbon/src/blue/Include/uses_blue_27.yaml
-  Release_27|Mac64:
+  Release_27|Any:
     BaseConfigurations:
       - Release
     Imports:
       - ../../../carbon/src/blue/Include/uses_blue_27.yaml
-      - ../../../carbon/src/CcpMath/uses_CcpMath.yaml
 
 ProjectGuid: 9545E741-2B03-40CE-8505-80032EC308F6

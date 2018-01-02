@@ -9,7 +9,6 @@
 
 #include <trinity/include/TriMath.h>
 
-#include "Vector3.h"
 #include "Ballpark.h"
 #include "Ball.h"
 #include "Box.h"
@@ -72,7 +71,7 @@ namespace
 {
     inline float _finite( double x )
     {
-        return finite( x );
+        return isfinite( x );
     }
 }
 #endif
@@ -3200,7 +3199,7 @@ void Ballpark::SetSpeedFraction(
     if(ball->mMode == DSTBALL_STOP && fraction > 0.0)
     {
         // I was not moving, so start in some direction
-        D3DXQUATERNION q;
+        Quaternion q;
         ball->Update(&q,ball->mRotUpdateTime);
         Vector3 v = Vector3(0.0f,0.0f,-1.0f);
         TriVectorRotateQuaternion(&v,&v,&q);

@@ -6,7 +6,7 @@ Vector3d GetPointOnBallThatFirstIntersectsPlane(Vector3d ball_pos, double ball_r
 	return ball_pos - plane_normal * ball_radius;
 }
 
-bool IntersectSegmentPlane(Vector3d p0, Vector3d p1, Plane plane, Vector3d& collision_point, double& collision_time)
+bool IntersectSegmentPlane(Vector3d p0, Vector3d p1, Planed plane, Vector3d& collision_point, double& collision_time)
 {
 	Vector3d p0p1 = p1 - p0;
 	double plane_normal_dot_ab = plane.normal * p0p1;
@@ -67,7 +67,7 @@ bool IntersectSphereTriangle(Vector3d sphere_position, double sphere_radius, Vec
 	Vector3d triangle_normal = triangle.GetNormal();
 	Vector3d p0 = GetPointOnBallThatFirstIntersectsPlane(sphere_position, sphere_radius, triangle_normal);
 	Vector3d p1 = p0 + sphere_velocity;
-	Plane plane(triangle.a, triangle_normal);
+	Planed plane(triangle.a, triangle_normal);
 
 	bool collision_exists = IntersectSegmentPlane(p0, p1, plane, collision_point, collision_time);
 	if( !collision_exists )

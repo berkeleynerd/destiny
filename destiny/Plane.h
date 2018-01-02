@@ -3,10 +3,10 @@
 
 #include "Vector3d.h"
 
-class Plane
+class Planed
 {
 public:
-	Plane(Vector3d point, Vector3d normal);
+	Planed(Vector3d point, Vector3d normal);
 	double d;
 	Vector3d normal;
 };

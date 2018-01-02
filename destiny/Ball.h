@@ -33,7 +33,6 @@
 #include "MiniBall.h"
 #include "MiniCapsule.h"
 #include "MiniBox.h"
-#include "Quaternion.h"
 
 struct Vector3d;
 #include <trinity/Include/IEveReferencePoint.h>

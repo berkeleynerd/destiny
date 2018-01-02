@@ -3,7 +3,6 @@
 #include "Ballpark.h"
 #include "Ball.h"
 #include "Box.h"
-#include "Vector3.h"
 #include "Triangle.h"
 #define ABS(X) ((X)<0.0?-(X):(X))
 

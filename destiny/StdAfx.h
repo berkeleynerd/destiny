@@ -25,17 +25,8 @@ using std::exception;
 #define _HAS_EXCEPTIONS 1
 #endif
 
-#ifdef _WIN32
-#include <d3d9.h>
-#include <d3dx9math.h>
-#else
-#include <CcpMath/include/Quaternion.h>
-#include <CcpMath/include/Vector3.h>
-#include <CcpMath/include/Matrix.h>
-typedef Quaternion D3DXQUATERNION;
-typedef Vector3 D3DXVECTOR3;
-typedef Matrix D3DXMATRIX;
-#endif
+#define CCP_MATH_USE_OWN_XNA_MATH
+#include <CcpMath/include/CcpMath.h>
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
 #include "BlueExposure/include/BlueExposure.h"
