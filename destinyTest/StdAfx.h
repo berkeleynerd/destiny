@@ -2,7 +2,9 @@
 #include "gtest/gtest.h"
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
+#define CCP_MATH_USE_OWN_XNA_MATH 1
 
+#include "CcpMath/include/CcpMath.h"
 #include "BlueExposure/include/BlueExposure.h"
 #include <blue/include/blue.h>
 #include <blue/include/IBluePython.h>
@@ -17,10 +19,8 @@
 #include "destiny/MapOfLongLongs.h"
 #include "destiny/MiniBall.h"
 #include "destiny/Partition.h"
-#include "destiny/Quaternion.h"
 #include "destiny/Random.h"
 #include "destiny/resource.h"
-#include "destiny/Vector3.h"
 #include "destiny/Vector3d.h"
 #include "destiny/Triangle.h"
 #include "destiny/Plane.h"

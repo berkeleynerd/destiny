@@ -14,7 +14,7 @@ TEST(IntersectSegmentPlane, IntersectionExists)
 {
 	Vector3d plane_point(0.0, 0.0, 0.0);
 	Vector3d plane_normal(0.0, 1.0, 0.0);
-	Plane plane(plane_point, plane_normal);
+	Planed plane(plane_point, plane_normal);
 	Vector3d a(0.0, 1.0, 0.0);
 	Vector3d b(0.0, -1.0, 0.0);
 
@@ -31,7 +31,7 @@ TEST(IntersectSegmentPlane, NoIntersection)
 {
 	Vector3d plane_point(0.0, 0.0, 0.0);
 	Vector3d plane_normal(0.0, 1.0, 0.0);
-	Plane plane(plane_point, plane_normal);
+	Planed plane(plane_point, plane_normal);
 	Vector3d a(0.0, 3.0, 0.0);
 	Vector3d b(0.0, 2.0, 0.0);
 
@@ -45,7 +45,7 @@ TEST(IntersectSegmentPlane, ParallelLineSegment)
 {
 	Vector3d plane_point(0.0, 0.0, 0.0);
 	Vector3d plane_normal(0.0, 0.0, 1.0);
-	Plane plane(plane_point, plane_normal);
+	Planed plane(plane_point, plane_normal);
 	Vector3d a(0.0, 1.0, 0.0);
 	Vector3d b(0.0, -1.0, 0.0);
 
