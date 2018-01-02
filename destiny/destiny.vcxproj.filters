@@ -63,9 +63,6 @@
     <ClInclude Include="Plane.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Quaternion.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="Random.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -79,9 +76,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Triangle.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Vector3.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Vector3d.h">
