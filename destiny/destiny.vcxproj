@@ -75,7 +75,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <PlatformToolset>v100</PlatformToolset>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)/Microsoft.Cpp.Default.props"/>
+  <Import Project="$(VCTargetsPath)/Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">
     <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
@@ -136,7 +136,7 @@
     <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)/Microsoft.Cpp.props"/>
+  <Import Project="$(VCTargetsPath)/Microsoft.Cpp.props" />
   <PropertyGroup Label="UserMacros">
     <CcpSdkPath>../../../../../../sdk</CcpSdkPath>
     <CcpSharedToolsPath>../../../../../../shared_tools</CcpSharedToolsPath>
@@ -153,17 +153,17 @@
       <Value>$(CcpBranchPath)</Value>
     </BuildMacro>
   </ItemGroup>
-  <ImportGroup Label="ExtensionSettings"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'" Label="PropertySheets"/>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets"/>
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'" Label="PropertySheets" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets" />
   <PropertyGroup>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">.pyd</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">_destiny</TargetName>
@@ -231,10 +231,10 @@
       <Culture>1039</Culture>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">
     <ClCompile>
@@ -271,10 +271,10 @@
       <Culture>1039</Culture>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">
     <ClCompile>
@@ -310,10 +310,10 @@
       <Culture>1039</Culture>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -350,10 +350,10 @@
       <Culture>1039</Culture>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">
     <ClCompile>
@@ -386,10 +386,10 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'">
     <ClCompile>
@@ -422,10 +422,10 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -458,10 +458,10 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -494,10 +494,10 @@
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">
     <ClCompile>
@@ -533,10 +533,10 @@
       <Culture>1039</Culture>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -573,79 +573,79 @@
       <Culture>1039</Culture>
       <AdditionalIncludeDirectories>..\..\..\include</AdditionalIncludeDirectories>
     </ResourceCompile>
-    <Manifest/>
-    <PreBuildEvent/>
-    <PreLinkEvent/>
-    <PostBuildEvent/>
+    <Manifest />
+    <PreBuildEvent />
+    <PreLinkEvent />
+    <PostBuildEvent />
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AABB.h"/>
-    <ClInclude Include="autoversion.h"/>
-    <ClInclude Include="Ball.h"/>
-    <ClInclude Include="Ballpark.h"/>
-    <ClInclude Include="Box.h"/>
-    <ClInclude Include="BoxShape.h"/>
-    <ClInclude Include="Capsule.h"/>
-    <ClInclude Include="Collision.h"/>
-    <ClInclude Include="DstConstants.h"/>
-    <ClInclude Include="Hashers.h"/>
-    <ClInclude Include="MapOfBalls.h"/>
-    <ClInclude Include="MapOfLongLongs.h"/>
-    <ClInclude Include="MiniBall.h"/>
-    <ClInclude Include="MiniBox.h"/>
-    <ClInclude Include="MiniCapsule.h"/>
-    <ClInclude Include="OrientedBox.h"/>
-    <ClInclude Include="Partition.h"/>
-    <ClInclude Include="Partitionable.h"/>
-    <ClInclude Include="Plane.h"/>
-    <ClInclude Include="Random.h"/>
-    <ClInclude Include="resource.h"/>
-    <ClInclude Include="StaticCollidable.h"/>
-    <ClInclude Include="StdAfx.h"/>
-    <ClInclude Include="Triangle.h"/>
-    <ClInclude Include="Vector3d.h"/>
-    <ClInclude Include="version.h"/>
-    <ClInclude Include="include\destinyId.h"/>
-    <ClInclude Include="include\IBall.h"/>
-    <ClInclude Include="include\IDstConstants.h"/>
-    <ClInclude Include="include\Quaternion.h"/>
+    <ClInclude Include="AABB.h" />
+    <ClInclude Include="autoversion.h" />
+    <ClInclude Include="Ball.h" />
+    <ClInclude Include="Ballpark.h" />
+    <ClInclude Include="Box.h" />
+    <ClInclude Include="BoxShape.h" />
+    <ClInclude Include="Capsule.h" />
+    <ClInclude Include="Collision.h" />
+    <ClInclude Include="DstConstants.h" />
+    <ClInclude Include="Hashers.h" />
+    <ClInclude Include="MapOfBalls.h" />
+    <ClInclude Include="MapOfLongLongs.h" />
+    <ClInclude Include="MiniBall.h" />
+    <ClInclude Include="MiniBox.h" />
+    <ClInclude Include="MiniCapsule.h" />
+    <ClInclude Include="OrientedBox.h" />
+    <ClInclude Include="Partition.h" />
+    <ClInclude Include="Partitionable.h" />
+    <ClInclude Include="Plane.h" />
+    <ClInclude Include="Random.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="StaticCollidable.h" />
+    <ClInclude Include="StdAfx.h" />
+    <ClInclude Include="Triangle.h" />
+    <ClInclude Include="Vector3d.h" />
+    <ClInclude Include="version.h" />
+    <ClInclude Include="include\destinyId.h" />
+    <ClInclude Include="include\IBall.h" />
+    <ClInclude Include="include\IDstConstants.h" />
+    <ClInclude Include="include\Quaternion.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AABB.cpp"/>
-    <ClCompile Include="Ball.cpp"/>
-    <ClCompile Include="Ballpark.cpp"/>
-    <ClCompile Include="Ballpark_Blue.cpp"/>
-    <ClCompile Include="Ball_Blue.cpp"/>
-    <ClCompile Include="Box.cpp"/>
-    <ClCompile Include="BoxShape.cpp"/>
-    <ClCompile Include="Capsule.cpp"/>
-    <ClCompile Include="Capsule_Blue.cpp"/>
-    <ClCompile Include="Collision.cpp"/>
-    <ClCompile Include="destiny.cpp"/>
-    <ClCompile Include="DstConstants.cpp"/>
-    <ClCompile Include="erf.cpp"/>
-    <ClCompile Include="MiniBall.cpp"/>
-    <ClCompile Include="Miniball_Blue.cpp"/>
-    <ClCompile Include="MiniBox.cpp"/>
-    <ClCompile Include="MiniBox_Blue.cpp"/>
-    <ClCompile Include="MiniCapsule.cpp"/>
-    <ClCompile Include="MiniCapsule_Blue.cpp"/>
-    <ClCompile Include="OrientedBox.cpp"/>
-    <ClCompile Include="OrientedBox_Blue.cpp"/>
-    <ClCompile Include="Partition.cpp"/>
-    <ClCompile Include="Partitionable.cpp"/>
-    <ClCompile Include="Plane.cpp"/>
-    <ClCompile Include="Random.cpp"/>
-    <ClCompile Include="StaticCollidable.cpp"/>
+    <ClCompile Include="AABB.cpp" />
+    <ClCompile Include="Ball.cpp" />
+    <ClCompile Include="Ballpark.cpp" />
+    <ClCompile Include="Ballpark_Blue.cpp" />
+    <ClCompile Include="Ball_Blue.cpp" />
+    <ClCompile Include="Box.cpp" />
+    <ClCompile Include="BoxShape.cpp" />
+    <ClCompile Include="Capsule.cpp" />
+    <ClCompile Include="Capsule_Blue.cpp" />
+    <ClCompile Include="Collision.cpp" />
+    <ClCompile Include="destiny.cpp" />
+    <ClCompile Include="DstConstants.cpp" />
+    <ClCompile Include="erf.cpp" />
+    <ClCompile Include="MiniBall.cpp" />
+    <ClCompile Include="Miniball_Blue.cpp" />
+    <ClCompile Include="MiniBox.cpp" />
+    <ClCompile Include="MiniBox_Blue.cpp" />
+    <ClCompile Include="MiniCapsule.cpp" />
+    <ClCompile Include="MiniCapsule_Blue.cpp" />
+    <ClCompile Include="OrientedBox.cpp" />
+    <ClCompile Include="OrientedBox_Blue.cpp" />
+    <ClCompile Include="Partition.cpp" />
+    <ClCompile Include="Partitionable.cpp" />
+    <ClCompile Include="Plane.cpp" />
+    <ClCompile Include="Random.cpp" />
+    <ClCompile Include="StaticCollidable.cpp" />
     <ClCompile Include="StdAfx.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Thunkers.cpp"/>
-    <ClCompile Include="Triangle.cpp"/>
+    <ClCompile Include="Thunkers.cpp" />
+    <ClCompile Include="Triangle.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="destiny.rc"/>
+    <ResourceCompile Include="destiny.rc" />
   </ItemGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
-  <ImportGroup Label="ExtensionTargets"/>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
