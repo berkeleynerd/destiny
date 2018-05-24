@@ -2559,6 +2559,11 @@ double Ballpark::WarpDistance(Ball *ball, Vector3d& p, Vector3d& v, double t, bo
     {
         // Acceleration phase
         speed = accelRate * exp(accelRate * t);
+		double currSpeed = v.Length();
+		if (currSpeed > speed)
+			// Faking the speed to be continuous even though it actually isn't
+			speed = currSpeed;
+
         v = speed * dir;
 
         distance = exp(accelRate * t);
