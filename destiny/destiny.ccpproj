@@ -88,6 +88,8 @@ BaseConfigurations:
       SuppressStartupBanner: true
       IgnoreAllDefaultLibraries: false
       GenerateDebugInformation: true
+    General:
+      TargetName: destiny
   
   BlueStatic:
     Imports:
