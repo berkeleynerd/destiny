@@ -173,6 +173,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">../../autobuild/$(ProjectName)/python_27/$(Platform)/$(PlatformToolset)/</OutDir>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">.lib</TargetExt>
     <ConfigurationType Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">StaticLibrary</ConfigurationType>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">destiny</TargetName>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.dll</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">_destiny</TargetName>
@@ -191,6 +192,7 @@
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">.lib</TargetExt>
     <ConfigurationType Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">StaticLibrary</ConfigurationType>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">destiny</TargetName>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/</OutDir>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.dll</TargetExt>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">_destiny</TargetName>
