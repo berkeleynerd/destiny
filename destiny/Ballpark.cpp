@@ -50,8 +50,6 @@ const char* TICK_EVOLVE = "Destiny::Tick";
 
 bool Quadratic(double& v1, double& v2, double a, double b, double c);
 
-extern double erf(double);
-
 PyObject * Ballpark::s_ballNotInParkCallback = NULL;
 static int ballparkCounter = 0;
 
