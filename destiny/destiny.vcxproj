@@ -625,7 +625,6 @@
     <ClCompile Include="Collision.cpp" />
     <ClCompile Include="destiny.cpp" />
     <ClCompile Include="DstConstants.cpp" />
-    <ClCompile Include="erf.cpp" />
     <ClCompile Include="MiniBall.cpp" />
     <ClCompile Include="Miniball_Blue.cpp" />
     <ClCompile Include="MiniBox.cpp" />

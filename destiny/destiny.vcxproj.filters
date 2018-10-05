@@ -132,9 +132,6 @@
     <ClCompile Include="DstConstants.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="erf.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="MiniBall.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
