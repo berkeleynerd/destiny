@@ -430,6 +430,16 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCol
 
                 if(filter.EXCLUDE_MISSILES && (otherBall->mMode == DSTBALL_MISSILE))
                     continue;
+
+                // skip player items which joined this bubble this very tick on the server
+                if(isMaster && filter.EXCLUDE_BUBBLE_ADDITIONS){
+                    if ((ball->mNewBubble != ball->mOldBubble || otherBall->mNewBubble != otherBall->mOldBubble) &&
+                        ball->mId > MIN_PLAYER_ITEM_ID && ball->isFree && ball->isInteractive &&
+                        otherBall->mId > MIN_PLAYER_ITEM_ID && otherBall->isFree && otherBall->isInteractive){
+                        CCP_LOG_CH(s_chPart, "Skipping collision candidate %I64d from nearbys of %I64d as this is a bubble changing tick", otherBall->mId, ball->mId);
+                        continue;
+                    }
+                }
             }
 
             otherBall->mHandled = true;

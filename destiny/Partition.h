@@ -6,6 +6,10 @@
 #include <unordered_set>
 #include <iterator>
 
+#ifndef MIN_PLAYER_ITEM_ID
+#define MIN_PLAYER_ITEM_ID 100000000
+#endif
+
 struct Vector3d;
 
 /*------------------------------------------------------------------------
@@ -179,7 +183,7 @@ public:
             memset(this, 0, sizeof(*this));
             switch(casenum) // initialize with a known 'static' filter case
             {
-            case 1: EXCLUDE_MISSILES = EXCLUDE_CLOAKED = 1; break;
+            case 1: EXCLUDE_MISSILES = EXCLUDE_CLOAKED = EXCLUDE_BUBBLE_ADDITIONS = 1; break;
             case 3: EXCLUDE_CLOAKED = 1; break;
             }
         };
@@ -188,6 +192,7 @@ public:
         unsigned int EXCLUDE_MISSILES         : 1;
         unsigned int EXCLUDE_CLOAKED          : 1;
         unsigned int EXCLUDE_HARMONICS_TEST   : 1;
+        unsigned int EXCLUDE_BUBBLE_ADDITIONS : 1;
     };
 	// Get collidables that are 'close', according to the criteria specified in 'filter'
 	void GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCollidables& uniStat, bool isMaster, NearbyCriteria filter);
