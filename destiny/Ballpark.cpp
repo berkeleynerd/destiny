@@ -4334,12 +4334,12 @@ bool Ballpark::InDeadBubble(Ball *ball)
 
     PyObject *key = PyLong_FromLong(ball->mNewBubble);
 
-    PyObject *interactivesDict;
+    PyObject *interactives;
     Py_ssize_t interactiveCount = 0;
     // A bubble with one or more interactive balls is considered live
-    if((interactivesDict = PyDict_GetItem(bubbleInteractives, key)))
+    if((interactives = PyDict_GetItem(bubbleInteractives, key)))
     {
-        interactiveCount = PyDict_Size(interactivesDict);
+        interactiveCount = PySet_Size(interactives);
         if(interactiveCount != 0)
         {
             Py_DECREF(key);
@@ -4371,11 +4371,11 @@ size_t Ballpark::GetInteractiveCnt(Ball *ball)
 
     Py_ssize_t cnt = 0;
 
-    PyObject *dict;
+    PyObject *interactives;
     PyObject *key = PyLong_FromLong(ball->mNewBubble);
 
-    if((dict = PyDict_GetItem(bubbleInteractives, key)))
-        cnt = PyDict_Size(dict);
+    if((interactives = PyDict_GetItem(bubbleInteractives, key)))
+        cnt = PySet_Size(interactives);
 
     Py_DECREF(key);
 
@@ -4478,13 +4478,13 @@ void Ballpark::DecreaseInteractiveCnt(Partitionable *p, long inBubble)
         if(inBubble != -1)
         {
             PyObject *key = PyLong_FromLong(inBubble);
-            PyObject *dict;
-            if((dict = PyDict_GetItem(bubbleInteractives, key)))
+            PyObject *interactives;
+            if((interactives = PyDict_GetItem(bubbleInteractives, key)))
             {
                 PyObject *key2 = PyLong_FromLongLong(p->mId);
-                PyDict_DelItem(dict, key2);
+                PySet_Discard(interactives, key2);
                 Py_DECREF(key2);
-                val = PyDict_Size(dict);
+                val = PySet_Size(interactives);
                 //CCP_LOGWARN_CH( s_chPark,"[%d] Decreasing count for ball %d in bubble %d", mCurrentTime, ball->mId, inBubble);
 
                 if(val == 0)
@@ -4514,17 +4514,17 @@ void Ballpark::IncreaseInteractiveCnt(Partitionable *p, long inBubble)
         if(inBubble != -1)
         {
             //CCP_LOGWARN_CH( s_chPark,"[%d] Increasing count for ball %d in bubble %d", mCurrentTime, ball->mId, inBubble);
-            PyObject *dict;
+            PyObject *interactives;
             PyObject *key = PyLong_FromLong(inBubble);
-            if(!(dict = PyDict_GetItem(bubbleInteractives, key)))
+            if(!(interactives = PyDict_GetItem(bubbleInteractives, key)))
             {
-                dict = PyDict_New();
-                PyDict_SetItem(bubbleInteractives, key, dict);
-                Py_DECREF(dict);
+                interactives = PySet_New(NULL);
+                PyDict_SetItem(bubbleInteractives, key, interactives);
+                Py_DECREF(interactives);
             }
 
             PyObject *key2 = PyLong_FromLongLong(p->mId);
-            PyDict_SetItem(dict, key2, Py_None);
+            PySet_Add(interactives, key2);
             Py_DECREF(key2);
             Py_DECREF(key);
 
@@ -4746,7 +4746,6 @@ ClientBall* Ballpark::GetEgo()
         return mLastEgoBall;
 
     // Either mEgo changed or the pointer is invalid
-    Ball *bibi = mBalls[mEgo];
     mLastEgoBall = (ClientBall *)mBalls[mEgo];
 
     if(!mLastEgoBall)

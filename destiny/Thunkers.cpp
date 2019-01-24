@@ -1083,7 +1083,6 @@ PyObject* Ballpark::PyGetRemoteFollowers(
 
 	// Cycle over all free balls
 	DictOfFreeBalls::iterator sit;
-    //DictOfBalls::iterator sit;
 	Ball *src, *dst;
 	for(sit = mFreeBalls.begin(); sit != mFreeBalls.end(); ++sit)
 	{
@@ -2416,7 +2415,8 @@ void Ballpark::PopulateAddDelForBubble(PyObject *bubble, PyObject *bubbleAddList
 					CCP_LOGWARN_CH( s_chPark, "[%d] Skipping myself in same", mCurrentTime);
 				continue;
 			}
-		}else
+		}
+		else
 		{
 			// Don't include cloaked balls removals
 			if(ball && ball->isCloaked)
