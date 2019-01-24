@@ -37,8 +37,7 @@ ClientBall::ClientBall(IRoot *lockobj) :
     mPosUpdateTime(0),
     mRotUpdateTime(0),
     mElapsed(0.0),
-    mCenterDist(0.0),
-    mSurfaceDist(0.0),
+    mCenterDist(-1.0),
 	mMaxAngle(0.25f),
 	mMaxAngularVelocity(0.5f * float( _PI_ )),
 	mInvInertiaTensor(-1.0),
@@ -1019,7 +1018,7 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
     InforceContinuity();
 
     bool shouldUpdateDist = false;
-    if(mElapsed==0.0)
+    if(mElapsed==0.0 || mCenterDist < 0.0)
         shouldUpdateDist = true;
 
     // fraction tells us how far we are in the interpolation segment. Should usually be between 0 and 1.
@@ -1065,11 +1064,8 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
     {
         Vector3d reference(0.0, 0.0, 0.0);
         mPark->GetReferencePoint(&reference, time);
-
-        mCenterDist = (mLastPos - reference).Length() ;
-        Ball *theEgo = mPark->GetEgo();
-        if(theEgo)
-            mSurfaceDist = mCenterDist - mRadius - theEgo->mRadius;
+        if(reference.LengthSq() > 0.0)
+            mCenterDist = (mLastPos - reference).Length();
     }
 
     if(mShowBoxes)
@@ -1133,7 +1129,7 @@ Vector3* ClientBall::GetValueAt(
     if(this==theEgo)
     {
         *in = Vector3(0.0f, 0.0f, 0.0f);
-        mCenterDist = mSurfaceDist = 0.0;
+        mCenterDist = 0.0;
         return in;
     }
     if(!theEgo)
@@ -1155,8 +1151,8 @@ Vector3* ClientBall::GetValueAt(
 
         if(time - mPosUpdateTime > 10000000)
         {
-            mCenterDist = Length( *in );
-            mSurfaceDist = mCenterDist - mRadius - theEgo->mRadius;
+            if(reference.LengthSq() > 0.0)
+                mCenterDist = Length( *in );
             // Handsoft: 337897 -  the recent changes of scene->scene2 
             // seems to have changed the call order and this gets called on
             // fixed balls before the update does. this has the effect of making 
@@ -1784,6 +1780,26 @@ void ClientBall::ApplyAngularVelocityToRotation( float dt )
 		// Add the new angle to the current rotation
 		mImpactRotation = Normalize( mImpactRotation * deltaAngle );
 	}
+}
+
+double ClientBall::GetSurfaceDistance()
+{
+    Ball *egoBall = mPark->mBalls[mPark->mEgo];
+    if(!egoBall || egoBall == this)
+        return 0.0;
+    return std::max(GetCenterDistance() - mRadius - egoBall->mRadius, 0.0);
+
+}
+
+double ClientBall::GetCenterDistance()
+{
+    if(mCenterDist < 0.0)
+    {
+        Ball *egoBall = mPark->mBalls[mPark->mEgo];
+        if(egoBall)
+            return egoBall == this ? 0.0 : (mNewPos - egoBall->mNewPos).Length();
+    }
+    return std::max(mCenterDist, 0.0);
 }
 
 //---------------------------------------------------------------------------------------

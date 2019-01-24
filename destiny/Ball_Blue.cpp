@@ -477,51 +477,50 @@ const Be::ClassInfo* ClientBall::ExposeToBlue()
 			Be::READWRITE
 		)
 
-		MAP_ATTRIBUTE
+		MAP_PROPERTY_READONLY
 		(
 			"centerDist",
-			mCenterDist,
-			"center-center distance from ego",
-			Be::READ
+			GetCenterDistance,
+			"center-center distance from ego"
 		)
-		MAP_ATTRIBUTE
+
+		MAP_PROPERTY_READONLY
 		(
 			"surfaceDist",
-			mSurfaceDist,
-			"surface-surface distance from ego",
-			Be::READ
-		)		
+			GetSurfaceDistance,
+			"surface-surface distance from ego"
+		)
 
 		MAP_ATTRIBUTE
 		(
-		"maxAngle",
-		mMaxAngle,
-		"max impact angle",
-		Be::READWRITE
+		    "maxAngle",
+		    mMaxAngle,
+		    "max impact angle",
+		    Be::READWRITE
 		)
 		
 		MAP_ATTRIBUTE
 		(
-		"maxAngularVelocity",
-		mMaxAngularVelocity,
-		"max angular velocity",
-		Be::READWRITE
+		    "maxAngularVelocity",
+		    mMaxAngularVelocity,
+		    "max angular velocity",
+		    Be::READWRITE
 		)
 
 		MAP_ATTRIBUTE
 		(
-		"speedModifier",
-		mSpeedModifier,
-		"How much faster does the ship move when it is hit versus when it is recovering",
-		Be::READWRITE
+		    "speedModifier",
+		    mSpeedModifier,
+		    "How much faster does the ship move when it is hit versus when it is recovering",
+		    Be::READWRITE
 		)
 
 		MAP_ATTRIBUTE
 		(
-		"minimumAngularVelocity",
-		mMinimumAngularVelocity,
-		"Minimum angular velocity, impacts producing angular velocity less than this will not be processed",
-		Be::READWRITE
+		    "minimumAngularVelocity",
+		    mMinimumAngularVelocity,
+		    "Minimum angular velocity, impacts producing angular velocity less than this will not be processed",
+		    Be::READWRITE
 		)
 
 		MAP_METHOD_AS_METHOD

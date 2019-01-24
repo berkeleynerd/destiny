@@ -27,11 +27,6 @@
 
 #include <trinity/include/ITriFunction.h>
 
-BLUE_INTERFACE(IBall) : IRoot
-{	
-	virtual void GetDistances(
-		double *surfaceDist, double *centerDist
-		) = 0;
-};
+BLUE_INTERFACE(IBall) : IRoot {};
 
 #endif

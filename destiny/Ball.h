@@ -348,13 +348,6 @@ public:
 	bool OnModified(
 		Be::Var* vBall
 		);
-	
-	////////////////////////////////
-	// IBall
-
-	void GetDistances(
-		double *surfaceDist, double *centerDist
-		) { return; };
 
 public:
 	/////////////////////////////////////////
@@ -396,7 +389,8 @@ public:
 	double mPitchSpeed;
 
 	double mCenterDist;
-	double mSurfaceDist;
+	double GetCenterDistance(); // getter for exposed property
+	double GetSurfaceDistance(); // getter for exposed property
 
 	Be::Time mPosUpdateTime; // last time pos was interpolated
 	Be::Time mRotUpdateTime; // last time rot was interpolated
@@ -458,15 +452,6 @@ public:
 	void ApplyImpulsiveForceAtPosition( const Vector3 &impulsiveForce, const Vector3 &pos );
 	void ApplyAngularVelocityToRotation( float dt );
 
-	////////////////////////////////
-	// IBall
-
-	void GetDistances(
-		double *surfaceDist, double *centerDist
-		) { *surfaceDist = mSurfaceDist;
-		    *centerDist = mCenterDist;
-			return;
-		};
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// IEveReferencePoint
