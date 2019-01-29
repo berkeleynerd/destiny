@@ -1784,6 +1784,8 @@ void ClientBall::ApplyAngularVelocityToRotation( float dt )
 
 double ClientBall::GetSurfaceDistance()
 {
+    if(mPark->mEgo <= 0)
+        return 0.0;
     Ball *egoBall = mPark->mBalls[mPark->mEgo];
     if(!egoBall || egoBall == this)
         return 0.0;
@@ -1793,7 +1795,7 @@ double ClientBall::GetSurfaceDistance()
 
 double ClientBall::GetCenterDistance()
 {
-    if(mCenterDist < 0.0)
+    if(mCenterDist < 0.0 && mPark->mEgo)
     {
         Ball *egoBall = mPark->mBalls[mPark->mEgo];
         if(egoBall)
