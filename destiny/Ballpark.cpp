@@ -2187,17 +2187,16 @@ void Ballpark::FollowBall(
 
     Ball *dest = mBalls[dstId];
     if(!dest)
-        return;
+	{
+		CCP_LOGWARN_CH(s_chPark, "Ball:%I64d trying to follow non-existent ball:%I64d. Cancelled.\n", srcId, dstId);
+		return;
+	}
 
     if(dest->isMoribund)
     {
         CCP_LOG_CH( s_chPark,"Ball:%I64d trying to follow moribund ball:%I64d. Cancelled.\n", srcId, dstId);
         return; // Can't follow dead balls
     }
-
-    // the source ball exists
-    // stop whatever it was doing
-    Stop(ball);
 
     if(ball->mNewBubble != dest->mNewBubble)
     {
@@ -2211,7 +2210,11 @@ void Ballpark::FollowBall(
         return;
     }
 
-    // Now start following the dstId ball
+	// the source ball exists
+	// stop whatever it was doing
+	Stop(ball);
+
+	// Now start following the dstId ball
     ball->mFollowId = dstId;
     ball->mFollowPtr = dest;
     ball->mFollowRange = range;
@@ -2311,7 +2314,10 @@ void Ballpark::Orbit(
 
     Ball *dest = mBalls[dstId];
     if(!dest)
-        return;
+	{
+		CCP_LOGWARN_CH(s_chPark, "Ball:%I64d trying to orbit non-existent ball:%I64d. Cancelled.\n", srcId, dstId);
+		return;
+	}
 
     if(dest->isMoribund)
     {
@@ -2319,23 +2325,23 @@ void Ballpark::Orbit(
         return; // Can't orbit dead balls
     }
 
-    // the source ball exists
-    // stop whatever it was doing
-    Stop(ball);
-
     if(ball->mNewBubble != dest->mNewBubble)
     {
-        CCP_LOG_CH( s_chPark,"Ball:%I64d trying to orbit Ball:%I64d in another bubble. Cancelled.\n", srcId, dstId);
+		CCP_LOGWARN_CH(s_chPark, "Ball:%I64d trying to orbit Ball:%I64d in another bubble. Cancelled.\n", srcId, dstId);
         return;
     }
 
     if(dest->isCloaked)
     {
-        CCP_LOG_CH( s_chPark,"Ball:%I64d trying to orbit cloaked Ball:%I64d. Cancelled.\n", srcId, dstId);
+		CCP_LOGWARN_CH(s_chPark, "Ball:%I64d trying to orbit cloaked Ball:%I64d. Cancelled.\n", srcId, dstId);
         return;
     }
 
-    // Now start following the dstId ball
+	// the source ball exists
+	// stop whatever it was doing
+	Stop(ball);
+
+	// Now start following the dstId ball
     ball->mFollowId = dstId;
     ball->mFollowPtr = dest;
     ball->mFollowRange = range;
