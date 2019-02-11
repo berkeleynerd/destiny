@@ -33,9 +33,6 @@
     <ClInclude Include="DstConstants.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="Hashers.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="MapOfBalls.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -67,6 +64,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SortedSets.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="StaticCollidable.h">

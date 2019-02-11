@@ -590,7 +590,6 @@
     <ClInclude Include="Capsule.h" />
     <ClInclude Include="Collision.h" />
     <ClInclude Include="DstConstants.h" />
-    <ClInclude Include="Hashers.h" />
     <ClInclude Include="MapOfBalls.h" />
     <ClInclude Include="MapOfLongLongs.h" />
     <ClInclude Include="MiniBall.h" />
@@ -602,6 +601,7 @@
     <ClInclude Include="Plane.h" />
     <ClInclude Include="Random.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="SortedSets.h" />
     <ClInclude Include="StaticCollidable.h" />
     <ClInclude Include="StdAfx.h" />
     <ClInclude Include="Triangle.h" />
