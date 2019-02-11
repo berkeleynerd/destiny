@@ -741,5 +741,17 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			PyAdjustTimes,
 			"When you need to move all the time tracking for the park and its balls, this is your man.  If you're not doing this from an OnSimClockRebase, you're probably doing it wrong."
 		)
+		MAP_METHOD_AS_METHOD
+		(
+			"GetBallBoxKeys",
+			PyGetBallBoxKeys,
+			"Get a list of box keys [(level, ix, iy, iz)...] that a ball is in"
+		)
+		MAP_METHOD_AS_METHOD
+		(
+			"GetBoxChildren",
+			PyGetBoxChildren,
+			"Describes the contents of a box: ([child box_keys...], [ballIDs...], [staticCollidableIDs]). Intended mostly as debugging aid"
+		)
 	EXPOSURE_END()
 }

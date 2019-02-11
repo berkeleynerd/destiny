@@ -549,7 +549,7 @@ void Ball::CheckForProximity_Sensor()
     if(mSensor.balls.size() > 0)
     {
         //create the set of nearby ballIDs on demand
-        std::unordered_set<ID> nearby;
+		SetOfIDs nearby;
         for (VectorOfBalls::iterator i = uni.begin(); i!=uni.end(); ++i)
             nearby.insert((*i)->mId);
 
@@ -687,7 +687,7 @@ void Modulo2pi(double& a,double& b)
 
 void Ball::DeleteFromBoxes()
 {
-    SetOfBoxes::iterator it;
+	SortedSetOfBoxes::iterator it;
     Box* box;
 
     // Go over all boxes the ball intersects
@@ -1490,7 +1490,8 @@ void Ball::AddActualMinicapsule(MiniCapsule* c)
 	ID theId = -1;
 
 	Capsule *capsule = mPark->AddCapsule(
-		-1, 
+		-1,
+		c->mParentBallID,
 		mNewPos.x + c->mHemisphereA.x, mNewPos.y + c->mHemisphereA.y, mNewPos.z + c->mHemisphereA.z, 
 		mNewPos.x + c->mHemisphereB.x, mNewPos.y + c->mHemisphereB.y, mNewPos.z + c->mHemisphereB.z, 
 		c->mRadius);
@@ -1510,6 +1511,7 @@ void Ball::AddMiniCapsule(
 	)
 {
 	MiniCapsule* c = new OMiniCapsule;
+	c->mParentBallID = mId;
 	c->mHemisphereA.x = ax;
 	c->mHemisphereA.y = ay;
 	c->mHemisphereA.z = az;
@@ -1534,6 +1536,7 @@ void Ball::AddMiniBox(
 	)
 {
 	MiniBox* b = new OMiniBox;
+	b->mParentBallID = mId;
 	b->mCorner = corner;
 	b->mLocalX = localX;
 	b->mLocalY = localY;
@@ -1597,7 +1600,8 @@ void Ball::AddActualMiniBox(MiniBox* b)
 	ID theId = -1;
 
 	OrientedBox *box = mPark->AddOrientedBox(
-		-1, 
+		-1,
+		b->mParentBallID,
 		b->mCorner.x + mNewPos.x, b->mCorner.y + mNewPos.y, b->mCorner.z + mNewPos.z,
 		b->mLocalX.x, b->mLocalX.y, b->mLocalX.z,
 		b->mLocalY.x, b->mLocalY.y, b->mLocalY.z,
@@ -1823,6 +1827,25 @@ PyObject* Ball::PyAddMiniBall(PyObject* args)
     return Py_None;
 }
 
+PyObject* Ball::PyAddMiniCapsule(PyObject* args)
+{
+	double ax, ay, az, bx, by, bz;
+	float r;
+
+	if (!PyArg_ParseTuple(args, "ddddddf",
+		&ax, &ay, &az,
+		&bx, &by, &bz,
+		&r))
+	{
+		return NULL;
+	}
+
+	AddMiniCapsule(ax, ay, az, bx, by, bz, r);
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 PyObject* Ball::PyAddMiniBox(PyObject* args)
 {
 	double c0, c1, c2, x0, x1, x2, y0, y1, y2, z0, z1, z2;
@@ -2001,17 +2024,6 @@ void Ball::FreeFormationSlot(size_t slot)
 }
 
 
-size_t BallPtrHasher::operator ()(const Ball* b) const
-{
-    return std::hash<ID>()(b->mId);
-}
-
-bool BallPtrHasher::operator () (const Ball* r, const Ball* l) const
-{
-    return r->mId == l->mId;
-}
-
-
 void Ball::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
 {
 	int q;
@@ -2183,5 +2195,28 @@ void Ball::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
 			InsertInBox(box2);
 			SetBoxActive(13+mod[0]+3*mod[1]+9*mod[2], true);
 		}
+	}
+}
+
+bool BallSortComparer::operator () (const Ball* x, const Ball* y) const
+{
+	// returns true if X precedes and is not equal to Y in the sort order.
+
+	// We need to ensures deterministic ordering between balls and miniballs across clients and servers.
+	// Ball IDs are shared, but miniball IDs are locally generated. Therefore for miniballs we must
+	// use the parent ball as the primary sort key, followed by the mini ball ID as a secondary sort key.
+	// (Within a single ball, all mini balls are ID'd in the same order across client/server, even if the absolute IDs don't match)
+	if ((x->mId < 0) && (y->mId < 0))
+	{
+		// Both balls are mini/local balls, so sort based on parent ID first:
+		if (x->mOwnerId < y->mOwnerId) return true;
+		if (x->mOwnerId > y->mOwnerId) return false;
+		// Both balls are miniballs under the same parent - can now compare their IDs directly:
+		return x->mId < y->mId;
+	}
+	else
+	{
+		// At least one ball is a regular (not mini/local) ball - sort based only on ball ID
+		return x->mId < y->mId;
 	}
 }

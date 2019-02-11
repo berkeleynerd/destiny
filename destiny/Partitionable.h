@@ -1,14 +1,9 @@
-
 #ifndef _PARTITIONABLE_H_
 #define _PARTITIONABLE_H_
 
-
 #include "Vector3d.h"
-class Box;
-class Ballpark;
-#include "Hashers.h"
+#include "SortedSets.h"
 
-typedef std::unordered_set<Box *, BoxPtrHasher, BoxPtrHasher> SetOfOrderedBoxes;
 typedef int64_t ID;
 
 class Partitionable
@@ -33,7 +28,7 @@ public:
 	long mOldBubble; // old bubble Id
 	bool isInteractive; // true if ball is associated with a user
 	
-	SetOfOrderedBoxes mBoxes;
+	SortedSetOfBoxes mBoxes;
 	Box *mMyBox;
 	Ballpark *mPark;
 

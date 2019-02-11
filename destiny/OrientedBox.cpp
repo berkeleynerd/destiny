@@ -2,13 +2,15 @@
 #include "OrientedBox.h"
 
 void OrientedBox::Initialize(
-	ID theID, 
+	ID theID,
+	ID parentObjectId,
 	double c0, double c1, double c2,
 	double x0, double x1, double x2,
 	double y0, double y1, double y2,
 	double z0, double z1, double z2 )
 {
 	mId = theID;
+	mParentBallId = parentObjectId;
 	Vector3d corner(c0, c1, c2);
 	Vector3d local_x(x0, x1, x2);
 	Vector3d local_y(y0, y1, y2);

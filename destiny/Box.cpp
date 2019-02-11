@@ -1,5 +1,10 @@
 #include "stdafx.h"
 #include "Box.h"
+#include "SortedSets.h"
+#include "StaticCollidable.h"
+#include "Ball.h"
+
+static CcpLogChannel_t s_chBox = CCP_LOG_DEFINE_CHANNEL("Box");
 
 static int boxCount = 0;
 //---------------------------------------------------------------------------------------
@@ -136,7 +141,7 @@ void Box::AddStaticCollidable(StaticCollidable* collidable)
 
 void Box::RemoveChildren(Box *box)
 {
-	SetOfBoxes::iterator it = mChildren.find(box);
+	SortedSetOfBoxes::iterator it = mChildren.find(box);
 	if(it != mChildren.end())
 		mChildren.erase(it); // children found, erase it
 
@@ -152,7 +157,7 @@ void Box::RemoveChildren(Box *box)
 
 void Box::RemoveBall(Ball *ball)
 {
-	SetOfBalls::iterator it = balls.find(ball);
+	SortedSetOfBalls::iterator it = balls.find(ball);
 	if(it != balls.end())
 		balls.erase(it); // ball found, erase it
 
@@ -168,7 +173,7 @@ void Box::RemoveBall(Ball *ball)
 
 void Box::RemoveStaticCollidable(StaticCollidable *collidable)
 {
-	SetOfOrderedStaticCollidables::iterator it = mStaticCollidables.find(collidable);
+	SortedSetOfStaticCollidables::iterator it = mStaticCollidables.find(collidable);
 	if(it != mStaticCollidables.end())
 		mStaticCollidables.erase(it);
 
@@ -246,13 +251,8 @@ long Box::NearbyBubbles()
 }
 
 
-
-size_t BoxPtrHasher::operator ()(const Box* b) const
+bool BoxSortComparer::operator () (const Box* x, const Box* y) const
 {
-	return std::hash<size_t>()(b->mKey);
-}
-
-bool BoxPtrHasher::operator () (const Box* r, const Box* l) const
-{
-	return r->mKey == l->mKey;
+	// returns true if X precedes and is not equal to Y in the sort order.
+	return x->mKey < y->mKey;
 }

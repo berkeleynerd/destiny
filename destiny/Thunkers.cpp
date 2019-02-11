@@ -106,6 +106,7 @@ PyObject* Ballpark::PyAddCapsule(
 	)
 {
 	ID srcId;
+	ID parentId;
 
 	double ax;
 	double ay;
@@ -117,8 +118,9 @@ PyObject* Ballpark::PyAddCapsule(
 
 	float radius;
 
-	if(!PyArg_ParseTuple(args, "Lddddddf",
+	if(!PyArg_ParseTuple(args, "LLddddddf",
 		&srcId,
+		&parentId,
 		&ax, &ay, &az,
 		&bx, &by, &bz,
 		&radius
@@ -127,6 +129,7 @@ PyObject* Ballpark::PyAddCapsule(
 	
 	Capsule *c = AddCapsule(
 		srcId,
+		parentId,
 		ax, ay, az,
 		bx, by, bz,
 		radius);
@@ -138,6 +141,7 @@ PyObject* Ballpark::PyAddOrientedBox(
 	)
 {
 	ID srcId;
+	ID parentId;
 
 	double corner_0;
 	double corner_1;
@@ -156,8 +160,9 @@ PyObject* Ballpark::PyAddOrientedBox(
 	double z2;
 
 
-	if(!PyArg_ParseTuple(args, "Ldddddddddddd",
+	if(!PyArg_ParseTuple(args, "LLdddddddddddd",
 		&srcId,
+		&parentId,
 		&corner_0, &corner_1, &corner_2,
 		&x0, &x1, &x2,
 		&y0, &y1, &y2,
@@ -166,6 +171,7 @@ PyObject* Ballpark::PyAddOrientedBox(
 
 	OrientedBox *b = AddOrientedBox(
 		srcId,
+		parentId,
 		corner_0, corner_1, corner_2,
 		x0, x1, x2,
 		y0, y1, y2,
@@ -2556,7 +2562,6 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 		PyObject *oldBubble = 0;
 		if(mProbe==uBall->mId)
 			CCP_LOGWARN_CH( s_chPark,"[%d] Checking adds and dels", mCurrentTime);
-		//CCP_LOG_CH( s_chPark,"Checking for ball %d [n:%d, o:%d]", uBall->mId, uBall->mNewBubble, uBall->mOldBubble);
 
 		if(uBall->mNewBubble != -1)
 		{
@@ -3167,13 +3172,13 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 	if(miniBallCnt)
 		byteCount += s->Write(&miniBallCnt, sizeof(miniBallCnt));
 
-	for(int i =0; i < miniBallCnt; i++)
+	for(int i = 0; i < miniBallCnt; i++)
 	{
 		MiniBall *mb = (MiniBall *)(void *)(b->mMiniBalls.GetAt(i));
-		byteCount += s->Write(&mb->mPos.x, sizeof(mb->mPos) );
+		byteCount += s->Write(&mb->mPos.x, sizeof(mb->mPos));
 		byteCount += s->Write(&mb->mRadius, sizeof(mb->mRadius));
 	}
-	
+
 	// Minicapsules
 	if(miniCapsuleCnt)
 		byteCount += s->Write(&miniCapsuleCnt, sizeof(miniCapsuleCnt));
@@ -3181,8 +3186,8 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 	for(int i =0; i < miniCapsuleCnt; i++)
 	{
 		MiniCapsule *mc = (MiniCapsule *)(void *)(b->mMiniCapsules.GetAt(i));
-		byteCount += s->Write(&mc->mHemisphereA, sizeof(mc->mHemisphereA) );
-		byteCount += s->Write(&mc->mHemisphereB, sizeof(mc->mHemisphereB) );
+		byteCount += s->Write(&mc->mHemisphereA, sizeof(mc->mHemisphereA));
+		byteCount += s->Write(&mc->mHemisphereB, sizeof(mc->mHemisphereB));
 		byteCount += s->Write(&mc->mRadius, sizeof(mc->mRadius));
 	}
 
@@ -3216,5 +3221,108 @@ PyObject* Ballpark::PyGetCurrentEgoPos(
 	PyTuple_SET_ITEM(ret, 1, PyFloat_FromDouble( pos.y ));
 	PyTuple_SET_ITEM(ret, 2, PyFloat_FromDouble( pos.z ));
 
+	return ret;
+}
+
+PyObject* Ballpark::PyGetBallBoxKeys(
+	PyObject* args
+	)
+{
+		ID srcID;
+	
+		if (!PyArg_ParseTuple(args, "L",
+			&srcID
+			))
+			return NULL;
+	
+		PyObject* boxList = PyList_New(0);
+
+		Ball *ball = mBalls[srcID];
+		if (ball)
+		{
+			SortedSetOfBoxes::iterator it_boxes;
+			Box* box;
+			for (it_boxes = ball->mBoxes.begin(); it_boxes != ball->mBoxes.end(); ++it_boxes)
+			{
+				box = *it_boxes;
+
+				PyObject *tuple = PyTuple_New(4);
+				PyTuple_SET_ITEM(tuple, 0, PyLong_FromLong(box->mLevel));
+				PyTuple_SET_ITEM(tuple, 1, PyLong_FromLongLong(box->mKey.ix));
+				PyTuple_SET_ITEM(tuple, 2, PyLong_FromLongLong(box->mKey.iy));
+				PyTuple_SET_ITEM(tuple, 3, PyLong_FromLongLong(box->mKey.iz));
+				PyList_Append(boxList, tuple);
+				Py_DECREF(tuple);
+			}
+		}
+		return boxList;
+}
+
+PyObject* Ballpark::PyGetBoxChildren(
+	PyObject* args
+	)
+{
+	int level;
+	int64_t ix, iy, iz;
+
+	if (!PyArg_ParseTuple(args, "iLLL",
+		&level,
+		&ix,
+		&iy,
+		&iz
+		))
+		return NULL;
+
+	PyObject* childBoxList = PyList_New(0);
+	PyObject* childBallList = PyList_New(0);
+	PyObject* childStaticCollidableList = PyList_New(0);
+
+	Box* parentBox = mPartition->CheckBox(ix, iy, iz, level);
+	if (parentBox)
+	{
+		SortedSetOfBoxes::iterator it_boxes;
+		Box* childBox;
+		for (it_boxes = parentBox->mChildren.begin(); it_boxes != parentBox->mChildren.end(); ++it_boxes)
+		{
+			childBox = *it_boxes;
+
+			PyObject *tuple = PyTuple_New(4);
+			PyTuple_SET_ITEM(tuple, 0, PyLong_FromLong(childBox->mLevel));
+			PyTuple_SET_ITEM(tuple, 1, PyLong_FromLongLong(childBox->mKey.ix));
+			PyTuple_SET_ITEM(tuple, 2, PyLong_FromLongLong(childBox->mKey.iy));
+			PyTuple_SET_ITEM(tuple, 3, PyLong_FromLongLong(childBox->mKey.iz));
+			PyList_Append(childBoxList, tuple);
+			Py_DECREF(tuple);
+		}
+
+		SortedSetOfBalls::iterator it_balls;
+		Ball* ball;
+		for (it_balls = parentBox->balls.begin(); it_balls != parentBox->balls.end(); ++it_balls)
+		{
+			ball = *it_balls;
+
+			PyObject *val = PyLong_FromLongLong(ball->mId);
+			PyList_Append(childBallList, val);
+			Py_DECREF(val);
+		}
+
+		SortedSetOfStaticCollidables::iterator it_staticCollidables;
+		StaticCollidable* staticCollidable;
+		for (it_staticCollidables = parentBox->mStaticCollidables.begin(); it_staticCollidables != parentBox->mStaticCollidables.end(); ++it_staticCollidables)
+		{
+			staticCollidable = *it_staticCollidables;
+
+			PyObject *tuple = PyTuple_New(2);
+			PyTuple_SET_ITEM(tuple, 0, PyLong_FromLongLong(staticCollidable->mId));
+			PyTuple_SET_ITEM(tuple, 1, PyLong_FromLongLong(staticCollidable->mParentBallId));
+			PyList_Append(childStaticCollidableList, tuple);
+			Py_DECREF(tuple);
+		}
+	}
+
+	PyObject *ret = PyTuple_New(3);
+	PyTuple_SET_ITEM(ret, 0, childBoxList);
+	PyTuple_SET_ITEM(ret, 1, childBallList);
+	PyTuple_SET_ITEM(ret, 2, childStaticCollidableList);
 	return ret;
 }

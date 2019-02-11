@@ -9,7 +9,7 @@ BLUE_CLASS( Capsule ) : public IRoot, public StaticCollidable
 {
 public:
 	EXPOSE_TO_BLUE();
-	void Initialize(ID theID, double ax, double ay, double az, double bx, double by, double bz, float radius);
+	void Initialize(ID theID, ID parentObjectId, double ax, double ay, double az, double bx, double by, double bz, float radius);
 	
 	//StaticCollidable abstract functions
 	float GetBoundingRadius();

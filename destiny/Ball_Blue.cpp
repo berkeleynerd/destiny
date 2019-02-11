@@ -419,16 +419,16 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 
 		MAP_METHOD_AS_METHOD
 		(
+			"AddMiniCapsule",
+			PyAddMiniCapsule,
+			"Adds a minicapsule to the minicapsule list"
+		)
+
+		MAP_METHOD_AS_METHOD
+		(
 			"AddMiniBox",
 			PyAddMiniBox,
 			"Adds a minibox to the minibox list"
-		)
-		
-		MAP_METHOD_AND_WRAP
-		(
-			"AddMiniCapsule",
-			AddMiniCapsule,
-			"Adds a minicapsule to the minicapsule list"
 		)
 
 		MAP_METHOD_AS_METHOD

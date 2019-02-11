@@ -11,7 +11,9 @@ BLUE_CLASS( OrientedBox ) : public IRoot, public StaticCollidable
 {
 public:
 	EXPOSE_TO_BLUE();
-	void Initialize(ID theID,
+	void Initialize(
+	    ID theID,
+	    ID parentObjectId,
 		double c0, double c1, double c2,
 		double x0, double x1, double x2,
 		double y0, double y1, double y2,

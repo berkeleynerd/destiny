@@ -83,7 +83,6 @@ typedef std::unordered_set<Ball *> SetOfBalls;
 typedef std::vector<Ball *> VectorOfBalls;
 typedef std::vector<Capsule *> VectorOfCapsules;
 typedef std::back_insert_iterator< VectorOfBalls > BallVectorInsertor;
-typedef std::unordered_set<Box *> SetOfBoxes;
 typedef std::vector<Box *> VectorOfBoxes;
 typedef std::back_insert_iterator< VectorOfBoxes > BoxVectorInsertor;
 typedef std::vector<Vector3d> VectorOfVectors;
@@ -219,6 +218,7 @@ public://FUNCTIONS
 
 	Capsule * AddCapsule(
 		const ID& objectId,
+		const ID& parentObjectId,
 		double ax,
 		double ay,
 		double az,
@@ -230,6 +230,7 @@ public://FUNCTIONS
 
 	OrientedBox * AddOrientedBox(
 		const ID& objectId,
+		const ID& parentObjectId,
 		double corner_0,
 		double corner_1,
 		double corner_2,
@@ -946,7 +947,8 @@ public:
 	PyObject* PySetBallNotInParkCallback ( PyObject* args );
 	PyObject* PyEntityWarpIn ( PyObject* args );
 	PyObject* PyAdjustTimes ( PyObject* args );
-
+	PyObject* PyGetBallBoxKeys(PyObject* args);
+	PyObject* PyGetBoxChildren(PyObject* args);
 };
 
 TYPEDEF_BLUECLASS(Ballpark);

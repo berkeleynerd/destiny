@@ -1056,8 +1056,6 @@ void Ballpark::Gradient(Ball *ball)
     {
         neighbor = *kt;
 
-        //CCP_LOG_CH( s_chPark,"[ %d ] Ball %I64d checking against %I64d", mCurrentTime, ball->mId, neighbor->mId);
-
         if( (ball->mMode==DSTBALL_MISSILE && (neighbor->mId == ball->mOwnerId || (neighbor->mMode==DSTBALL_MINIBALL && neighbor->mOwnerId==ball->mOwnerId))) // I am a missile, and the other guy is my daddy
             || ( (neighbor->mMode==DSTBALL_MISSILE || neighbor->mMode==DSTBALL_MUSHROOM) && ball->mId == neighbor->mOwnerId) // The other guy is a missile and I am his daddy
             || ( neighbor->mMode==DSTBALL_MISSILE && ball->mId == neighbor->mFollowId ) // The other guy is a missile and I am his target
@@ -1955,6 +1953,7 @@ Ball * Ballpark::AddBall(
 
 Capsule * Ballpark::AddCapsule(
 	const ID& objectId,
+	const ID& parentObjectId,
 	double ax,
 	double ay,
 	double az,
@@ -1976,7 +1975,7 @@ Capsule * Ballpark::AddCapsule(
 	else
 	{
 		capsule = new OCapsule();
-		capsule->Initialize(theID, ax, ay, az, bx, by, bz, radius);
+		capsule->Initialize(theID, parentObjectId, ax, ay, az, bx, by, bz, radius);
 		mCapsules[theID] = capsule;
 	}
 	
@@ -1990,6 +1989,7 @@ Capsule * Ballpark::AddCapsule(
 
 OrientedBox * Ballpark::AddOrientedBox(
 	const ID& objectId,
+	const ID& parentObjectId,
 	double corner_0, double corner_1, double corner_2,
 	double x0, double x1, double x2,
 	double y0, double y1, double y2,
@@ -2008,7 +2008,9 @@ OrientedBox * Ballpark::AddOrientedBox(
 	else
 	{
 		obb = new OOrientedBox();
-		obb->Initialize(theID,
+		obb->Initialize(
+		    theID,
+		    parentObjectId,
 			corner_0, corner_1, corner_2,
 			x0, x1, x2,
 			y0, y1, y2,

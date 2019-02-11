@@ -2,9 +2,10 @@
 #include "Capsule.h"
 
 
-void Capsule::Initialize(ID theID, double ax, double ay, double az, double bx, double by, double bz, float radius)
+void Capsule::Initialize(ID theID, ID parentObjectId, double ax, double ay, double az, double bx, double by, double bz, float radius)
 {
 	mId = theID;
+	mParentBallId = parentObjectId;
 	mHemisphereA.x = ax;
 	mHemisphereA.y = ay;
 	mHemisphereA.z = az;
@@ -114,7 +115,7 @@ void Capsule::CollideWithBall(Ball* ball)
 				time_of_impact = 0.0;
 				normal = dist;
 				vp1 = ball->mNewVel;
-				ReactToCollision(ball,p0, vp1, m1, normal, time_of_impact);
+				ReactToCollision(ball, p0, vp1, m1, normal, time_of_impact);
 				return;
 			}
 		}

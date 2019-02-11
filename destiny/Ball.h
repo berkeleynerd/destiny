@@ -46,10 +46,7 @@ class Box;
 class Ball;
 
 #include "MapOfLongLongs.h"
-#include "Hashers.h"
-
-typedef std::unordered_set<Ball *, BallPtrHasher, BallPtrHasher> SetOfOrderedBalls;
-typedef std::unordered_set<Ball *> SetOfBalls;
+#include "SortedSets.h"
 
 class ProximitySensor{
 public:
@@ -93,12 +90,10 @@ public:
   Apart from changes between these dynamical states, the behavior of a ball
   is fully deterministic.
 ------------------------------------------------------------------------*/
-typedef std::unordered_set<Box *, BoxPtrHasher, BoxPtrHasher> SetOfOrderedBoxes;
 typedef std::vector<Ball *> VectorOfBalls;
 typedef int64_t ID;
 typedef std::vector<ID> VectorOfIDs;
 typedef std::unordered_set<ID> SetOfIDs;
-
 
 
 class Ball :
@@ -122,7 +117,7 @@ public:
 	// so that it packs more tightly.
 	//--------------------------------------------------//
     ID mFollowId; // the ball being followed for a DSTBALL_FOLLOW, DSTBALL_ORBIT and DSTBALL_MISSILE mode
-    ID mOwnerId; // the ball that launched me for DSTBALL_MISSILE mode
+    ID mOwnerId; // the ball that launched me for DSTBALL_MISSILE mode, or the parent ball (for miniballs)
     int64_t mHarmonic; // Harmonic value of the ball
 
     Ballpark *mPark; // pointer to ball owner
@@ -193,7 +188,7 @@ public:
 	Be::Time mOldTime; // timestamp of old destiny state
 
 	SetOfIDs mFollowers; // IDs of balls following this ball
-	SetOfOrderedBoxes mBoxes; // Boxes that this ball currently intersects, ordered by Box 'key'
+	SortedSetOfBoxes mBoxes; // Boxes that this ball currently intersects, ordered by Box 'key'
 	VectorOfIDs mCollisions; // Objects that have collided with me in the last time step
 	
 	bool mActiveBoxes[27];
@@ -357,6 +352,7 @@ public:
 
 	PyObject* Py__init__( PyObject* args );
 	PyObject* PyAddMiniBall( PyObject* args );
+	PyObject* PyAddMiniCapsule( PyObject* args );
 	PyObject* PyAddMiniBox( PyObject* args );
 	PyObject* PyGetRotatedVector( PyObject* args );
 	PyObject* PyAddProximitySensor( PyObject* args );

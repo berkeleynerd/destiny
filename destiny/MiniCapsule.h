@@ -20,6 +20,7 @@ public:
 	~MiniCapsule();
 
 	ID mId;
+	ID mParentBallID;
 	Vector3d mHemisphereA;
 	Vector3d mHemisphereB;
 	float mRadius;

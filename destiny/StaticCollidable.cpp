@@ -2,19 +2,9 @@
 #include "StaticCollidable.h"
 
 
-size_t StaticCollidablePtrHasher::operator ()(const StaticCollidable* c) const
+StaticCollidable::StaticCollidable():
+	mParentBallId(0)
 {
-	return std::hash<ID>()(c->mId);
-}
-
-bool StaticCollidablePtrHasher::operator () (const StaticCollidable* r, const StaticCollidable* l) const
-{
-	return r->mId == l->mId;
-}
-
-StaticCollidable::StaticCollidable()
-{
-
 }
 
 //---------------------------------------------------------------------------------------
@@ -32,7 +22,7 @@ void StaticCollidable::ClearBoxes()
 //---------------------------------------------------------------------------------------
 void StaticCollidable::DeleteFromBoxes()
 {
-	SetOfBoxes::iterator it;
+	SortedSetOfBoxes::iterator it;
 	Box* box;
 
 	// Go over all boxes the ball intersects
@@ -58,4 +48,14 @@ void StaticCollidable::InsertInBox(Box *box)
 double StaticCollidable::GetInflatedRadius(double dt)
 {
 	return GetBoundingRadius();
+}
+
+bool StaticCollidableSortComparer::operator () (const StaticCollidable* x, const StaticCollidable* y) const
+{
+	// returns true if X precedes and is not equal to Y in the sort order.
+	// StaticCollidables use their parent ball ID as the primary sort key, and only use their own
+	// ID to sort StaticCollidable within the same parent 
+	if (x->mParentBallId < y->mParentBallId) return true;
+	if (x->mParentBallId > y->mParentBallId) return false;
+	return x->mId < y->mId;
 }

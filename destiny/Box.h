@@ -3,15 +3,9 @@
 
 #include "Partition.h"
 #include "Vector3d.h"
-#include "Hashers.h"
+#include "SortedSets.h"
 
 class Ball;
-
-
-
-typedef std::unordered_set<Ball *, BallPtrHasher, BallPtrHasher> SetOfOrderedBalls;
-typedef std::unordered_set<StaticCollidable *, StaticCollidablePtrHasher, StaticCollidablePtrHasher> SetOfOrderedStaticCollidables;
-
 
 class Box
 {
@@ -41,13 +35,13 @@ public:
 	Key mKey;
 
 	// balls contained in this box at this level
-	SetOfOrderedBalls balls;
+	SortedSetOfBalls balls;
 
 	// Static collidable objects contained in this box at this level
-	SetOfOrderedStaticCollidables mStaticCollidables;
+	SortedSetOfStaticCollidables mStaticCollidables;
 
 	// Boxes underneath this one in the partition
-	SetOfBoxes mChildren;
+	SortedSetOfBoxes mChildren;
 
 	// my parent in the partition hierarchy
 	Box *mParent;

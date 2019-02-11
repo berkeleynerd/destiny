@@ -20,6 +20,7 @@ public:
 	~MiniBox();
 
 	ID mId;
+	ID mParentBallID;
 	Vector3d mCorner;
 	Vector3d mLocalX;
 	Vector3d mLocalY;

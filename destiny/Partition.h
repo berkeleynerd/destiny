@@ -6,6 +6,8 @@
 #include <unordered_set>
 #include <iterator>
 
+#include "SortedSets.h"
+
 struct Vector3d;
 
 /*------------------------------------------------------------------------
@@ -35,14 +37,11 @@ class StaticCollidable;
 class Key;
 
 typedef int64_t ID;
-typedef std::unordered_set<Ball *> SetOfBalls;
 typedef std::unordered_map<ID, Ball *> DictOfBalls;
 typedef std::vector<Ball *> VectorOfBalls;
 typedef std::vector<StaticCollidable *> VectorOfStaticCollidables;
 typedef std::pair<ID, Ball*> DictEntry;
 typedef std::unordered_map<Key,Box *,std::hash<size_t>> MapOfBoxes;
-typedef std::unordered_set<Box *> SetOfBoxes;
-typedef std::insert_iterator< SetOfBoxes > BoxSetInsertor;
 typedef std::vector<Box *> VectorOfBoxes;
 typedef std::back_insert_iterator< VectorOfBoxes > BoxVectorInsertor;
 
@@ -194,7 +193,7 @@ public:
 
 	private:
 
-    void ExplodeChildren(SetOfBoxes &children,BoxVectorInsertor &ins);
+	void ExplodeChildren(SortedSetOfBoxes &children, BoxVectorInsertor &ins);
 
     double mGridUnit;
     BoxAllocator mBoxAllocator;

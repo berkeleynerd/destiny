@@ -237,19 +237,19 @@ bool isNotMissile(Ball* ball)
 // ExplodeChildren recursively traverses a box's children list, accumuluting boxes on the way.
 //---------------------------------------------------------------------------------------
 
-void Partition::ExplodeChildren(SetOfBoxes &children,BoxVectorInsertor &ins)
+void Partition::ExplodeChildren(SortedSetOfBoxes &children, BoxVectorInsertor &ins)
 {
-    SetOfBoxes::iterator it;
+	SortedSetOfBoxes::iterator it;
     Box *box;
 
     for(it = children.begin(); it != children.end() ; ++it)
     {
         box = *it;
-        ExplodeChildren(box->mChildren,ins);
+		ExplodeChildren(box->mChildren, ins);
 
         if(!box->balls.empty() || !box->mStaticCollidables.empty())
         {
-                ins = box;
+			ins = box;
         }
     }
 }
@@ -321,9 +321,9 @@ void Partition::GetCollisionCandidates(Ball* ball, VectorOfBalls& uni, VectorOfS
 ---------------------------------------------------------------------------------------*/
 void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCollidables& uniStat, bool isMaster, NearbyCriteria filter)
 {
-    SetOfOrderedBoxes::iterator it;
+	SortedSetOfBoxes::iterator it;
     VectorOfBoxes::iterator lt;
-    SetOfOrderedBalls::iterator jt;
+	SortedSetOfBalls::iterator jt;
     Box *box,*save;
 
     if(!ball)
@@ -436,7 +436,7 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCol
             uni.push_back(otherBall);
         }
 	
-		SetOfOrderedStaticCollidables::iterator sit;
+		SortedSetOfStaticCollidables::iterator sit;
 
 		if(!filter.EXCLUDE_FIXED_BALLS)
 		{
@@ -454,14 +454,14 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCol
 				collidable->mHandled = true;
 				uniStat.push_back(collidable);
 			}
-
-			for(ssize_t i = uniStat.size()-1; i>=0; --i)
-				uniStat[i]->mHandled = false;
 		}
 	}
     
     for(ssize_t i = uni.size()-1; i>=0; --i)
         uni[i]->mHandled = false;
+
+	for (ssize_t i = uniStat.size() - 1; i >= 0; --i)
+		uniStat[i]->mHandled = false;
 }
 
 
