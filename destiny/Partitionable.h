@@ -4,6 +4,9 @@
 #include "Vector3d.h"
 #include "SortedSets.h"
 
+class Box;
+class Ballpark;
+
 typedef int64_t ID;
 
 class Partitionable
