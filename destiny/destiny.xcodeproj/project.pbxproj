@@ -25,10 +25,10 @@
 			fileRef = 0000000A00004db8c4e7c17e;
 			};
 		0000005C00004db8c4e7c17e = {
-			name = Partitionable.h;
+			name = Plane.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = Partitionable.h;
+			path = Plane.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -147,10 +147,10 @@
 			fileRef = 0000006800004db8c4e7c17e;
 			};
 		0000005000004db8c4e7c17e = {
-			name = MapOfLongLongs.h;
+			name = MiniBall.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = MapOfLongLongs.h;
+			path = MiniBall.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -316,10 +316,10 @@
 			defaultConfigurationIsVisible = 0;
 			};
 		0000004C00004db8c4e7c17e = {
-			name = Hashers.h;
+			name = MapOfBalls.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = Hashers.h;
+			path = MapOfBalls.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -470,10 +470,10 @@
 			fileRef = 0000004600004db8c4e7c17e;
 			};
 		0000005A00004db8c4e7c17e = {
-			name = Partition.h;
+			name = Partitionable.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = Partition.h;
+			path = Partitionable.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -582,10 +582,10 @@
 			sourceTree = "<group>";
 			};
 		0000005600004db8c4e7c17e = {
-			name = MiniCapsule.h;
+			name = OrientedBox.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = MiniCapsule.h;
+			path = OrientedBox.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -614,18 +614,18 @@
 			fileRef = 0000003400004db8c4e7c17e;
 			};
 		0000004E00004db8c4e7c17e = {
-			name = MapOfBalls.h;
+			name = MapOfLongLongs.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = MapOfBalls.h;
+			path = MapOfLongLongs.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
 		0000005E00004db8c4e7c17e = {
-			name = Plane.h;
+			name = Random.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = Plane.h;
+			path = Random.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -705,10 +705,10 @@
 			sourceTree = "<group>";
 			};
 		0000006000004db8c4e7c17e = {
-			name = Random.h;
+			name = resource.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = Random.h;
+			path = resource.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -789,27 +789,27 @@
 				0000004A00004db8c4e7c17e,
 				0000004C00004db8c4e7c17e,
 				0000004E00004db8c4e7c17e,
-				0000005000004db8c4e7c17e,
 				0000001A00004db8c4e7c17e,
-				0000005200004db8c4e7c17e,
+				0000005000004db8c4e7c17e,
 				0000001E00004db8c4e7c17e,
-				0000005400004db8c4e7c17e,
+				0000005200004db8c4e7c17e,
 				0000002000004db8c4e7c17e,
 				0000002200004db8c4e7c17e,
-				0000005600004db8c4e7c17e,
+				0000005400004db8c4e7c17e,
 				0000002400004db8c4e7c17e,
 				0000001C00004db8c4e7c17e,
 				0000002600004db8c4e7c17e,
-				0000005800004db8c4e7c17e,
+				0000005600004db8c4e7c17e,
 				0000002800004db8c4e7c17e,
 				0000002A00004db8c4e7c17e,
-				0000005A00004db8c4e7c17e,
+				0000005800004db8c4e7c17e,
 				0000002C00004db8c4e7c17e,
-				0000005C00004db8c4e7c17e,
+				0000005A00004db8c4e7c17e,
 				0000002E00004db8c4e7c17e,
-				0000005E00004db8c4e7c17e,
+				0000005C00004db8c4e7c17e,
 				0000003000004db8c4e7c17e,
-				0000006000004db8c4e7c17e,
+				0000005E00004db8c4e7c17e,
+				0000006200004db8c4e7c17e,
 				0000003200004db8c4e7c17e,
 				0000006400004db8c4e7c17e,
 				0000003400004db8c4e7c17e,
@@ -820,7 +820,7 @@
 				0000006A00004db8c4e7c17e,
 				0000003C00004db8c4e7c17e,
 				0000001600004db8c4e7c17e,
-				0000006200004db8c4e7c17e,
+				0000006000004db8c4e7c17e,
 				0000006C00004db8c4e7c17e,
 				);
 			name = "Source Files";
@@ -860,10 +860,10 @@
 			name = Release;
 			};
 		0000005200004db8c4e7c17e = {
-			name = MiniBall.h;
+			name = MiniBox.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = MiniBall.h;
+			path = MiniBox.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -916,18 +916,18 @@
 			sourceTree = "<group>";
 			};
 		0000006200004db8c4e7c17e = {
-			name = resource.h;
+			name = SortedSets.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = resource.h;
+			path = SortedSets.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
 		0000005400004db8c4e7c17e = {
-			name = MiniBox.h;
+			name = MiniCapsule.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = MiniBox.h;
+			path = MiniCapsule.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
@@ -972,10 +972,10 @@
 			fileRef = 0000001200004db8c4e7c17e;
 			};
 		0000005800004db8c4e7c17e = {
-			name = OrientedBox.h;
+			name = Partition.h;
 			fileEncoding = 4;
 			lastKnownFileType = sourcecode.cpp.h;
-			path = OrientedBox.h;
+			path = Partition.h;
 			isa = PBXFileReference;
 			sourceTree = "<group>";
 			};
