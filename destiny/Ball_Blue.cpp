@@ -371,7 +371,7 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 			"miniBalls",
 			mMiniBalls,
 			"na",
-			Be::READWRITE | Be::PERSIST
+			Be::READ | Be::PERSIST
 		)
 
 		MAP_ATTRIBUTE
@@ -379,7 +379,7 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 			"miniCapsules",
 			mMiniCapsules,
 			"na",
-			Be::READWRITE | Be::PERSIST
+			Be::READ | Be::PERSIST
 		)
 
 		MAP_ATTRIBUTE
@@ -387,7 +387,7 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 			"miniBoxes",
 			mMiniBoxes,
 			"na",
-			Be::READWRITE | Be::PERSIST
+			Be::READ | Be::PERSIST
 		)
 
 
