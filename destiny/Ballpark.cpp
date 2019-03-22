@@ -3443,6 +3443,7 @@ void Ballpark::CloakBall(
         // Add a proximity sensor
         ball->AddProximitySensor(range, 2.0, 0);
     }
+    StopAllFollowers(ball);
     ball->isCloaked = cloakMode;
     ball->isMassive = false;
 }
