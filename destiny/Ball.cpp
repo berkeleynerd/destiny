@@ -1433,6 +1433,7 @@ void Ball::AddMiniBall(
     b->mPos.z = z;
     b->mRadius = r;
     mMiniBalls.Insert(-1, b);
+    b->Unlock();
 
     if(!isFree)
     {
@@ -1520,6 +1521,7 @@ void Ball::AddMiniCapsule(
 	c->mHemisphereB.z = bz;
 	c->mRadius = r;
 	mMiniCapsules.Insert(-1, c);
+	c->Unlock();
 
 	if(!isFree)
 	{
@@ -1543,6 +1545,7 @@ void Ball::AddMiniBox(
 	b->mLocalZ = localZ;
 
 	mMiniBoxes.Insert(-1, b);
+	b->Unlock();
 
 	if(!isFree)
 	{
