@@ -188,7 +188,6 @@ public:
 	Be::Time mOldTime; // timestamp of old destiny state
 
 	SetOfIDs mFollowers; // IDs of balls following this ball
-	SortedSetOfBoxes mBoxes; // Boxes that this ball currently intersects, ordered by Box 'key'
 	VectorOfIDs mCollisions; // Objects that have collided with me in the last time step
 	
 	bool mActiveBoxes[27];
