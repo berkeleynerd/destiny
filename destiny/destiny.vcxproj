@@ -44,6 +44,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9545E741-2B03-40CE-8505-80032EC308F6}</ProjectGuid>
+    <ProjectName>destiny</ProjectName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'" Label="Configuration">
     <PlatformToolset>v100</PlatformToolset>
