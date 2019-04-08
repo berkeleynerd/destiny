@@ -1404,20 +1404,12 @@ void Ball::AddActualMiniball(MiniBall *b)
 		return;
 	}
 
-    ID theId = -1;
-
-    Ball *ball = mPark->AddBall(-1, mMass, b->mRadius, 0.0f,
-                0, 0, 1, 0, 0,
-                mNewPos.x + b->mPos.x, mNewPos.y + b->mPos.y, mNewPos.z + b->mPos.z,
-                0.0, 0.0, 0.0,
-                mAgility,
-                mSpeedFraction
-                );
+	Ball *ball = mPark->AddMiniball(
+		mId, mMass, b->mRadius,
+		mNewPos.x + b->mPos.x, mNewPos.y + b->mPos.y, mNewPos.z + b->mPos.z
+		);
 
     b->mId = ball->mId;
-    ball->mOwnerId = mId;
-    ball->SetMode(DSTBALL_MINIBALL);
-
 }
 
 void Ball::AddMiniBall(

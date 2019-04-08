@@ -216,6 +216,15 @@ public://FUNCTIONS
 		float speedFraction
 		);
 
+	Ball * AddMiniball(
+		const ID& parentObjectId,
+		double mass,
+		float radius,
+		double x,
+		double y,
+		double z
+		);
+
 	Capsule * AddCapsule(
 		const ID& objectId,
 		const ID& parentObjectId,

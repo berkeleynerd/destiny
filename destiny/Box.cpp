@@ -142,8 +142,16 @@ void Box::AddStaticCollidable(StaticCollidable* collidable)
 void Box::RemoveChildren(Box *box)
 {
 	SortedSetOfBoxes::iterator it = mChildren.find(box);
-	if(it != mChildren.end())
+	if (it != mChildren.end())
+	{
 		mChildren.erase(it); // children found, erase it
+	}
+	else
+	{
+		CCP_LOGERR_CH(s_chBox, "Box::RemoveChildren failure: [%d: %I64d, %I64d, %I64d] - Box [%d: %I64d, %I64d, %I64d] not found in mChildren",
+			mLevel, mKey.ix, mKey.iy, mKey.iz,
+			box->mLevel, box->mKey.ix, box->mKey.iy, box->mKey.iz);
+	}
 
 	if(mChildren.empty() && balls.empty() && mStaticCollidables.empty())
 	{
@@ -158,8 +166,15 @@ void Box::RemoveChildren(Box *box)
 void Box::RemoveBall(Ball *ball)
 {
 	SortedSetOfBalls::iterator it = balls.find(ball);
-	if(it != balls.end())
+	if (it != balls.end())
+	{
 		balls.erase(it); // ball found, erase it
+	}
+	else
+	{
+		CCP_LOGERR_CH(s_chBox, "Box::RemoveBall failure: [%d: %I64d, %I64d, %I64d] - Ball %I64d (%I64d) not found in balls",
+			mLevel, mKey.ix, mKey.iy, mKey.iz, ball->mId, ball->mOwnerId);
+	}
 
 	if(mChildren.empty() && balls.empty() && mStaticCollidables.empty())
 	{
@@ -174,8 +189,15 @@ void Box::RemoveBall(Ball *ball)
 void Box::RemoveStaticCollidable(StaticCollidable *collidable)
 {
 	SortedSetOfStaticCollidables::iterator it = mStaticCollidables.find(collidable);
-	if(it != mStaticCollidables.end())
+	if (it != mStaticCollidables.end())
+	{
 		mStaticCollidables.erase(it);
+	}
+	else
+	{
+		CCP_LOGERR_CH(s_chBox, "Box::RemoveStaticCollidable failure: [%d: %I64d, %I64d, %I64d] - StaticCollidable %I64d (%I64d) not found in mStaticCollidables",
+			mLevel, mKey.ix, mKey.iy, mKey.iz, collidable->mId, collidable->mParentBallId);
+	}
 
 	if(mChildren.empty() && balls.empty() && mStaticCollidables.empty())
 	{

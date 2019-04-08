@@ -1783,7 +1783,8 @@ ID Ballpark::GetIDForCollisionObject(ID objectId)
 }
 
 //---------------------------------------------------------------------------------------
-// AddBall adds a ball with the given parameters to the current simulation
+// AddBall adds a ball with the given parameters to the current simulation.
+// Do not use this to add miniballs - use AddMiniball for that.
 //---------------------------------------------------------------------------------------
 Ball * Ballpark::AddBall(
     const ID& objectId,
@@ -1949,6 +1950,74 @@ Ball * Ballpark::AddBall(
     //CCP_LOG_CH( s_chPark, "  isCloaked %d, isMoribund %d, MaxVel, Agility, SpeedFraction", ball->isCloaked, ball->isMoribund, ball->mMaxVel, ball->mAgility, ball->mSpeedFraction);
 
     return ball;
+}
+
+//---------------------------------------------------------------------------------------
+// AddMiniball adds a miniball with the given parameters to the current simulation
+//---------------------------------------------------------------------------------------
+Ball * Ballpark::AddMiniball(
+	const ID& parentObjectId,
+	double mass,
+	float radius,
+	double x,
+	double y,
+	double z
+	)
+{
+	bool created = false;
+	ID theID = GetIDForCollisionObject(-1);
+	Ball *ball = mBalls[theID];
+
+	if (ball)
+	{
+		CCP_LOGERR_CH(s_chPark, "Ballpark.AddMiniball: Ball already exists for new ID %I64d. This should not happen!", theID);
+	}
+
+	if (isMaster)
+	{
+		ball = new OBall();
+	}
+	else
+	{
+		ball = new OClientBall();
+	}
+	ball->mId = theID;
+    ball->mPark = this;
+
+	ball->mNewPos.x = x;
+	ball->mNewPos.y = y;
+	ball->mNewPos.z = z;
+	ball->mOldPos = ball->mNewPos;
+    ball->mRadius = (radius < 0.0f ? 0.0f : radius);
+    ball->mMass = (mass < 0.0f ? 0.0f : mass);
+    ball->mOwnerId = parentObjectId;  // It is important this is set BEFORE calling InsertBallInBoxes (used for box-membership sorting)
+
+	// Miniballs don't move!
+	ball->mNewVel.x = 0.0;
+	ball->mNewVel.y = 0.0;
+	ball->mNewVel.z = 0.0;
+	ball->mOldVel.x = 0.0;
+	ball->mOldVel.y = 0.0;
+	ball->mOldVel.z = 0.0;
+	ball->mMaxVel = 0.0f;
+	ball->mAgility = 0.0f;
+	ball->mSpeedFraction = 0.0f;
+    ball->isFree = 0;
+    ball->isGlobal = 0;
+    ball->isMassive = 1;
+    ball->isInteractive = 0;
+    ball->isSpaceJunk = 0;
+
+	SetBallTimeFactor(ball);
+    ball->SetMode(DSTBALL_MINIBALL);
+
+	// Now insert ball into the space partition
+	InsertBallInBoxes(ball);
+
+	// Register for ticks
+	((IBall*)ball)->Unlock();
+
+	return ball;
 }
 
 Capsule * Ballpark::AddCapsule(
