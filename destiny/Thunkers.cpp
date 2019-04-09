@@ -3326,3 +3326,35 @@ PyObject* Ballpark::PyGetBoxChildren(
 	PyTuple_SET_ITEM(ret, 2, childStaticCollidableList);
 	return ret;
 }
+
+PyObject* Ballpark::PyGetBoxKey(
+    PyObject* args
+    )
+{
+    Vector3d pos;
+    int level;
+
+    if (!PyArg_ParseTuple(args, "iddd",
+        &level,
+        &pos.x,
+        &pos.y,
+        &pos.z
+        ))
+        return NULL;
+
+    if (level < 0 || level >= mPartition->mNumberOfLevels)
+    {
+        PyErr_SetString(PyExc_TypeError, "Illegal level");
+        return 0;
+    }
+
+    int64_t ix, iy, iz;
+    mPartition->GetBoxKey(pos, level, ix, iy, iz);
+
+    PyObject *ret = PyTuple_New(3);
+    PyTuple_SET_ITEM(ret, 0, PyLong_FromLongLong(ix));
+    PyTuple_SET_ITEM(ret, 1, PyLong_FromLongLong(iy));
+    PyTuple_SET_ITEM(ret, 2, PyLong_FromLongLong(iz));
+
+    return ret;
+}

@@ -36,6 +36,26 @@ Partition::Partition():
         mLevelGrid.push_back( grid );
     }
 }
+
+void Partition::GetBoxKey(const Vector3d& pos, long level, int64_t& ix, int64_t& iy, int64_t& iz)
+{
+    if (level >= mNumberOfLevels || level < 0)
+    {
+        ix = 0;
+        iy = 0;
+        iz = 0;
+        return;
+    }
+
+    double boxWidth = mLevelWidth[level];
+    double fac = 1.0 / boxWidth;
+    int64_t n = mLevelGrid[level];
+
+    ix = int64_t((pos.x + 0.5*boxWidth*n)*fac);
+    iy = int64_t((pos.y + 0.5*boxWidth*n)*fac);
+    iz = int64_t((pos.z + 0.5*boxWidth*n)*fac);
+}
+
 //---------------------------------------------------------------------------------------
 // Box Factory numero uno
 //---------------------------------------------------------------------------------------

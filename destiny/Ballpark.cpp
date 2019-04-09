@@ -1964,7 +1964,6 @@ Ball * Ballpark::AddMiniball(
 	double z
 	)
 {
-	bool created = false;
 	ID theID = GetIDForCollisionObject(-1);
 	Ball *ball = mBalls[theID];
 

@@ -958,6 +958,7 @@ public:
 	PyObject* PyAdjustTimes ( PyObject* args );
 	PyObject* PyGetBallBoxKeys(PyObject* args);
 	PyObject* PyGetBoxChildren(PyObject* args);
+    PyObject* PyGetBoxKey(PyObject* args);    
 };
 
 TYPEDEF_BLUECLASS(Ballpark);

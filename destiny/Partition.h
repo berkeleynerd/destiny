@@ -113,6 +113,9 @@ class Partition
 public:
     Partition();
 
+    // GetBoxKey outputs the key (ix, iy, iz) for a box at the given level which contains pos.
+    void GetBoxKey(const Vector3d& pos, long level, int64_t& ix, int64_t& iy, int64_t& iz);
+
     //
     // GetBox(i,j,k,l) returns a box for the given grid coordinate at the given level
     // creating one if it didn't exist

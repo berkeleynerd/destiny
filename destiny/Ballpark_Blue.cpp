@@ -753,5 +753,11 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			PyGetBoxChildren,
 			"Describes the contents of a box: ([child box_keys...], [ballIDs...], [staticCollidableIDs]). Intended mostly as debugging aid"
 		)
+		MAP_METHOD_AS_METHOD
+		(
+			"GetBoxKey",
+            PyGetBoxKey,
+            "Describes the box key (ix, iy, iz) that contains a point at a given level. Intended mostly as debugging aid"
+		)
 	EXPOSURE_END()
 }
