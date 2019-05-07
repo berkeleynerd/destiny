@@ -7,8 +7,6 @@ Imports:
 General:
   ConfigurationType: DynamicLibrary
   UseOfMfc: false
-  IntDir: ../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/
-  OutDir: ../../autobuild/destiny/$(Platform)/$(PlatformToolset)/
 
 # Compiler settings for all configurations
 ClCompile:

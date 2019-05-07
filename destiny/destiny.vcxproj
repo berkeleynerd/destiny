@@ -78,63 +78,53 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)/Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|x64'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_27|Win32'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|Win32'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|x64'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_27|Win32'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseStatic|x64'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>../../autobuild/destiny/$(Platform)/$(PlatformToolset)/</OutDir>
     <UseOfMfc>False</UseOfMfc>
-    <IntDir>../temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
+    <IntDir>../../autobuild/temp/$(ProjectName)/$(Platform)/$(Configuration)/$(PlatformToolset)/</IntDir>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)/Microsoft.Cpp.props" />
