@@ -120,11 +120,11 @@
 					"../../../carbon/autobuild/CcpMath/MacOsX$(ARCHS)/clang4.2/",
 					);
 				SYMROOT = "../../autobuild/destiny/python_27/MacOsX$(ARCHS)/clang4.2";
-				OBJROOT = "../temp/destiny/MacOsX$(ARCHS)/$(CONFIGURATION)/clang4.2";
+				OBJROOT = "../../autobuild/temp/destiny/MacOsX$(ARCHS)/$(CONFIGURATION)/clang4.2";
 				GCC_TREAT_WARNINGS_AS_ERRORS = YES;
 				LD_DYLIB_INSTALL_NAME = "@rpath/$(PRODUCT_NAME).so";
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				CONFIGURATION_TEMP_DIR = "../temp/destiny/MacOsX$(ARCHS)/$(CONFIGURATION)/clang4.2";
+				CONFIGURATION_TEMP_DIR = "../../autobuild/temp/destiny/MacOsX$(ARCHS)/$(CONFIGURATION)/clang4.2";
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					NDEBUG,
 					"BLUE_WITH_PYTHON=1",
@@ -138,7 +138,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				SDKROOT = macosx;
-				WARNING_CFLAGS = "-Wno-nonportable-include-path -Wno-inconsistent-missing-override -Wno-deprecated-register";
+				WARNING_CFLAGS = "-Wno-nonportable-include-path -Wno-inconsistent-missing-override -Wno-deprecated-register -Wno-pragma-pack";
 				};
 			name = Release;
 			};
