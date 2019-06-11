@@ -10,6 +10,8 @@
 #include <blue/include/IBluePersist.h>
 #include <blue/include/ITaskletTimer.h>
 
+#include <array>
+
 static CcpLogChannel_t s_chPThunk = CCP_LOG_DEFINE_CHANNEL( "ParkThunkers" );
 static CcpLogChannel_t s_chPark = CCP_LOG_DEFINE_CHANNEL( "BallPark" );
 
@@ -18,6 +20,7 @@ extern PyObject* Timer_AdditionsAndDeletions;
 extern PyObject* Timer_GetBallIdsInRange;
 extern PyObject* Timer_WriteBallsToStream;
 extern ITaskletTimer *TheTimer;
+extern const std::array<int,5> followModes;
 
 static size_t byteCount = 0;
 
@@ -295,6 +298,43 @@ PyObject* Ballpark::PyOrbit(
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+
+//---------------------------------------------------------------------------------------
+// Ballpark::PyMoore
+//---------------------------------------------------------------------------------------
+PyObject* Ballpark::PyMoore(
+	PyObject* args
+	)
+{
+	ID srcId;
+	ID dstId;
+	float range;
+
+	if (!PyArg_ParseTuple(args, "LLf",
+		&srcId,
+		&dstId,
+		&range
+		))
+		return NULL;
+
+	if(dstId <= 100000000)
+	{
+		BeOS->SetError(BEDEF, Clsid(), "You can not moore to a non-player item ballID, src(%I64d), dst(%I64d)",srcId, dstId);
+		return NULL;
+	}
+	if(range < 10.0)
+	{
+		BeOS->SetError(BEDEF, Clsid(), "Invalid range %f for mooring %I64d to %I64d", range, srcId, dstId);
+		return NULL;
+	}
+
+	Moore(srcId, dstId, range);
+
+	Py_INCREF(Py_None);
+	return Py_None;
+}
+
 
 //---------------------------------------------------------------------------------------
 // Ballpark::PyWarpTo
@@ -1093,7 +1133,8 @@ PyObject* Ballpark::PyGetRemoteFollowers(
 	for(sit = mFreeBalls.begin(); sit != mFreeBalls.end(); ++sit)
 	{
 		src = sit->second;
-		if(src->mMode==DSTBALL_FOLLOW || src->mMode==DSTBALL_MISSILE || src->mMode==DSTBALL_ORBIT || src->mMode==DSTBALL_FORMATION)
+		uint8_t ballMode = src->mMode;
+		if(std::any_of(followModes.begin(), followModes.end(), [ballMode](int mode){return ballMode == mode;}) )
 		{
 			if(src->isMoribund)
 				CCP_LOGWARN_CH( s_chPark,"Ballpark::GetRemoteFollowers follower %I64d is moribund",src->mId);
@@ -2366,6 +2407,7 @@ bool Ballpark::ReadFullStateFromStream(IBlueStreamPtr s, int partial)
 		case DSTBALL_MISSILE:
 		case DSTBALL_ORBIT:
 		case DSTBALL_FORMATION:
+		case DSTBALL_MOORED:
 			{
 				Ball *dest = mBalls[ID(b->mFollowId)];
 				CCP_ASSERT(dest);
@@ -2941,6 +2983,13 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 				// Nothing to do here
 				break;
 			}
+		case DSTBALL_MOORED:
+		    {
+		        byteCount += s->Read(&ball->mFollowId,    sizeof(ball->mFollowId)    );
+				byteCount += s->Read(&ball->mFollowRange, sizeof(ball->mFollowRange) );
+				byteCount += s->Read(&ball->mGoto,        sizeof(ball->mGoto) );
+				break;
+		    }
 		default:
 			{
 				CCP_LOGERR_CH( s_chPThunk,"ReadBallFromStream: Unknown ball mode %d in dump", mode);
@@ -3159,6 +3208,13 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 
 			break;
 		}
+	case DSTBALL_MOORED:
+	    {
+	        byteCount += s->Write(&b->mFollowId,    sizeof(b->mFollowId)    );
+			byteCount += s->Write(&b->mFollowRange, sizeof(b->mFollowRange) );
+			byteCount += s->Write(&b->mGoto,        sizeof(b->mGoto) );
+			break;
+	    }
 	default:
 		{
 			CCP_LOGERR_CH( s_chPThunk,"WriteBallToStream: Unknown ball mode %d in dump", mode);

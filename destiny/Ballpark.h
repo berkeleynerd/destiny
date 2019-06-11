@@ -380,6 +380,23 @@ public://FUNCTIONS
 
 
 	//////////////////////////////////////////////////////////////////////////////
+	// Moore makes 'srcId' seriously attracted to its mGoto, and shouldn't be able
+	// to move more than 'radius' meters away from 'dstId's bounding radius by
+	// collisions
+	//
+	// pre:
+	//  'srcId' and 'dstId' exist. 'dstId' is fixed and 'srcId' is free.
+	//   range >= 0.
+	// post: Ball 'srcId' will now be unable to be bumped outside the mooring range
+	//////////////////////////////////////////////////////////////////////////////
+	void Moore(
+		const ID& srcId,
+		const ID& dstId,
+		float range
+		);
+
+
+	//////////////////////////////////////////////////////////////////////////////
 	// Stop makes 'srcId' stop any current ball mode
 	// This will eventually bring it to a stop, except for bumping by other Balls.
 	//
@@ -757,6 +774,7 @@ public://FUNCTIONS
     Vector3d EvolveFormation(Ball* ball);
     Vector3d EvolveFollow(Ball* ball);
     Vector3d EvolveOrbit(Ball* ball, long currentTime);
+    Vector3d EvolveMoored(Ball* ball);
     void EvolveStop(Ball* ball);    // This one operates directly on the velocity, no need for return value
 
     bool IsAlignedForWarp(Ball* ball);
@@ -899,6 +917,7 @@ public:
 	PyObject* PyGotoPoint ( PyObject* args );
 	PyObject* PyGotoDirection ( PyObject* args );
 	PyObject* PyOrbit ( PyObject* args );
+	PyObject* PyMoore ( PyObject* args );
 	PyObject* PyStop ( PyObject* args );
 	PyObject* PyClearAll ( PyObject* args );
 	PyObject* PySetBallMass ( PyObject* args );

@@ -127,6 +127,11 @@ static Be::VarChooser DstBallMode[] =
 		VAL(DSTBALL_FORMATION),
 		"A ball part of a formation"
 	},
+	{
+		"DSTBALL_MOORED",
+		VAL(DSTBALL_MOORED),
+		"A ball moored to a structure"
+	},
 	{0}
 };
 
