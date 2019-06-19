@@ -391,8 +391,7 @@ public://FUNCTIONS
 	//////////////////////////////////////////////////////////////////////////////
 	void Moore(
 		const ID& srcId,
-		const ID& dstId,
-		float range
+		const ID& dstId
 		);
 
 

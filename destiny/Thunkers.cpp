@@ -309,12 +309,10 @@ PyObject* Ballpark::PyMoore(
 {
 	ID srcId;
 	ID dstId;
-	float range;
 
-	if (!PyArg_ParseTuple(args, "LLf",
+	if (!PyArg_ParseTuple(args, "LL",
 		&srcId,
-		&dstId,
-		&range
+		&dstId
 		))
 		return NULL;
 
@@ -323,13 +321,8 @@ PyObject* Ballpark::PyMoore(
 		BeOS->SetError(BEDEF, Clsid(), "You can not moore to a non-player item ballID, src(%I64d), dst(%I64d)",srcId, dstId);
 		return NULL;
 	}
-	if(range < 10.0)
-	{
-		BeOS->SetError(BEDEF, Clsid(), "Invalid range %f for mooring %I64d to %I64d", range, srcId, dstId);
-		return NULL;
-	}
 
-	Moore(srcId, dstId, range);
+	Moore(srcId, dstId);
 
 	Py_INCREF(Py_None);
 	return Py_None;

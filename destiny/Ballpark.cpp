@@ -949,10 +949,10 @@ Vector3d Ballpark::EvolveMoored(Ball* ball)
 {
     Ball* fixedBall = ball->mFollowPtr;
     double distanceFromStructure = (ball->mNewPos - fixedBall->mNewPos).Length() - ball->mRadius - fixedBall->mRadius;
-    if(distanceFromStructure > ball->mFollowRange)
+    if( distanceFromStructure > ball->mFollowRange )
         return GotoThrust(ball, ball->mGoto);
     double distanceFromMoorePoint = (ball->mNewPos - ball->mGoto).Length() - ball->mRadius;
-    if( distanceFromMoorePoint > ball->mRadius && distanceFromMoorePoint > distanceFromStructure)
+    if( distanceFromMoorePoint > ball->mRadius && distanceFromMoorePoint > distanceFromStructure )
         return GotoThrust(ball, ball->mGoto);
     return ball->mLastG; // just return whatever gradient it has at this point (pretty much always the 0 vector)
 }
@@ -2457,13 +2457,8 @@ void Ballpark::Orbit(
 //---------------------------------------------------------------------------------------
 // Moore the ship to a structure
 //---------------------------------------------------------------------------------------
-void Ballpark::Moore(const ID& srcId, const ID& dstId, float range)
+void Ballpark::Moore(const ID& srcId, const ID& dstId)
 {
-    if(!_finite(range) )
-    {
-        CCP_LOGWARN_CH( s_chPark,"NaN in Moore. Ignored command.");
-        return;
-    }
     if(srcId == dstId)
         return;
 
@@ -2485,7 +2480,7 @@ void Ballpark::Moore(const ID& srcId, const ID& dstId, float range)
     if(shipBall->isMoribund)
     {
         CCP_LOG_CH( s_chPark,"Ball:%I64d trying to moore whilst being dead. Cancelled.", srcId);
-        return; // Can't orbit dead balls
+        return; // Can't moore a dead ball
     }
     // mustn't be doing anything untowards...
     uint8_t shipMode = shipBall->mMode;
@@ -2499,7 +2494,7 @@ void Ballpark::Moore(const ID& srcId, const ID& dstId, float range)
     if(structureBall->isMoribund)
     {
         CCP_LOG_CH( s_chPark,"Ball:%I64d trying to moore to moribund ball:%I64d. Cancelled.", srcId, dstId);
-        return; // Can't orbit dead balls
+        return; // Can't moore to dead balls
     }
     if(structureBall->mMode != DSTBALL_RIGID)
     {
@@ -2517,15 +2512,13 @@ void Ballpark::Moore(const ID& srcId, const ID& dstId, float range)
 
     shipBall->mFollowId = dstId;
     shipBall->mFollowPtr = structureBall;
-    shipBall->mFollowRange = range;
-    Vector3d direction = shipBall->mNewPos - structureBall->mNewPos;
-    direction.Normalize();
-    shipBall->mGoto = structureBall->mNewPos + (direction*range);
+    shipBall->mFollowRange = static_cast<float>(std::max(0.0, (shipBall->mNewPos - structureBall->mNewPos).Length() - shipBall->mRadius - structureBall->mRadius));
+    shipBall->mGoto = shipBall->mNewPos;
     shipBall->SetMode(DSTBALL_MOORED);
 
     // Declare this ball a follower
     structureBall->mFollowers.insert(shipBall->mId);
-    CCP_LOG_CH( s_chPark,"Ball %I64d now moored to structure %I64d at point (%f, %f, %f) at distance %f.", srcId, dstId, shipBall->mGoto.x, shipBall->mGoto.y, shipBall->mGoto.z, range);
+    CCP_LOG_CH( s_chPark,"Ball %I64d now moored to structure %I64d at point (%f, %f, %f)  at distance %f.", srcId, dstId, shipBall->mGoto.x, shipBall->mGoto.y, shipBall->mGoto.z, shipBall->mFollowRange);
 }
 
 //---------------------------------------------------------------------------------------
