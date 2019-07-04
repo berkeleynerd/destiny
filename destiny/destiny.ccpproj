@@ -92,7 +92,7 @@ BaseConfigurations:
   BlueStatic:
     Imports:
     - ../../../carbon/src/stackless/Include/stackless.yaml
-    - ../../../../../../sdk/Telemetry/3.0.1.1008/telemetry_3.0.1.1008.yaml
+    - ../../../sdk/Telemetry/3.0.1.1008/telemetry_3.0.1.1008.yaml
 
     General:
       OutDir: ../../autobuild/$(ProjectName)/exefile/$(Platform)/$(PlatformToolset)/
