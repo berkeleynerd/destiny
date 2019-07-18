@@ -382,16 +382,12 @@ void Ballpark::Evolve(Be::Time timestamp)
         Vector3d p,v;
         p = ball->mNewPos;
         v = ball->mNewVel;
-        
-        if(ball->mMode != DSTBALL_WARP || (ball->mMode == DSTBALL_WARP && ball->mEffectStamp== -1))
-        {
-            Integrate(p,v, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, dt);
-        }
-        else
+
+        if(ball->IsWarping())
         {
             WarpDistance(ball, p, v, (mCurrentTime - ball->mEffectStamp)*dt, false);
-            if(ball->mMode == DSTBALL_STOP) 
-            {   // Just got dropped out of warp, now the warp result becomes the new oldPos 
+            if(ball->mMode == DSTBALL_STOP)
+            {   // Just got dropped out of warp, now the warp result becomes the new oldPos
                 // and we integrate one step ahead so that interpolation can continue from the
                 // point we dropped out of warp.
                 ball->mNewPos = p; // (old and new get swapped at the end)
@@ -399,14 +395,17 @@ void Ballpark::Evolve(Be::Time timestamp)
                 Integrate(p,v, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, dt);
 
                 if (ball->mNewVel.LengthSq() < 0.1)
-                {
-                    // Under extreme cases, it is possible for a ball to end its warp in a new bubble and hit 0 velocity in a single tick.
+                {   // Under extreme cases, it is possible for a ball to end its warp in a new bubble and hit 0 velocity in a single tick.
                     // (Typically capsules with very high warp speeds and very good agility)
                     // If this happens, then it won't get an updated box insertion until it starts moving again.
                     // Mitigate this by forcing a box update.
                     InsertBallInBoxes(ball);
                 }
             }
+        }
+        else
+        {
+            Integrate(p,v, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, dt);
         }
         ball->mOldPos = p;
         ball->mOldVel = v;
@@ -631,14 +630,12 @@ Vector3d Ballpark::EvolveWarp(Ball* ball)
     Vector3d zero = Vector3d(0.0,0.0,0.0);
 
     // Check if the warp proper is already in progress
-    if(ball->mEffectStamp != -1)
-    {
+    if(ball->IsWarping())
         return zero;
-    }
 
     //CCP_LOGWARN_CH( s_chPark,"... destination (%f, %f, %f), velocity (%f, %f, %f)", ball->mGoto.x, ball->mGoto.y, ball->mGoto.z, ball->mNewVel.x, ball->mNewVel.y, ball->mNewVel.z );
     //CCP_LOGWARN_CH( s_chPark,"... velDir (%f, %f, %f)", velDir.x, velDir.y, velDir.z);
-    if(IsAlignedForWarp(ball))
+    if( ball->IsAlignedForWarp())
     {
         if (!PyOS->PostEvent(
             (IEveBallpark*)this, "Destiny::OnActivatingWarp",
@@ -654,34 +651,12 @@ Vector3d Ballpark::EvolveWarp(Ball* ball)
         return zero;
     }
     else
-    {
-        // Not aligned, use goto...
+    {   // Not aligned, use goto...
+        //CCP_LOG_CH(s_chPark, "EvolveWarp: Ball %I64d is still aligning at ts %d.", ball->mId, ABS(ball->mEffectStamp));
+        --ball->mEffectStamp; // "increment" tick counter. The absolute value is used to determine if we should force-start warp in case the ship is stuck
         return EvolveGoto(ball);
     }
 }
-
-
-// -------------------------------------------------------------
-//  Description:
-//      Determines if a ball is aligned for warp (pointing in the right direction and at 75% of it's max speed)
-//  Arguments:
-//      ball - the ball to evolve
-//  Returns:
-//      True if the ball is aligned and above half speed, else false
-// -------------------------------------------------------------
-bool Ballpark::IsAlignedForWarp(Ball* ball)
-{
-    // Find the angle we make the direction
-    Vector3d dir = ball->mGoto - ball->mNewPos;
-    dir.Normalize();
-    Vector3d velDir = ball->mNewVel;
-    velDir.Normalize();
-
-    // Only allow the warp if the ship is properly aligned and it has
-    // reached a speed equal to 75% its maximum speed
-    return ABS(1.0 - velDir * dir) < 0.01 && ball->mNewVel.LengthSq() > (double)0.5625*ball->mMaxVel * ball->mMaxVel;
-}
-
 
 // -------------------------------------------------------------
 //  Description:
@@ -2564,6 +2539,12 @@ void Ballpark::WarpTo(
         return;
     }
 
+    if (ball->IsWarpish() && dst == ball->mGoto)
+    {
+        //CCP_LOG_CH(s_chPark, "WarpTo: redundant command; already trying to warp to the specified spot.");
+        return; // no-op really, and since we don't want to reset the align counter, let's do nothing
+    }
+
     // Stop ball from doing whatever it was doing
     Stop(ball);
     // Use persistent info about the warp
@@ -3637,8 +3618,8 @@ void Ballpark::UncloakBall(
     }
 
     ball->isCloaked = 0;
-    
-    if( ball->mMode != DSTBALL_WARP || ball->mEffectStamp == -1)
+
+    if( ! ball->IsWarping() )
     {
         ball->isMassive = true; // Only set the ball massive if it's not in proper warp.  
         // clear this ball from all proximity sensors in this bubble

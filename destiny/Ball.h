@@ -42,6 +42,8 @@ struct Vector3d;
 #include <vector>
 #include <bitset>
 
+#define MAX_ALIGN_TICKS 180 // seconds with our current tick rate....
+
 class Box;
 class Ball;
 
@@ -180,6 +182,7 @@ public:
 	MiniBallList mMiniBalls;
 	MiniBoxList mMiniBoxes;
 	MiniCapsuleList mMiniCapsules;
+
 	//--------------------------------------------------//
 	// Dynamic state of ball
 	//--------------------------------------------------//
@@ -336,6 +339,14 @@ public:
 		double bz,
 		float r
 		);
+
+
+	// Check the warp state of ball
+	inline bool IsWarpish();         // True if the ball is either aligning for warp or warping.
+	inline bool IsAligningForWarp(); // True iif the ball is in the alignment phase of a warp.
+	inline bool IsWarping();         // True iif the ball is in proper warp.
+    bool IsAlignedForWarp();         // True iif the ball qualifies for entering proper warp.
+
 
 	////////////////////////////////
 	// INotify

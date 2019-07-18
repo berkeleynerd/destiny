@@ -254,18 +254,18 @@ void Ball::CalculateYawPitchRoll(bool snap)
     }
     else
     {
-        if( mMode == DSTBALL_WARP )
-        {    // Really heavy ships have a tendancy to warp sideways.
-            if( mEffectStamp == -1 ) //If they are aligning for warp, make them rotate towards their goto point, rather then their current velocity
-            {
+        if( IsWarpish() )
+        {   // Left to their own devices, really heavy ships have a tendancy to warp sideways.
+            if( IsAligningForWarp())
+            {   //So, if they are aligning for warp, make them rotate towards their goto point, rather then their current velocity
                 //CCP_LOG_CH( s_ch,"Aligning %I64d: %d collisions.", mId, mCollisions.size());
-                if( mCollisions.size() == 0) 
-                    direction = mGoto - mNewPos; 
+                if( mCollisions.size() == 0)
+                    direction = mGoto - mNewPos;
                 else // The degenerate case where you're aligning and bumping an obstacle. You should rotate with your bumps.
                     direction = mNewVel;
             }
             else if( massModifier < 1.0 && mPark->mCurrentTime != mEffectStamp )
-            { //If they are in warp, let them rotate faster as they gain speed into the warp
+            {   //If they are in warp, let them rotate faster as they gain speed into the warp
                 //CCP_LOG_CH( s_ch,"Warping %I64d: Adjusting massModifier from %f.  EffectStamp id %d while ballpark stamp is %d", mId, massModifier, mEffectStamp, mPark->mCurrentTime);
                 massModifier = MIN(1.0, massModifier * MIN(15.0, (mPark->mCurrentTime-mEffectStamp)*2));
                 //CCP_LOG_CH( s_ch,"  massModifier on ball %I64d adjusted to %f.", mId, massModifier);
@@ -1036,13 +1036,7 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
     mElapsed += dt;
 
     // Calculate the new position
-    if(mMode != DSTBALL_WARP || (mMode == DSTBALL_WARP && mEffectStamp== -1))
-    {
-        mLastPos = mOldPos;
-        mLastVel = mOldVel;
-        mPark->Integrate(mLastPos, mLastVel, mIntAcc, mMass * mAgility, mPark->mFriction, mTimeFactor, fraction);
-    }
-    else
+    if( IsWarping() )
     {
         double t = ((mPark->mCurrentTime - mEffectStamp) - 1 + fraction)*mPark->dt;
         mPark->WarpDistance(
@@ -1053,7 +1047,13 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
             true
         );
     }
-    
+    else
+    {
+        mLastPos = mOldPos;
+        mLastVel = mOldVel;
+        mPark->Integrate(mLastPos, mLastVel, mIntAcc, mMass * mAgility, mPark->mFriction, mTimeFactor, fraction);
+    }
+
     // Calculate the delta with last position and keep it
     mDeltaPos = mLastPos - mDeltaPos;
 
@@ -1604,6 +1604,51 @@ void Ball::AddActualMiniBox(MiniBox* b)
 
 	b->mId = box->mId;
 }
+
+//
+// Warp state of ball
+//
+
+inline bool Ball::IsWarpish()  // Returns True if the ball is either aligning for warp or warping.
+{
+    return mMode == DSTBALL_WARP;
+}
+
+inline bool Ball::IsAligningForWarp()  // Returns True iif the ball is in the alignment phase of a warp.
+{
+    return IsWarpish() && mEffectStamp < 0;
+}
+
+inline bool Ball::IsWarping()  // Returns True iif the ball is in proper warp.
+{
+    return IsWarpish() && ! IsAligningForWarp();
+}
+
+bool Ball::IsAlignedForWarp()  // Returns true iif the ball qualifies for entering proper warp, but hasn't yet.
+{
+    if( ! IsAligningForWarp() )
+        return false;
+
+    // Find the angle we make the direction
+    Vector3d dir = mGoto - mNewPos;
+    dir.Normalize();
+    Vector3d velDir = mNewVel;
+    velDir.Normalize();
+
+    // A ship should enter warp proper if either of the following is true:
+    //   The ship is properly aligned and it has reached a speed equal to 75% its maximum speed
+    if (ABS(1.0 - velDir * dir) < 0.01 && mNewVel.LengthSq() > (double)0.5625*mMaxVel * mMaxVel)
+        return true;
+    // OR
+    //   The ship has spent MAX_ALIGN_TICKS seconds in the aligning state
+    if ( ABS(mEffectStamp) > MAX_ALIGN_TICKS )
+    {
+        CCP_LOG_CH(s_ch, "AlignForWarp: Forcing warp as %I64d has been aligning for %d ticks.", mId, ABS(mEffectStamp));
+        return true;
+    }
+    return false;
+}
+
 
 
 Vector3d* ClientBall::GetReferencePoint( Vector3d* out, Be::Time time )

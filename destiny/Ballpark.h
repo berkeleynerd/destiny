@@ -776,8 +776,6 @@ public://FUNCTIONS
     Vector3d EvolveMoored(Ball* ball);
     void EvolveStop(Ball* ball);    // This one operates directly on the velocity, no need for return value
 
-    bool IsAlignedForWarp(Ball* ball);
-
 	//////////////////////////////////////////////////////////////////////////////
 	// InitializeBubbles recalculates the bubble distribution of balls
 	//
