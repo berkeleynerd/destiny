@@ -1609,17 +1609,17 @@ void Ball::AddActualMiniBox(MiniBox* b)
 // Warp state of ball
 //
 
-inline bool Ball::IsWarpish()  // Returns True if the ball is either aligning for warp or warping.
+bool Ball::IsWarpish()  // Returns True if the ball is either aligning for warp or warping.
 {
     return mMode == DSTBALL_WARP;
 }
 
-inline bool Ball::IsAligningForWarp()  // Returns True iif the ball is in the alignment phase of a warp.
+bool Ball::IsAligningForWarp()  // Returns True iif the ball is in the alignment phase of a warp.
 {
     return IsWarpish() && mEffectStamp < 0;
 }
 
-inline bool Ball::IsWarping()  // Returns True iif the ball is in proper warp.
+bool Ball::IsWarping()  // Returns True iif the ball is in proper warp.
 {
     return IsWarpish() && ! IsAligningForWarp();
 }
