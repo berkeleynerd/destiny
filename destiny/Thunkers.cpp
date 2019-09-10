@@ -299,36 +299,6 @@ PyObject* Ballpark::PyOrbit(
 	return Py_None;
 }
 
-
-//---------------------------------------------------------------------------------------
-// Ballpark::PyMoore
-//---------------------------------------------------------------------------------------
-PyObject* Ballpark::PyMoore(
-	PyObject* args
-	)
-{
-	ID srcId;
-	ID dstId;
-
-	if (!PyArg_ParseTuple(args, "LL",
-		&srcId,
-		&dstId
-		))
-		return NULL;
-
-	if(dstId <= 100000000)
-	{
-		BeOS->SetError(BEDEF, Clsid(), "You can not moore to a non-player item ballID, src(%I64d), dst(%I64d)",srcId, dstId);
-		return NULL;
-	}
-
-	Moore(srcId, dstId);
-
-	Py_INCREF(Py_None);
-	return Py_None;
-}
-
-
 //---------------------------------------------------------------------------------------
 // Ballpark::PyWarpTo
 //---------------------------------------------------------------------------------------
@@ -2400,7 +2370,6 @@ bool Ballpark::ReadFullStateFromStream(IBlueStreamPtr s, int partial)
 		case DSTBALL_MISSILE:
 		case DSTBALL_ORBIT:
 		case DSTBALL_FORMATION:
-		case DSTBALL_MOORED:
 			{
 				Ball *dest = mBalls[ID(b->mFollowId)];
 				CCP_ASSERT(dest);
@@ -2976,13 +2945,6 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 				// Nothing to do here
 				break;
 			}
-		case DSTBALL_MOORED:
-		    {
-		        byteCount += s->Read(&ball->mFollowId,    sizeof(ball->mFollowId)    );
-				byteCount += s->Read(&ball->mFollowRange, sizeof(ball->mFollowRange) );
-				byteCount += s->Read(&ball->mGoto,        sizeof(ball->mGoto) );
-				break;
-		    }
 		default:
 			{
 				CCP_LOGERR_CH( s_chPThunk,"ReadBallFromStream: Unknown ball mode %d in dump", mode);
@@ -3201,13 +3163,6 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 
 			break;
 		}
-	case DSTBALL_MOORED:
-	    {
-	        byteCount += s->Write(&b->mFollowId,    sizeof(b->mFollowId)    );
-			byteCount += s->Write(&b->mFollowRange, sizeof(b->mFollowRange) );
-			byteCount += s->Write(&b->mGoto,        sizeof(b->mGoto) );
-			break;
-	    }
 	default:
 		{
 			CCP_LOGERR_CH( s_chPThunk,"WriteBallToStream: Unknown ball mode %d in dump", mode);

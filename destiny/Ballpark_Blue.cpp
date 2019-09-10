@@ -356,12 +356,6 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 		MAP_METHOD_AS_METHOD
 		(
-			"Moore",
-			PyMoore,
-			"no comment"
-		)
-		MAP_METHOD_AS_METHOD
-		(
 			"Stop",
 			PyStop,
 			"no comment"

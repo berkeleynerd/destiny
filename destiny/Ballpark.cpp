@@ -63,7 +63,7 @@ double WARP_FACTOR_TO_DECELERATION = 1.0 / 3000; // Higher value means shorter m
 // ('Approx' is because the scaling isn't totally linear, but is reasonably close for the scales we use)
 
 // These ball movement modes use mFollowId and mFollowPtr
-extern const std::array<int,5> followModes = {DSTBALL_FOLLOW, DSTBALL_ORBIT, DSTBALL_MISSILE, DSTBALL_FORMATION, DSTBALL_MOORED};
+extern const std::array<int,5> followModes = {DSTBALL_FOLLOW, DSTBALL_ORBIT, DSTBALL_MISSILE, DSTBALL_FORMATION};
 
 // Used in ORBIT move-mode - Controls how quickly the rotational axis itself will rotate (rad/s)
 double ORBITAL_PRECESSION = 0.001;
@@ -596,11 +596,6 @@ void Ballpark::EvolveBehaviorForBall(Ball* ball)
             EvolveStop(ball);
             break;
         }
-    case DSTBALL_MOORED:
-        {
-            a = EvolveMoored(ball);
-            break;
-        }
     default:
         {
             break;
@@ -910,28 +905,6 @@ Vector3d Ballpark::EvolveOrbit(Ball* ball, long currentTime)
 
     return a;
 }
-
-
-// -------------------------------------------------------------
-//  Description:
-//      Returns an acceleration vector for a ball in an "moored" mode.
-//  Arguments:
-//      ball - the ball to evolve
-//  Returns:
-//      Acceleration vector for the ball.
-// -------------------------------------------------------------
-Vector3d Ballpark::EvolveMoored(Ball* ball)
-{
-    Ball* fixedBall = ball->mFollowPtr;
-    double distanceFromStructure = (ball->mNewPos - fixedBall->mNewPos).Length() - ball->mRadius - fixedBall->mRadius;
-    if( distanceFromStructure > ball->mFollowRange )
-        return GotoThrust(ball, ball->mGoto);
-    double distanceFromMoorePoint = (ball->mNewPos - ball->mGoto).Length() - ball->mRadius;
-    if( distanceFromMoorePoint > ball->mRadius && distanceFromMoorePoint > distanceFromStructure )
-        return GotoThrust(ball, ball->mGoto);
-    return ball->mLastG; // just return whatever gradient it has at this point (pretty much always the 0 vector)
-}
-
 
 // -------------------------------------------------------------
 //  Description:
@@ -1317,16 +1290,6 @@ void Ballpark::Potential(Ball *me, Ball *other, int recursionDepth)
     // Don't disrupt a missile's path if it is colliding with its target
     if((me->mMode!=DSTBALL_MISSILE || other->mId!=me->mFollowId) && s >= me->mLastCollision)
     {
-        if( me->mMode == DSTBALL_MOORED )
-        {
-            // Calculate the dot product of the normalized vector representing the direction from the fixed point to the
-            // ball and the balls velocity vector to get the velocity component in that direction
-            Vector3d normal = me->mNewPos - me->mFollowPtr->mNewPos;
-            normal.Normalize();
-            double normalVelocity = a1 * normal;
-            // Subtract the normal multiplied by this result from the velocity vector to remove all velocity in that direction.
-            a1 -= (normal * normalVelocity);
-        }
         Vector3d lastC = 0.85*a1;
         if(s==me->mLastCollision)
         {
@@ -2427,73 +2390,6 @@ void Ballpark::Orbit(
 
     // Declare this ball a follower
     dest->mFollowers.insert(ball->mId);
-}
-
-//---------------------------------------------------------------------------------------
-// Moore the ship to a structure
-//---------------------------------------------------------------------------------------
-void Ballpark::Moore(const ID& srcId, const ID& dstId)
-{
-    if(srcId == dstId)
-        return;
-
-    Ball *shipBall = mBalls[srcId];
-    Ball *structureBall = mBalls[dstId];
-
-    if(!shipBall || !structureBall)
-    {
-        CCP_LOGWARN_CH(s_chPark, "Ball:%I64d trying to moore ball:%I64d when one of them doesn't exist. Cancelled.", srcId, dstId);
-        return;
-    }
-    if(shipBall->mNewBubble != structureBall->mNewBubble)
-    {
-		CCP_LOGWARN_CH(s_chPark, "Ball:%I64d trying to moore to Ball:%I64d in another bubble. Cancelled.", srcId, dstId);
-        return;
-    }
-
-    // sanity check ship
-    if(shipBall->isMoribund)
-    {
-        CCP_LOG_CH( s_chPark,"Ball:%I64d trying to moore whilst being dead. Cancelled.", srcId);
-        return; // Can't moore a dead ball
-    }
-    // mustn't be doing anything untowards...
-    uint8_t shipMode = shipBall->mMode;
-    if(shipMode != DSTBALL_GOTO && shipMode != DSTBALL_STOP)
-    {
-        CCP_LOG_CH( s_chPark,"Ball:%I64d can't moore while in mode %d. Cancelled.", srcId, shipMode);
-        return;
-    }
-
-    // sanity check structure
-    if(structureBall->isMoribund)
-    {
-        CCP_LOG_CH( s_chPark,"Ball:%I64d trying to moore to moribund ball:%I64d. Cancelled.", srcId, dstId);
-        return; // Can't moore to dead balls
-    }
-    if(structureBall->mMode != DSTBALL_RIGID)
-    {
-        CCP_LOG_CH( s_chPark,"Ball:%I64d trying to moore to non-rigid ball:%I64d. Cancelled.", srcId, dstId);
-        return;
-    }
-    if(structureBall->isFree)
-    {
-		CCP_LOGWARN_CH(s_chPark, "Ball:%I64d trying to moore to free Ball:%I64d. Cancelled.", srcId, dstId);
-        return;
-    }
-
-	// Ok, lets do this. Stop whatever it was doing
-	Stop(shipBall);
-
-    shipBall->mFollowId = dstId;
-    shipBall->mFollowPtr = structureBall;
-    shipBall->mFollowRange = static_cast<float>(std::max(0.0, (shipBall->mNewPos - structureBall->mNewPos).Length() - shipBall->mRadius - structureBall->mRadius));
-    shipBall->mGoto = shipBall->mNewPos;
-    shipBall->SetMode(DSTBALL_MOORED);
-
-    // Declare this ball a follower
-    structureBall->mFollowers.insert(shipBall->mId);
-    CCP_LOG_CH( s_chPark,"Ball %I64d now moored to structure %I64d at point (%f, %f, %f)  at distance %f.", srcId, dstId, shipBall->mGoto.x, shipBall->mGoto.y, shipBall->mGoto.z, shipBall->mFollowRange);
 }
 
 //---------------------------------------------------------------------------------------
