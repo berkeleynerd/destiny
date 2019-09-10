@@ -63,7 +63,7 @@ double WARP_FACTOR_TO_DECELERATION = 1.0 / 3000; // Higher value means shorter m
 // ('Approx' is because the scaling isn't totally linear, but is reasonably close for the scales we use)
 
 // These ball movement modes use mFollowId and mFollowPtr
-extern const std::array<int,5> followModes = {DSTBALL_FOLLOW, DSTBALL_ORBIT, DSTBALL_MISSILE, DSTBALL_FORMATION};
+extern const std::array<int,4> followModes = {DSTBALL_FOLLOW, DSTBALL_ORBIT, DSTBALL_MISSILE, DSTBALL_FORMATION};
 
 // Used in ORBIT move-mode - Controls how quickly the rotational axis itself will rotate (rad/s)
 double ORBITAL_PRECESSION = 0.001;

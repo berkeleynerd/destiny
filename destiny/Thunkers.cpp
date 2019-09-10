@@ -20,7 +20,7 @@ extern PyObject* Timer_AdditionsAndDeletions;
 extern PyObject* Timer_GetBallIdsInRange;
 extern PyObject* Timer_WriteBallsToStream;
 extern ITaskletTimer *TheTimer;
-extern const std::array<int,5> followModes;
+extern const std::array<int,4> followModes;
 
 static size_t byteCount = 0;
 
