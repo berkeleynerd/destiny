@@ -2432,6 +2432,10 @@ void Ballpark::WarpTo(
     {
         // Distance too small. Do a goto point instead
         GotoPoint(ball,Vector3d(x,y,z));
+        if (!PyOS->PostEvent((IEveBallpark*)this, "Destiny::OnExitWarp", "OnExitWarp", "Li", ball->mId, 1))
+        {
+            PyOS->PyError();
+        }
         return;
     }
 
