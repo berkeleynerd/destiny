@@ -3,7 +3,7 @@ ProjectGuid: a5770cb2-f08d-4162-b512-964ca65f00e2
 # These are the SDKs that are used by all configurations
 Imports:
 - ..\..\..\carbon\src\core_project\core_project.yaml
-- ../../../../../../sdk/GoogleTest/1.6.0/gtest.yaml
+- ../../../vendor/GoogleTest/1.10.0/gtest.yaml
 - ..\..\..\carbon\src\blue\Include\uses_blue.yaml
 
 # Settings from the General section, for all configurations
@@ -23,7 +23,6 @@ ClCompile:
   PrecompiledHeaderOutputFile: $(IntDir)destinyTest.pch
   AdditionalIncludeDirectories:
     - ..
-    - ../../../../../../sdk/directx/october2004/include
   PreprocessorDefinitions:
   - BLUEBUILD
 
@@ -31,7 +30,6 @@ Link:
   GenerateDebugInformation: true
   ProgramDatabaseFile: $(TargetDir)$(TargetName).pdb
   AdditionalLibraryDirectories:
-    - ../../../../../../sdk/directx/october2004/lib/$(Platform)
     - ..\..\autobuild\destiny\exefile\$(Platform)\$(PlatformToolset)
 
 
@@ -53,14 +51,6 @@ BaseConfigurations:
       TargetName: destinyTest
 
 Configurations:
-  Debug|Win32,x64:
-    BaseConfigurations:
-    - Debug
-    Link:
-      AdditionalDependencies:
-        - _destiny_d.lib
-
-
   Release|Win32,x64:
     BaseConfigurations:
     - Release
