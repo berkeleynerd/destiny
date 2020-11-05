@@ -195,7 +195,7 @@
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\Python\27_64\include;$(CcpSdkPath)\telemetry\3.5.0.13\include;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\Python\27_64\include;$(CcpSdkPath)\telemetry\3.0.1.1008\include;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <WholeProgramOptimization>True</WholeProgramOptimization>
@@ -213,7 +213,7 @@
       <RuntimeTypeInfo>True</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\Python\27_64\libs;$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/python_27/$(Platform)/$(PlatformToolset)/;../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\Python\27_64\libs;$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/python_27/$(Platform)/$(PlatformToolset)/;../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <SuppressStartupBanner>True</SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
@@ -235,7 +235,7 @@
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\Python\27\include;$(CcpSdkPath)\telemetry\3.5.0.13\include;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\Python\27\include;$(CcpSdkPath)\telemetry\3.0.1.1008\include;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <WholeProgramOptimization>True</WholeProgramOptimization>
@@ -253,7 +253,7 @@
       <RuntimeTypeInfo>True</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\Python\27\libs;$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/python_27/$(Platform)/$(PlatformToolset)/;../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\Python\27\libs;$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/python_27/$(Platform)/$(PlatformToolset)/;../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <SuppressStartupBanner>True</SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
@@ -275,7 +275,7 @@
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <WholeProgramOptimization>True</WholeProgramOptimization>
@@ -292,7 +292,7 @@
       <RuntimeTypeInfo>True</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <SuppressStartupBanner>True</SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
@@ -314,7 +314,7 @@
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <WholeProgramOptimization>True</WholeProgramOptimization>
@@ -332,7 +332,7 @@
       <RuntimeTypeInfo>True</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <SuppressStartupBanner>True</SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
@@ -353,7 +353,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\include;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\include;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>True</TreatWarningAsError>
@@ -371,7 +371,7 @@
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
       <SuppressStartupBanner>True</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/python_27/$(Platform)/$(PlatformToolset)/;../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/python_27/$(Platform)/$(PlatformToolset)/;../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>CcpMath_d.lib;blue_d.lib;rad_tm_win64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
@@ -389,7 +389,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\include;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\include;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>True</TreatWarningAsError>
@@ -407,7 +407,7 @@
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
       <SuppressStartupBanner>True</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/python_27/$(Platform)/$(PlatformToolset)/;../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/python_27/$(Platform)/$(PlatformToolset)/;../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>CcpMath_d.lib;blue_d.lib;rad_tm_win32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
@@ -425,7 +425,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>True</TreatWarningAsError>
@@ -443,7 +443,7 @@
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
       <SuppressStartupBanner>True</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>CcpMath_d.lib;blue_d.lib;python27_d.lib;rad_tm_win32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
@@ -461,7 +461,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <TreatWarningAsError>True</TreatWarningAsError>
@@ -479,7 +479,7 @@
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
       <SuppressStartupBanner>True</SuppressStartupBanner>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>CcpMath_d.lib;blue_d.lib;python27_d.lib;rad_tm_win64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
@@ -498,7 +498,7 @@
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <WholeProgramOptimization>True</WholeProgramOptimization>
@@ -515,7 +515,7 @@
       <RuntimeTypeInfo>True</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <SuppressStartupBanner>True</SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
@@ -537,7 +537,7 @@
       <PreprocessorDefinitions>BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FunctionLevelLinking>True</FunctionLevelLinking>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\include;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\pc;..\..\..\carbon\src\stackless\stackless;$(CcpBranchPath)/carbon/src;.;../../../carbon/src/CcpUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <WholeProgramOptimization>True</WholeProgramOptimization>
@@ -555,7 +555,7 @@
       <RuntimeTypeInfo>True</RuntimeTypeInfo>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);../../../carbon/autobuild/CcpMath/$(Platform)/$(PlatformToolset)/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>True</GenerateDebugInformation>
       <SuppressStartupBanner>True</SuppressStartupBanner>
       <IgnoreAllDefaultLibraries>False</IgnoreAllDefaultLibraries>
