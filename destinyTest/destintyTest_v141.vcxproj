@@ -63,7 +63,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>BLUEBUILD;BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;$(CcpBranchPath)/carbon/src;$(CcpSdkPath)/googletest/1.10.0/include;$(CcpSdkPath)\telemetry\3.0.1.1008\include;.;..;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;$(CcpBranchPath)/carbon/src;$(CcpSdkPath)/googletest/1.10.0/include;$(CcpSdkPath)\telemetry\3.5.0.13\include;.;..;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <PrecompiledHeaderOutputFile>$(IntDir)destinyTest.pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderFile>StdAfx.h</PrecompiledHeaderFile>
@@ -73,7 +73,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>True</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);$(CcpSdkPath)/googletest/1.10.0/lib/$(Platform)/$(PlatformToolset)/;$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\autobuild\destiny\exefile\$(Platform)\$(PlatformToolset);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);$(CcpSdkPath)/googletest/1.10.0/lib/$(Platform)/$(PlatformToolset)/;$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\autobuild\destiny\exefile\$(Platform)\$(PlatformToolset);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>blue.lib;destiny.lib;gtest.lib;python27.lib;rad_tm_win64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -87,7 +87,7 @@
     <ClCompile>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PreprocessorDefinitions>BLUEBUILD;BLUE_WITH_PYTHON=1;CCP_STACKLESS=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;$(CcpBranchPath)/carbon/src;$(CcpSdkPath)/googletest/1.10.0/include;$(CcpSdkPath)\telemetry\3.0.1.1008\include;.;..;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\..\carbon\src\stackless\pc;$(CcpBranchPath)/carbon/src;$(CcpSdkPath)/googletest/1.10.0/include;$(CcpSdkPath)\telemetry\3.5.0.13\include;.;..;..\..\..\carbon\src\stackless\include;..\..\..\carbon\src\stackless\stackless;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>True</MultiProcessorCompilation>
       <PrecompiledHeaderOutputFile>$(IntDir)destinyTest.pch</PrecompiledHeaderOutputFile>
       <PrecompiledHeaderFile>StdAfx.h</PrecompiledHeaderFile>
@@ -97,7 +97,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>True</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);$(CcpSdkPath)/googletest/1.10.0/lib/$(Platform)/$(PlatformToolset)/;$(CcpSdkPath)\telemetry\3.0.1.1008\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\autobuild\destiny\exefile\$(Platform)\$(PlatformToolset);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);$(CcpSdkPath)/googletest/1.10.0/lib/$(Platform)/$(PlatformToolset)/;$(CcpSdkPath)\telemetry\3.5.0.13\lib;../../../carbon/autobuild/blue/exefile/$(Platform)/$(PlatformToolset)/;..\..\..\carbon\autobuild\stackless\$(Platform)\$(PlatformToolset);..\..\autobuild\destiny\exefile\$(Platform)\$(PlatformToolset);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>$(TargetDir)$(TargetName).pdb</ProgramDatabaseFile>
       <AdditionalDependencies>blue.lib;destiny.lib;gtest.lib;python27.lib;rad_tm_win32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
