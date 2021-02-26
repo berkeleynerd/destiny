@@ -126,13 +126,13 @@ public:
     Ball *mTrackingPtr; // Var for tracking a target and notification on range.
     Ball *mFollowPtr; // Pointer to ball being followed
 
-	int mAllianceID;
-    int mCorporationID;
+	int32_t mAllianceID;
+	int32_t mCorporationID;
 
     short mMod[3];
 
     char mFormationID;
-    char isCloaked;  //  non-zero if ball is cloaked for others
+    uint8_t isCloaked;  //  non-zero if ball is cloaked for others
 
     bool isFree; // true if ball can move
 	bool isGlobal; // true if ball is visible by all
