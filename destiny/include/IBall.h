@@ -25,7 +25,7 @@
 #ifndef _IBall_H_
 #define _IBall_H_
 
-#include <trinity/include/ITriFunction.h>
+#include <trinity/Include/ITriFunction.h>
 
 BLUE_INTERFACE(IBall) : IRoot {};
 

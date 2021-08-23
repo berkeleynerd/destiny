@@ -785,7 +785,7 @@ public://FUNCTIONS
 		Be::Time realTime,
 		Be::Time simTime,
 		void* cookie
-		);
+		) override;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// IEveBallpark
@@ -794,21 +794,21 @@ public://FUNCTIONS
 		Vector3* ref,
 		Vector3* sref,
 		Be::Time time
-		);
+		) override;
 
 	void DeltaVel(
 		Vector3* vel,
 		Be::Time time
-		);
+		) override;
 
 	float GetUnitBase(
-		){return mSomeWeirdHackToFixSomething;};
+		) override {return mSomeWeirdHackToFixSomething;};
 
 	void SetUnitBase(
 		float unit
-		){mSomeWeirdHackToFixSomething = unit;};
+		) override {mSomeWeirdHackToFixSomething = unit;};
 
-	Vector3d* GetReferencePoint(Vector3d* out, Be::Time time);
+	Vector3d* GetReferencePoint(Vector3d* out, Be::Time time) override;
 
     void EntityWarpIn(const ID& srcId, double x, double y, double z, int warpFactor);
 

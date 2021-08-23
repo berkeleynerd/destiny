@@ -34,6 +34,7 @@ using std::exception;
 #include "include/destinyId.h"
 #include <blue/include/IBluePython.h>
 #include <blue/include/IBlueOS.h>
+#include "blue/Include/IBluePersist.h"
 
 #include "blue/include/BlueStatistics.h"
 

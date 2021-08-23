@@ -12,10 +12,10 @@ public:
 	void Initialize(ID theID, ID parentObjectId, double ax, double ay, double az, double bx, double by, double bz, float radius);
 	
 	//StaticCollidable abstract functions
-	float GetBoundingRadius();
-	Vector3d GetCenter();
-	void CollideWithBall(Ball* ball);
-	void InsertInBoxes(Box* box1, Box* top, long newBubbleId);
+	float GetBoundingRadius() override;
+	Vector3d GetCenter() override;
+	void CollideWithBall(Ball* ball) override;
+	void InsertInBoxes(Box* box1, Box* top, long newBubbleId) override;
 
 private:
 	void ReactToCollision(Ball* ball, Vector3d& ballPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact);

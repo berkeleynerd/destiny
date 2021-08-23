@@ -37,7 +37,7 @@
 struct Vector3d;
 #include <trinity/Include/IEveReferencePoint.h>
 
-#include <blue/include/blue.h>
+#include <blue/Include/Blue.h>
 #include <unordered_set>
 #include <vector>
 #include <bitset>
@@ -233,21 +233,21 @@ public:
 	// pre: none
 	// post: remove ball from any intersecting boxes in the current space partition
 	//////////////////////////////////////////////////////////////////////////////
-	void DeleteFromBoxes();
+	void DeleteFromBoxes() override;
 
 	//////////////////////////////////////////////////////////////////////////////
 	// ClearBoxes()
 	// pre: none
 	// post: All boxes have been cleared away, and their state is false
 	//////////////////////////////////////////////////////////////////////////////
-	void ClearBoxes();
+	void ClearBoxes() override;
 
 	//////////////////////////////////////////////////////////////////////////////
 	// InsertInBox()
 	// pre: none
 	// post: The ball and box will have references to each other
 	//////////////////////////////////////////////////////////////////////////////
-	void InsertInBox(Box* box);
+	void InsertInBox(Box* box) override;
 
 	//////////////////////////////////////////////////////////////////////////////
 	// InsertInBox()
@@ -255,25 +255,25 @@ public:
 	// post: The ball will be a member of the boxes that it intersects during 
 	//       this and the previous timestep
 	//////////////////////////////////////////////////////////////////////////////
-	void InsertInBoxes(Box* box1, Box* top, long newBubbleId);
+	void InsertInBoxes(Box* box1, Box* top, long newBubbleId) override;
 
 	//////////////////////////////////////////////////////////////////////////////
 	// GetInflatedRadius()
 	// Get the radius of the largest sphere the object can occupy during the time step
 	//////////////////////////////////////////////////////////////////////////////
-	double GetInflatedRadius(double dt);
+	double GetInflatedRadius(double dt) override;
 
 	//////////////////////////////////////////////////////////////////////////////
 	// GetInflatedRadius()
 	// Get the radius of the ball
 	//////////////////////////////////////////////////////////////////////////////
-	float GetBoundingRadius();
+	float GetBoundingRadius() override;
 
 	//////////////////////////////////////////////////////////////////////////////
 	// SetBoxActive()
 	// Update the activity status of the box
 	//////////////////////////////////////////////////////////////////////////////
-	void SetBoxActive(int boxId, bool isActive);
+	void SetBoxActive(int boxId, bool isActive) override;
 
 	//////////////////////////////////////////////////////////////////////////////
 	// CalculateYawPitchRoll()
@@ -352,7 +352,7 @@ public:
 	// INotify
 	bool OnModified(
 		Be::Var* vBall
-		);
+		) override;
 
 public:
 	/////////////////////////////////////////
@@ -435,7 +435,7 @@ public:
 	// pre: none
 	// post: Updates the current yaw, pitch and roll of ball
 	//////////////////////////////////////////////////////////////////////////////
-	void CalculateYawPitchRoll(bool snap=false);
+	void CalculateYawPitchRoll(bool snap=false) override;
 
 	//////////////////////////////////////////////////////////////////////////////
 	// GetDelta(delta,time)
@@ -462,7 +462,7 @@ public:
 	/////////////////////////////////////////////////////////////////////////////////////
 	// IEveReferencePoint
 	/////////////////////////////////////////////////////////////////////////////////////
-	virtual	Vector3d* GetReferencePoint(Vector3d* out, Be::Time time);;
+	virtual	Vector3d* GetReferencePoint(Vector3d* out, Be::Time time) override;
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// ITriFunction
@@ -470,7 +470,7 @@ public:
 	// This is a stub, so that destiny will compile following CL 73220
 	// It is functionality only required for curveset support, so I'm not sure what the correct functionality
 	// for a ball would be.
-	virtual void UpdateValue( double time ) {};
+	virtual void UpdateValue( double time ) override {};
 
     Be::Time GetShiftedTime(Be::Time time);
 	/////////////////////////////////////////////////////////////////////////////////////
@@ -479,42 +479,42 @@ public:
 	Quaternion* Update(
 		Quaternion* in,
 		Be::Time time
-		);
+		) override;
 
 	Quaternion* Update(
 		Quaternion* in,
 		double time
-		);
+		) override;
 
 	Quaternion* GetValueAt(
 		Quaternion* in,
 		Be::Time time
-		);
+		) override;
 
 	Quaternion* GetValueAt(
 		Quaternion* in,
 		double time
-		);
+		) override;
 
 	Quaternion* GetValueDotAt(
 		Quaternion* in,
 		Be::Time time
-		);
+		) override;
 
 	Quaternion* GetValueDotAt(
 		Quaternion* in,
 		double time
-		);
+		) override;
 
 	Quaternion* GetValueDoubleDotAt(
 		Quaternion* in,
 		Be::Time time
-		){return in;};
+		) override {return in;};
 
 	Quaternion* GetValueDoubleDotAt(
 		Quaternion* in,
 		double time
-		){return in;};
+		) override {return in;};
 
 	/////////////////////////////////////////////////////////////////////////////////////
 	// ITriVectorFunction
@@ -522,43 +522,43 @@ public:
 	Vector3* Update(
 		Vector3* in,
 		Be::Time time
-		);
+		) override;
 
 	Vector3* Update(
 		Vector3* in,
 		double time
-		);
+		) override;
 
 	Vector3* GetValueAt(
 		Vector3* in,
 		Be::Time time
-		);
+		) override;
 
 	Vector3* GetValueAt(
 		Vector3* in,
 		double time
-		);
+		) override;
 
 	Vector3* GetValueDotAt(
 		Vector3* in,
 		Be::Time time
-		);
+		) override;
 
 	Vector3* GetValueDotAt(
 		Vector3* in,
 		double time
-		);
+		) override;
 
 	Vector3* GetValueDoubleDotAt(
 		Vector3* in,
 		Be::Time time
-		);
+		) override;
 
 	Vector3* GetValueDoubleDotAt(
 		Vector3* in,
 		double time
-		);
-	Vector3d* InterpolatedPosition(Vector3d* out, Be::Time);
+		) override;
+	Vector3d* InterpolatedPosition(Vector3d* out, Be::Time) override;
 
 	PyObject* PyGetPartitionBoxes ( PyObject* args );
 };

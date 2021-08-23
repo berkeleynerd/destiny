@@ -1,7 +1,7 @@
 #ifndef _MINIBox_H_
 #define _MINIBox_H_
 
-#include <blue/include/blue.h>
+#include <blue/Include/Blue.h>
 #include "include/IBall.h"
 #include "include/IDstConstants.h"
 #include "Vector3d.h"

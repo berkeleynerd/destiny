@@ -20,10 +20,10 @@ public:
 		double z0, double z1, double z2 );
 
 	//StaticCollidable abstract functions
-	float GetBoundingRadius();
-	Vector3d GetCenter();
-	void CollideWithBall(Ball* ball);
-	void InsertInBoxes(Box* box1, Box* top, long newBubbleId);
+	float GetBoundingRadius() override;
+	Vector3d GetCenter() override;
+	void CollideWithBall(Ball* ball) override;
+	void InsertInBoxes(Box* box1, Box* top, long newBubbleId) override;
 
 private:
 	void ReactToCollision(Ball* ball, Vector3d& ballPosition, Vector3d& ballVelocity, double m1, Vector3d& normal, double timeOfImpact);

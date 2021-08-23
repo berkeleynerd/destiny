@@ -31,16 +31,23 @@
 #include "Galaxy.h"
 #endif
 #include "Partition.h"
-
-#include "include/destinyId.cxx"
 #include "DstConstants.h"
-
-#include <blue/include/blueId.cxx>
-#include <BlueExposure/include/InterfaceDefinitions.cxx>
 
 // Define the interfaces we use from Trinity
 BLUE_DEFINE_INTERFACE( ITriVectorFunction );
 BLUE_DEFINE_INTERFACE( ITriQuaternionFunction );
+
+// interfaces
+BLUE_DEFINE_INTERFACE(IBall);
+BLUE_DEFINE_INTERFACE(IBallpark);
+
+// classes
+BLUE_DEFINE(Ballpark);
+BLUE_DEFINE(Ball);
+BLUE_DEFINE(ClientBall);
+BLUE_DEFINE(MiniBall);
+BLUE_DEFINE(MiniBox);
+BLUE_DEFINE(MiniCapsule);
 
 #include <Util/PairingHeap.h>
 
@@ -327,8 +334,6 @@ static PyMethodDef destiny_methods[] = {
 // Class Factory List
 //
 //////////////////////////////////////////////////////////////////////
-const char* BLUEMODULENAME = "_destiny";
-
 #define BLUECLASSFACTORY(_Class) \
 	{_Class::ClassType_(), SimpleFactory<O##_Class>::Create},
 
@@ -382,8 +387,10 @@ BOOL APIENTRY DllMain(HINSTANCE instance, DWORD  reason, LPVOID)
 extern "C" void
 #ifdef _MSC_VER
 __declspec(dllexport)
+#else
+__attribute__((visibility("default")))
 #endif
-init_destiny()
+CCP_CONCATENATE( init_destiny, CCP_BUILD_FLAVOR )()
 {
     CCP_LOG( "Destiny compiled %s %s starting", __DATE__, __TIME__);
 	CCP_LOG( "Size of balls: %d bytes", sizeof(Ball));
@@ -391,7 +398,7 @@ init_destiny()
 	BeClasses->RegisterClasses(classes);
     
 	// put myself into python as a module
-	PyObject* module = Py_InitModule((char*)BLUEMODULENAME, destiny_methods);
+	PyObject* module = Py_InitModule( CCP_STRINGIZE( CCP_CONCATENATE( _destiny, CCP_BUILD_FLAVOR ) ), destiny_methods );
 	gThisModule = module;
 	PyObject* dict = PyModule_GetDict(module);
     
