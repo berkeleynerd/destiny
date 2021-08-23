@@ -1,8 +1,9 @@
-
 import blue
-from _destiny import *
-
+import sys
 import decometaclass
-Ball = decometaclass.WrapBlueClass("destiny.Ball")
-Ballpark = decometaclass.WrapBlueClass("destiny.Ballpark")
-ClientBall = decometaclass.WrapBlueClass("destiny.ClientBall")
+
+_destiny = blue.LoadExtension("_destiny")
+_destiny.Ball = decometaclass.WrapBlueClass("destiny.Ball")
+_destiny.Ballpark = decometaclass.WrapBlueClass("destiny.Ballpark")
+_destiny.ClientBall = decometaclass.WrapBlueClass("destiny.ClientBall")
+sys.modules[__name__] = _destiny

@@ -2,6 +2,3 @@ ownermails:
   - hrafng@ccpgames.com
 testing:
   skipci: True
-  binaries:
-    - DLL_BLUE
-    - DLL_DESTINY
