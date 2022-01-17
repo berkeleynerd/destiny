@@ -196,6 +196,9 @@ Ballpark::~Ballpark()
 
     Py_XDECREF( Ballpark::s_ballNotInParkCallback );
     Ballpark::s_ballNotInParkCallback = NULL;
+
+    // Always need to unregister from ticks if we get destroyed
+    Pause();
 }
 #pragma endregion
 
