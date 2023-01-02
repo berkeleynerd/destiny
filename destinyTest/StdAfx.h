@@ -3,7 +3,7 @@
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
 
-#include "CcpMath/include/CcpMath.h"
+#include <CcpMath.h>
 #include "BlueExposure/include/BlueExposure.h"
 #include <blue/Include/Blue.h>
 #include <blue/Include/IBluePython.h>

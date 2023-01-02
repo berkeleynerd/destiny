@@ -25,7 +25,7 @@ using std::exception;
 #define _HAS_EXCEPTIONS 1
 #endif
 
-#include <CcpMath/include/CcpMath.h>
+#include <CcpMath.h>
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
 #include "BlueExposure/include/BlueExposure.h"
