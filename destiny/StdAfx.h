@@ -28,7 +28,7 @@ using std::exception;
 #include <CcpMath.h>
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
-#include "BlueExposure/include/BlueExposure.h"
+#include <BlueExposure.h>
 #include <blue/include/blue.h>
 
 #include "include/destinyId.h"
