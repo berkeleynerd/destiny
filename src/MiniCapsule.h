@@ -1,9 +1,9 @@
 #ifndef _MINICAPSULE_H_
 #define _MINICAPSULE_H_
 
-#include <blue/Include/Blue.h>
-#include "include/IBall.h"
-#include "include/IDstConstants.h"
+#include <Blue.h>
+#include "IBall.h"
+#include "IDstConstants.h"
 #include "Vector3d.h"
 #include "DstConstants.h"
 

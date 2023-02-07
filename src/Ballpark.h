@@ -25,8 +25,8 @@
 #ifndef _DYNAMIC_H_
 #define _DYNAMIC_H_
 
-#include <trinity/Include/IEveBallpark.h>
-#include "include/IDstConstants.h"
+#include <IEveBallpark.h>
+#include "IDstConstants.h"
 
 struct Vector3d;
 

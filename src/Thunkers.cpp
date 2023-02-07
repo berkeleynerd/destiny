@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include <trinity/include/TriMath.h>
+#include <TriMath.h>
 #include "Ballpark.h"
 #include "Ball.h"
 #include "Box.h"
@@ -7,8 +7,8 @@
 #define ABS(X) ((X)<0.0?-(X):(X))
 
 
-#include <blue/include/IBluePersist.h>
-#include <blue/include/ITaskletTimer.h>
+#include <IBluePersist.h>
+#include <ITaskletTimer.h>
 
 #include <array>
 

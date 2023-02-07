@@ -49,9 +49,9 @@ BLUE_DEFINE(MiniBall);
 BLUE_DEFINE(MiniBox);
 BLUE_DEFINE(MiniCapsule);
 
-#include <Util/PairingHeap.h>
+#include <CcpPairingHeap.h>
 
-#include "include/Quaternion.h"
+#include "Quaternion.h"
 
 #include <limits>
 #ifdef max //remove silly max macro, for limits

@@ -26,8 +26,8 @@
 #define _BALL_H_
 #include "Partitionable.h"
 
-#include "include/IBall.h"
-#include "include/IDstConstants.h"
+#include "IBall.h"
+#include "IDstConstants.h"
 
 #include "DstConstants.h"
 #include "MiniBall.h"
@@ -35,9 +35,9 @@
 #include "MiniBox.h"
 
 struct Vector3d;
-#include <trinity/Include/IEveReferencePoint.h>
+#include <IEveReferencePoint.h>
 
-#include <blue/Include/Blue.h>
+#include <Blue.h>
 #include <unordered_set>
 #include <vector>
 #include <bitset>

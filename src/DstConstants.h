@@ -25,7 +25,7 @@
 #ifndef _DSTCONSTANTS_H_
 #define _DSTCONSTANTS_H_
 
-#include "include/IDstConstants.h"
+#include "IDstConstants.h"
 
 void AddDstConstants(PyObject *d);
 

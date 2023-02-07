@@ -29,14 +29,14 @@ using std::exception;
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
 #include <BlueExposure.h>
-#include <blue/include/blue.h>
+#include <Blue.h>
 
-#include "include/destinyId.h"
-#include <blue/include/IBluePython.h>
-#include <blue/include/IBlueOS.h>
-#include "blue/Include/IBluePersist.h"
+#include "destinyId.h"
+#include <IBluePython.h>
+#include <IBlueOS.h>
+#include "IBluePersist.h"
 
-#include "blue/include/BlueStatistics.h"
+#include "BlueStatistics.h"
 
               
 

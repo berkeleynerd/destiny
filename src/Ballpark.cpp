@@ -7,14 +7,14 @@
 #include <float.h>
 
 
-#include <trinity/include/TriMath.h>
+#include <TriMath.h>
 
 #include "Ballpark.h"
 #include "Ball.h"
 #include "Box.h"
-#include "include/Quaternion.h"
+#include "Quaternion.h"
 
-#include <blue/include/ITaskletTimer.h>
+#include <ITaskletTimer.h>
 
 #include <list>
 #include <algorithm>
