@@ -3,7 +3,6 @@
 #include "Ballpark.h"
 #include "Partition.h"
 #include "Box.h"
-#include <TriMath.h>
 
 #define ABS(X) ((X)<0.0?-(X):(X))
 #define MIN(X,Y) ((X)<(Y)?(X):(Y))

@@ -35,7 +35,7 @@
 #include "MiniBox.h"
 
 struct Vector3d;
-#include <IEveReferencePoint.h>
+#include "IEveReferencePoint.h"
 
 #include <Blue.h>
 #include <unordered_set>

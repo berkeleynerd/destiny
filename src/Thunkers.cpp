@@ -1,10 +1,10 @@
 #include "stdafx.h"
-#include <TriMath.h>
 #include "Ballpark.h"
 #include "Ball.h"
 #include "Box.h"
 #include "Triangle.h"
 #define ABS(X) ((X)<0.0?-(X):(X))
+constexpr double PI = 3.141592654;
 
 
 #include <IBluePersist.h>
@@ -2313,7 +2313,7 @@ PyObject* Ballpark::PyScanCone(
 	double c2 = cos(angle)*cos(angle);
 	bool sphere = false;
 
-	if(angle > TRI_PI)
+	if(angle > PI)
 	{
 		// We are only interested in range
 		sphere = true;

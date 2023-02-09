@@ -6,9 +6,6 @@
 #endif
 #include <float.h>
 
-
-#include <TriMath.h>
-
 #include "Ballpark.h"
 #include "Ball.h"
 #include "Box.h"

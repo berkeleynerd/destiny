@@ -24,6 +24,11 @@ find_package(CcpMath REQUIRED NO_CMAKE_PATH)
 ccp_add_library(destiny SHARED)
 target_link_libraries(destiny PUBLIC Blue CcpCore PRIVATE CcpMath)
 
+set(PUBLIC_HEADER_FILES_INCLUDE
+    include/IEveReferencePoint.h
+    include/IEveBallpark.h
+)
+
 set(_SOURCES
     src/AABB.cpp
     src/AABB.h
@@ -78,12 +83,17 @@ set(_SOURCES
     src/Triangle.h
     src/Vector3d.h
     src/version.h
+    ${PUBLIC_HEADER_FILES_INCLUDE}
 )
 target_sources(destiny PRIVATE ${_SOURCES})
 
 target_precompile_headers(destiny PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/StdAfx.h)
-target_include_directories(destiny PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_include_directories(destiny PRIVATE ${BRANCH_ROOT_DIR}/carbon/src/trinity/Include)
+target_include_directories(destiny
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 if(APPLE)
     # this is temporary so that we don't drown in warnings
     set_property(TARGET destiny APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-nonportable-include-path -Wno-inconsistent-missing-override")
@@ -95,8 +105,12 @@ ccp_add_library(destinyStatic STATIC)
 target_link_libraries(destinyStatic PUBLIC Blue CcpCore CcpMath)
 target_sources(destinyStatic PRIVATE ${_SOURCES})
 target_precompile_headers(destinyStatic PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/StdAfx.h)
-target_include_directories(destinyStatic PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-target_include_directories(destinyStatic PRIVATE ${BRANCH_ROOT_DIR}/carbon/src/trinity/Include)
+target_include_directories(destinyStatic
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 if(APPLE)
     # this is temporary so that we don't drown in warnings
     set_property(TARGET destinyStatic APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-nonportable-include-path -Wno-inconsistent-missing-override")
@@ -123,13 +137,9 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     # Install rule for available public headers
     install(FILES ${PUBLIC_HEADER_FILES_INCLUDE} DESTINATION include)
 
-    # Install debug symbols
-    if (MSVC)
-        install(FILES $<TARGET_PDB_FILE:destiny> DESTINATION lib/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET})
-    elseif(APPLE)
-        # .sym file is optional because these only get extracted for the Release configuration.
-        install(FILES $<TARGET_FILE:destiny>.sym DESTINATION lib/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET} OPTIONAL)
-    endif()
+    # Install a custom DestinyConfig.cmake file, since as a dependency we are
+    # basically a header-only library, not something that gets linked against.
+    install(FILES ${PROJECT_SOURCE_DIR}/cmake/DestinyConfig.cmake DESTINATION .)
 
     # Install python package
     install(DIRECTORY python/ DESTINATION python
