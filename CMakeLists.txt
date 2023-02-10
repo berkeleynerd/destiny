@@ -143,5 +143,8 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 
     # Install python package
     install(DIRECTORY python/ DESTINATION python
-            FILES_MATCHING PATTERN "*.py")
+            FILES_MATCHING
+            PATTERN "*.py"
+            PATTERN "package.yaml"
+    )
 endif()
