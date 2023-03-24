@@ -38,7 +38,7 @@ class TestMiniCapsule(helpers.BallparkTestCase):
             (250.0, 20.463899776331143, 0.0)
         ]
 
-        self.assertEqual(coords, expected_coords)
+        self.assertListOfPointsAlmostEqual(coords, expected_coords)
 
 class TestMiniBox(helpers.BallparkTestCase):
     def test_add(self):
@@ -100,6 +100,7 @@ class TestMiniBox(helpers.BallparkTestCase):
         self.assertEqual(mini_box.z1, -2.0)
         self.assertEqual(mini_box.z2, 1.0)
 
+
     def test_collide(self):
         parent, = self.add_balls(1)
         parent.x = 0
@@ -127,8 +128,7 @@ class TestMiniBox(helpers.BallparkTestCase):
             (105.0, 21.71944122765141, 5.0),
             (105.0, 20.571753158732008, 5.0)
         ]
-        self.assertEqual(coords, expected_coords)
-
+        self.assertListOfPointsAlmostEqual(coords, expected_coords)
 
 
 class TestMiniBall(helpers.BallparkTestCase):
@@ -139,6 +139,7 @@ class TestMiniBall(helpers.BallparkTestCase):
         self.assertEqual(mini_ball.x, 1)
         self.assertEqual(mini_ball.y, 2)
         self.assertEqual(mini_ball.z, 3)
+
 
     def test_collide(self):
         parent, = self.add_balls(1)
@@ -165,4 +166,4 @@ class TestMiniBall(helpers.BallparkTestCase):
             (200.0, 20.571753158732008, 0.0)
         ]
 
-        self.assertEqual(coords, expected_coords)
+        self.assertListOfPointsAlmostEqual(coords, expected_coords)

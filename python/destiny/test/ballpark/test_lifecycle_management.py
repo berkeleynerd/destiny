@@ -1,6 +1,7 @@
 import destiny
 from destiny.test import helpers
 
+
 class TestBallpark(helpers.BallparkTestCase):
     def test_can_create_ballpark(self):
         self.assertIsNotNone(self.park)
@@ -177,8 +178,10 @@ class TestAddMushroom(helpers.BallparkTestCase):
 
 class TestCapsule(helpers.BallparkTestCase):
     def test_parameters_get_set_correctly(self):
-        capsule = self.park.AddCapsule(23, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 42.0)
-        self.assertEqual(capsule.id, 23)
+        parentBall = helpers.add_ball_to_park(self.park)
+
+        parentBall.AddMiniCapsule(1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 42.0)
+        capsule = parentBall.miniCapsules[-1]
         self.assertEqual(capsule.ax, 1.0)
         self.assertEqual(capsule.ay, 2.0)
         self.assertEqual(capsule.az, 3.0)
@@ -188,36 +191,6 @@ class TestCapsule(helpers.BallparkTestCase):
         self.assertEqual(capsule.bz, 6.0)
 
         self.assertEqual(capsule.radius, 42.0)
-        self.assertEqual(capsule.park, self.park)
-
-    def test_remove_capsule(self):
-        capsule = self.park.AddCapsule(23, 0,0,0, 1,0,0, 1)
-        self.park.RemoveCapsule(capsule.id)
-        self.assertTrue(capsule.isMoribund)
-
-
-class TestOrientedBox(helpers.BallparkTestCase):
-    def test_parameters_get_set_correctly(self):
-        obb = self.park.AddOrientedBox(
-            23, # ID
-            0.0, 0.0, 0.0, # Corner of box
-            1.0, 0.0, 0.0, # Local X axis
-            0.0, 1.0, 0.0, # Local Y axis
-            0.0, 0.0, 1.0, # Local Z axis
-        )
-        self.assertEqual(obb.id, 23)
-
-    def test_remove(self):
-        obb = self.park.AddOrientedBox(
-            -1,
-            0.0, 0.0, 0.0, # Corner of box
-            1.0, 0.0, 0.0, # Local X axis
-            0.0, 1.0, 0.0, # Local Y axis
-            0.0, 0.0, 1.0, # Local Z axis
-        )
-        self.park.RemoveOrientedBox(obb.id)
-        self.assertTrue(obb.isMoribund)
-
 
 
 class TestIdGeneration(helpers.BallparkTestCase):
@@ -230,17 +203,24 @@ class TestIdGeneration(helpers.BallparkTestCase):
         return ball.id
 
     def get_next_capsule_id(self):
-        capsule = self.park.AddCapsule(-1, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 42.0)
+        parentBall = helpers.add_ball_to_park(self.park)
+        parentBall.AddMiniCapsule(
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0,
+            42.0
+        )
+        capsule = parentBall.miniCapsules[-1]
         return capsule.id
 
     def get_next_oriented_box_id(self):
-        obb = self.park.AddOrientedBox(
-            -1,
+        parentBall = helpers.add_ball_to_park(self.park)
+        parentBall.AddMiniBox(
             0.0, 0.0, 0.0, # Corner of box
             1.0, 0.0, 0.0, # Local X axis
             0.0, 1.0, 0.0, # Local Y axis
             0.0, 0.0, 1.0, # Local Z axis
         )
+        obb = parentBall.miniBoxes[-1]
         return obb.id
 
     def test_ball_id_gets_generated(self):

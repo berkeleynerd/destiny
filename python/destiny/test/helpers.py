@@ -1,7 +1,5 @@
 import struct
 import unittest
-
-import decometaclass
 import destiny
 
 MAX_FORMATION_SLOTS_FOR_BALLS = 16
@@ -42,6 +40,7 @@ class BallparkTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.park.ClearAll()
+        del self.park
 
     def add_balls(self, n):
         for i in xrange(n):
@@ -243,7 +242,7 @@ def get_level_width(level_no):
     return base_width * 4 ** (no_levels - level_no - 1)
 
 
-class BallEventSpy(decometaclass.WrapBlueClass("destiny.Ball")):
+class BallEventSpy(destiny.Ball):
     def __init__(self, *args):
         super(BallEventSpy, self).__init__(*args)
         self.collision_callback_args = []

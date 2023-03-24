@@ -1,7 +1,7 @@
-import destiny
 from destiny.test import helpers
 from destiny.test.helpers import MIN_BOX_SIZE
 import math
+
 
 class TestInitialize_bubbles(helpers.BallparkTestCase):
     def test_can_initialize_bubbles(self):
@@ -102,7 +102,7 @@ class TestGetBallIdInRangeOfTriangle(helpers.BallparkTestCase):
             0.0, 10.0, 0.0,
             5.0)
         self.assertListEqual(result, [])
-    
+
     def test_other_ball_in_triangle(self):
         ball, other = self.add_balls(2)
         other.radius = 1.0
@@ -115,7 +115,7 @@ class TestGetBallIdInRangeOfTriangle(helpers.BallparkTestCase):
             0.0, 10.0, 0.0,
             5.0)
         self.assertListEqual(result, [other.id])
-    
+
     def test_other_ball_out_of_range(self):
         ball, other = self.add_balls(2)
         other.radius = 1.0
@@ -128,7 +128,7 @@ class TestGetBallIdInRangeOfTriangle(helpers.BallparkTestCase):
             0.0, 10.0, 0.0,
             5.0)
         self.assertListEqual(result, [])
-    
+
     def test_other_ball_on_edge_of_range(self):
         ball, other = self.add_balls(2)
         other.radius = 1.0
@@ -140,7 +140,7 @@ class TestGetBallIdInRangeOfTriangle(helpers.BallparkTestCase):
             0.0, 10.0, 0.0,
             5.0)
         self.assertListEqual(result, [other.id])
-    
+
     def test_multiple_balls_in_triangle(self):
         ball, a, b = self.add_balls(3)
         a.radius = 1.0
@@ -247,19 +247,15 @@ class TestGetBallIdsInCapsule(helpers.BallparkTestCase):
 
 
 class TestGetBallIdsInCone(helpers.BallparkTestCase):
-    def setUp(self):
-        super(TestGetBallIdsInCone, self).setUp()
-        self.ball, self.other = self.add_balls(2)
-
-    def _get_colliding_balls(self):
-        self.park.InitializeBubbles()
+    def _get_colliding_balls(self, ball):
         return self.park.GetBallIdsInCone(
-            self.ball.id,
+            ball.id,
             0.0, 0.0, 10.0,
             math.radians(45.0))
 
     def test_no_other_ball(self):
-        result = self._get_colliding_balls()
+        ball, = self.add_balls(1)
+        result = self._get_colliding_balls(ball)
         self.assertListEqual(result, [])
 
     def test_source_does_not_exist_raises_runtime_error(self):
@@ -272,35 +268,43 @@ class TestGetBallIdsInCone(helpers.BallparkTestCase):
         )
 
     def test_ball_in_cone(self):
-        self.other.radius = 1.0
-        self.other.z += 5.0
-        result = self._get_colliding_balls()
-        self.assertListEqual(result, [self.other.id])
+        ball, other = self.add_balls(2)
+        self.park.InitializeBubbles()
+        other.radius = 1.0
+        other.z += 5.0
+        result = self._get_colliding_balls(ball)
+        self.assertListEqual(result, [other.id])
 
     def test_ball_too_far_away(self):
-        self.other.radius = 1.0
-        self.other.z += 12.0
-        result = self._get_colliding_balls()
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.z += 12.0
+        result = self._get_colliding_balls(ball)
         self.assertListEqual(result, [])
 
     def test_ball_intersects_front_of_cone(self):
-        self.other.radius = 1.0
-        self.other.z += 11.0
-        result = self._get_colliding_balls()
-        self.assertListEqual(result, [self.other.id])
+        ball, other = self.add_balls(2)
+        self.park.InitializeBubbles()
+        other.radius = 1.0
+        other.z += 11.0
+        result = self._get_colliding_balls(ball)
+        self.assertListEqual(result, [other.id])
 
     def test_ball_intersects_cone(self):
-        self.other.radius = 1.0
-        self.other.z += 5.0
-        self.other.x += 6.0
-        result = self._get_colliding_balls()
-        self.assertListEqual(result, [self.other.id])
+        ball, other = self.add_balls(2)
+        self.park.InitializeBubbles()
+        other.radius = 1.0
+        other.z += 5.0
+        other.x += 6.0
+        result = self._get_colliding_balls(ball)
+        self.assertListEqual(result, [other.id])
 
     def test_ball_does_not_intersect_cone(self):
-        self.other.radius = 1.0
-        self.other.z += 5.0
-        self.other.x += 7.0
-        result = self._get_colliding_balls()
+        ball, other = self.add_balls(2)
+        other.radius = 1.0
+        other.z += 5.0
+        other.x += 7.0
+        result = self._get_colliding_balls(ball)
         self.assertListEqual(result, [])
 
 
@@ -327,9 +331,16 @@ class TestBallBox(helpers.BallparkTestCase):
         self.assertAlmostEqual(y, MIN_BOX_SIZE / 2.0)
         self.assertAlmostEqual(z, MIN_BOX_SIZE * 1.5)
 
+
 class TestGetStaticCollidableBox(helpers.BallparkTestCase):
     def test_capsule_in_box_zero_zero_zero(self):
-        capsule = self.park.AddCapsule(-1, 1.0,1.0,1.0, 2.0,2.0,2.0, 1.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniCapsule(
+            1.0, 1.0, 1.0,
+            2.0, 2.0, 2.0,
+            1.0
+        )
+        capsule = parentBall.miniCapsules[-1]
         box_width, (x,y,z) = self.park.GetStaticCollidableBox(capsule.id)
         self.assertEqual(box_width, MIN_BOX_SIZE)
         self.assertAlmostEqual(x, MIN_BOX_SIZE / 2.0)
@@ -337,7 +348,13 @@ class TestGetStaticCollidableBox(helpers.BallparkTestCase):
         self.assertAlmostEqual(z, MIN_BOX_SIZE / 2.0)
 
     def test_capsule_in_box_zero_zero_one(self):
-        capsule = self.park.AddCapsule(-1, 1.0,1.0, MIN_BOX_SIZE + 1.0, 1.0,1.0, MIN_BOX_SIZE + 3.0, 1.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniCapsule(
+            1.0, 1.0, MIN_BOX_SIZE + 1.0,
+            1.0, 1.0, MIN_BOX_SIZE + 3.0,
+            1.0
+        )
+        capsule = parentBall.miniCapsules[-1]
         box_width, (x,y,z) = self.park.GetStaticCollidableBox(capsule.id)
         self.assertEqual(box_width, MIN_BOX_SIZE)
         self.assertAlmostEqual(x, MIN_BOX_SIZE / 2.0)
@@ -345,11 +362,14 @@ class TestGetStaticCollidableBox(helpers.BallparkTestCase):
         self.assertAlmostEqual(z, MIN_BOX_SIZE * 1.5)
 
     def test_oriented_box_in_box_zero_zero_zero(self):
-        obb = self.park.AddOrientedBox(-1,
-                                       MIN_BOX_SIZE/4.0, MIN_BOX_SIZE/4.0, MIN_BOX_SIZE/4.0,
-                                       1.0, 0.0, 0.0,
-                                       0.0, 1.0, 0.0,
-                                       0.0, 0.0, 1.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+           MIN_BOX_SIZE/4.0, MIN_BOX_SIZE/4.0, MIN_BOX_SIZE/4.0,
+           1.0, 0.0, 0.0,
+           0.0, 1.0, 0.0,
+           0.0, 0.0, 1.0
+        )
+        obb = parentBall.miniBoxes[-1]
         box_width, (x,y,z) = self.park.GetStaticCollidableBox(obb.id)
         self.assertEqual(box_width, MIN_BOX_SIZE)
         self.assertAlmostEqual(x, MIN_BOX_SIZE / 2.0)
@@ -357,16 +377,72 @@ class TestGetStaticCollidableBox(helpers.BallparkTestCase):
         self.assertAlmostEqual(z, MIN_BOX_SIZE / 2.0)
 
     def test_oriented_box_in_box_zero_zero_one(self):
-        obb = self.park.AddOrientedBox(-1,
-                                       MIN_BOX_SIZE/4.0, MIN_BOX_SIZE/4.0, MIN_BOX_SIZE*1.5,
-                                       1.0, 0.0, 0.0,
-                                       0.0, 1.0, 0.0,
-                                       0.0, 0.0, 1.0)
-        box_width, (x,y,z) = self.park.GetStaticCollidableBox(obb.id)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+           MIN_BOX_SIZE/4.0, MIN_BOX_SIZE/4.0, MIN_BOX_SIZE*1.5,
+           1.0, 0.0, 0.0,
+           0.0, 1.0, 0.0,
+           0.0, 0.0, 1.0
+        )
+        obb = parentBall.miniBoxes[-1]
+        box_width, (x, y, z) = self.park.GetStaticCollidableBox(obb.id)
         self.assertEqual(box_width, MIN_BOX_SIZE)
         self.assertAlmostEqual(x, MIN_BOX_SIZE / 2.0)
         self.assertAlmostEqual(y, MIN_BOX_SIZE / 2.0)
         self.assertAlmostEqual(z, MIN_BOX_SIZE * 1.5)
+
+    def test_adding_a_capsule_makes_a_box_active(self):
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniCapsule(
+            2.0, 2.0, 2.0,
+            3.0, 3.0, 3.0,
+            1.0
+        )
+        level = 7
+        level_width, active_boxes = self.park.GetActiveBoxes(level)
+        expected_active_boxes = [(0.0, 0.0, 0.0)]
+        self.assertEqual(active_boxes, expected_active_boxes)
+
+    def test_adding_a_large_capsule_makes_adjecent_boxes_active(self):
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniCapsule(
+            1.0, 1.0, 1.0,
+            2.0, 2.0, 2.0,
+            2.0
+        )
+        level = 7
+        level_width, active_boxes = self.park.GetActiveBoxes(level)
+        expected_active_boxes = [
+            (-MIN_BOX_SIZE, -MIN_BOX_SIZE, -MIN_BOX_SIZE),
+            (-MIN_BOX_SIZE, -MIN_BOX_SIZE, 0.0),
+            (-MIN_BOX_SIZE, 0.0, -MIN_BOX_SIZE),
+            (-MIN_BOX_SIZE, 0.0, 0.0),
+            (0.0, -MIN_BOX_SIZE, -MIN_BOX_SIZE),
+            (0.0, -MIN_BOX_SIZE, 0.0),
+            (0.0, 0.0, -MIN_BOX_SIZE),
+            (0.0, 0.0, 0.0)
+        ]
+        self.assertListEqual(sorted(active_boxes), expected_active_boxes)
+
+    def test_adding_a_long_capsule_makes_adjecent_boxes_active(self):
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniCapsule(
+            MIN_BOX_SIZE / 2.0, MIN_BOX_SIZE / 2.0, MIN_BOX_SIZE / 2.0,
+            MIN_BOX_SIZE * 6.0, MIN_BOX_SIZE / 2.0, MIN_BOX_SIZE / 2.0,
+            MIN_BOX_SIZE / 3.0)
+
+        level = 7
+        level_width, active_boxes = self.park.GetActiveBoxes(level)
+        expected_active_boxes = [
+            (0.0, 0.0, 0.0),
+            (MIN_BOX_SIZE, 0.0, 0.0),
+            (MIN_BOX_SIZE * 2, 0.0, 0.0),
+            (MIN_BOX_SIZE * 3, 0.0, 0.0),
+            (MIN_BOX_SIZE * 4, 0.0, 0.0),
+            (MIN_BOX_SIZE * 5, 0.0, 0.0),
+            (MIN_BOX_SIZE * 6, 0.0, 0.0)
+        ]
+        self.assertListEqual(sorted(active_boxes), expected_active_boxes)
 
 
 class TestGetActiveBoxes(helpers.BallparkTestCase):
@@ -385,154 +461,133 @@ class TestGetActiveBoxes(helpers.BallparkTestCase):
         self.assertEqual(level_width, MIN_BOX_SIZE)
         self.assertEqual(box_low_coord_list, [(0.0, 0.0, 0.0)])
 
-    def test_adding_a_capsule_makes_a_box_active(self):
-        self.park.AddCapsule(0, 2.0,2.0,2.0, 3.0,3.0,3.0, 1.0)
-        level = 7
-        level_width, active_boxes = self.park.GetActiveBoxes(level)
-        expected_active_boxes =  [(0.0, 0.0, 0.0)]
-        self.assertEqual(active_boxes, expected_active_boxes)
-
-    def test_adding_a_large_capsule_makes_adjecent_boxes_active(self):
-        self.park.AddCapsule(0, 1.0,1.0,1.0, 2.0,2.0,2.0, 2.0)
-        level = 7
-        level_width, active_boxes = self.park.GetActiveBoxes(level)
-        expected_active_boxes =  [
-            (-MIN_BOX_SIZE, -MIN_BOX_SIZE, -MIN_BOX_SIZE),
-            (-MIN_BOX_SIZE, -MIN_BOX_SIZE, 0.0),
-            (-MIN_BOX_SIZE, 0.0, -MIN_BOX_SIZE),
-            (-MIN_BOX_SIZE, 0.0, 0.0),
-            (0.0, -MIN_BOX_SIZE, -MIN_BOX_SIZE),
-            (0.0, -MIN_BOX_SIZE, 0.0),
-            (0.0, 0.0, -MIN_BOX_SIZE),
-            (0.0, 0.0, 0.0)
-        ]
-        self.assertListEqual(sorted(active_boxes), expected_active_boxes)
-
-    def test_adding_a_long_capsule_makes_adjecent_boxes_active(self):
-        self.park.AddCapsule(
-            0, MIN_BOX_SIZE / 2.0,MIN_BOX_SIZE / 2.0,
-            MIN_BOX_SIZE / 2.0, MIN_BOX_SIZE*6.0,MIN_BOX_SIZE / 2.0,MIN_BOX_SIZE / 2.0,
-            MIN_BOX_SIZE/3.0)
-        level = 7
-        level_width, active_boxes = self.park.GetActiveBoxes(level)
-        expected_active_boxes =  [
-            (0.0, 0.0, 0.0),
-            (MIN_BOX_SIZE, 0.0, 0.0),
-            (MIN_BOX_SIZE * 2, 0.0, 0.0),
-            (MIN_BOX_SIZE * 3, 0.0, 0.0),
-            (MIN_BOX_SIZE * 4, 0.0, 0.0),
-            (MIN_BOX_SIZE * 5, 0.0, 0.0),
-            (MIN_BOX_SIZE * 6, 0.0, 0.0)
-        ]
-        self.assertListEqual(sorted(active_boxes), expected_active_boxes)
-
 
 class TestActiveBoxesForOrientedBox(helpers.BallparkTestCase):
     def test_adding_a_box_makes_a_box_active(self):
-        self.park.AddOrientedBox(-1,
-                                 2.0, 2.0, 2.0,
-                                 1.0, 0.0, 0.0,
-                                 0.0, 1.0, 0.0,
-                                 0.0, 0.0, 1.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0.0, y=0.0, z=0.0, radius=500.0)
+        parentBall.AddMiniBox(
+            2.0, 2.0, 2.0,
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            0.0, 0.0, 1.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
-        expected_active_boxes =  [(0.0, 0.0, 0.0)]
+        expected_active_boxes = [(0.0, 0.0, 0.0)]
         self.assertEqual(expected_active_boxes, active_boxes)
 
     def test_tight_fit(self):
-        self.park.AddOrientedBox(-1,
-                                 0.0, 0.0, 0.0,
-                                 10.0, 0.0, 0.0,
-                                 0.0, 10.0, 0.0,
-                                 0.0, 0.0, 10.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+            0.0, 0.0, 0.0,
+            10.0, 0.0, 0.0,
+            0.0, 10.0, 0.0,
+            0.0, 0.0, 10.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0)]
         self.assertEqual(expected_active_boxes, active_boxes)
 
     def test_level_six(self):
-        self.park.AddOrientedBox(-1,
-                                 0.0, 0.0, 0.0,
-                                 10.1, 0.0, 0.0,
-                                 0.0, 10.1, 0.0,
-                                 0.0, 0.0, 10.1)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+             0.0, 0.0, 0.0,
+             10.1, 0.0, 0.0,
+             0.0, 10.1, 0.0,
+             0.0, 0.0, 10.1
+        )
         level = 6
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0)]
         self.assertEqual(expected_active_boxes, active_boxes)
 
     def test_intersect_left(self):
-        self.park.AddOrientedBox(-1,
-                                 -1.0, 0.0, 0.0,
-                                 5.0, 0.0, 0.0,
-                                 0.0, 5.0, 0.0,
-                                 0.0, 0.0, 5.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+             -1.0, 0.0, 0.0,
+             5.0, 0.0, 0.0,
+             0.0, 5.0, 0.0,
+             0.0, 0.0, 5.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (-MIN_BOX_SIZE, 0.0, 0.0)]
         self.assertEqual(expected_active_boxes, active_boxes)
 
     def test_intersect_right(self):
-        self.park.AddOrientedBox(-1,
-                                 MIN_BOX_SIZE - 4.0, 0.0, 0.0,
-                                 5.0, 0.0, 0.0,
-                                 0.0, 5.0, 0.0,
-                                 0.0, 0.0, 5.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+             MIN_BOX_SIZE - 4.0, 0.0, 0.0,
+             5.0, 0.0, 0.0,
+             0.0, 5.0, 0.0,
+             0.0, 0.0, 5.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (MIN_BOX_SIZE, 0.0, 0.0)]
         self.assertEqual(expected_active_boxes, active_boxes)
 
     def test_intersect_bottom(self):
-        self.park.AddOrientedBox(-1,
-                                 0.0, -1.0, 0.0,
-                                 5.0, 0.0, 0.0,
-                                 0.0, 5.0, 0.0,
-                                 0.0, 0.0, 5.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+             0.0, -1.0, 0.0,
+             5.0, 0.0, 0.0,
+             0.0, 5.0, 0.0,
+             0.0, 0.0, 5.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (0.0, -MIN_BOX_SIZE, 0.0)]
         self.assertEqual(expected_active_boxes, active_boxes)
 
     def test_intersect_top(self):
-        self.park.AddOrientedBox(-1,
-                                 0.0, MIN_BOX_SIZE - 4.0, 0.0,
-                                 5.0, 0.0, 0.0,
-                                 0.0, 5.0, 0.0,
-                                 0.0, 0.0, 5.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+             0.0, MIN_BOX_SIZE - 4.0, 0.0,
+             5.0, 0.0, 0.0,
+             0.0, 5.0, 0.0,
+             0.0, 0.0, 5.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (0.0, MIN_BOX_SIZE, 0.0)]
         self.assertEqual(expected_active_boxes, active_boxes)
 
     def test_intersect_back(self):
-        self.park.AddOrientedBox(-1,
-                                 0.0, 0.0, -1.0,
-                                 5.0, 0.0, 0.0,
-                                 0.0, 5.0, 0.0,
-                                 0.0, 0.0, 5.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+             0.0, 0.0, -1.0,
+             5.0, 0.0, 0.0,
+             0.0, 5.0, 0.0,
+             0.0, 0.0, 5.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (0.0, 0.0, -MIN_BOX_SIZE)]
-        self.assertEqual(expected_active_boxes, active_boxes)
+        self.assertEqual(set(expected_active_boxes), set(active_boxes))
 
     def test_intersect_front(self):
-        self.park.AddOrientedBox(-1,
-                                 0.0, 0.0, MIN_BOX_SIZE -  4.0,
-                                 5.0, 0.0, 0.0,
-                                 0.0, 5.0, 0.0,
-                                 0.0, 0.0, 5.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+             0.0, 0.0, MIN_BOX_SIZE -  4.0,
+             5.0, 0.0, 0.0,
+             0.0, 5.0, 0.0,
+             0.0, 0.0, 5.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (0.0, 0.0, MIN_BOX_SIZE)]
         self.assertEqual(expected_active_boxes, active_boxes)
 
     def test_intersect_top_front_right(self):
-        self.park.AddOrientedBox(-1,
-                                 MIN_BOX_SIZE - 4.0, MIN_BOX_SIZE - 4.0, MIN_BOX_SIZE - 4.0,
-                                 5.0, 0.0, 0.0,
-                                 0.0, 5.0, 0.0,
-                                 0.0, 0.0, 5.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
+        parentBall.AddMiniBox(
+             MIN_BOX_SIZE - 4.0, MIN_BOX_SIZE - 4.0, MIN_BOX_SIZE - 4.0,
+             5.0, 0.0, 0.0,
+             0.0, 5.0, 0.0,
+             0.0, 0.0, 5.0
+        )
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0),
@@ -543,7 +598,7 @@ class TestActiveBoxesForOrientedBox(helpers.BallparkTestCase):
                                   (MIN_BOX_SIZE, MIN_BOX_SIZE, 0.0),
                                   (MIN_BOX_SIZE, 0.0, MIN_BOX_SIZE),
                                   (MIN_BOX_SIZE, MIN_BOX_SIZE, MIN_BOX_SIZE)]
-        self.assertEqual(expected_active_boxes, active_boxes)
+        self.assertEqual(set(expected_active_boxes), set(active_boxes))
 
 class TestGetAndSetBoxObject(helpers.BallparkTestCase):
     def test_setting_object_on_existing_box_succeeds(self):

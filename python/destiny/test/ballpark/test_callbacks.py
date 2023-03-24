@@ -1,6 +1,7 @@
 import destiny
 from destiny.test import helpers
 
+
 class TestProximitySensors(helpers.BallparkTestCase):
     def test_callback_gets_called_when_period_has_passed(self):
         proximity_ball = helpers.add_ball_event_spy_to_park(self.park, objectID=3)

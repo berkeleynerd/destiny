@@ -1,6 +1,6 @@
 import destiny
 
-import helpers
+from destiny.test import helpers
 
 
 

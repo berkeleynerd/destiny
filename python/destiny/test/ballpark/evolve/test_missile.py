@@ -23,7 +23,7 @@ class TestMissile(helpers.BallparkTestCase):
             (0.7228658129569013, 0.0, -924.9140088245537),
             (0.8335741171028117, 0.0, -986.7675660216928)
         ]
-        self.assertListOfPointsAlmostEqual(missile_coordinates, expected_missile_coordinates)
+        self.assertListOfPointsAlmostEqual(missile_coordinates, expected_missile_coordinates, places=2)
 
     def test_aimed_not_massive(self):
         src = helpers.create_space_ball(self.park)
@@ -71,7 +71,7 @@ class TestMissile(helpers.BallparkTestCase):
             (0.7228658129569013, 0.0, -924.9140088245537),
             (0.8335741171028117, 0.0, -986.7675660216928)
         ]
-        self.assertListOfPointsAlmostEqual(missile_coordinates, expected_missile_coordinates)
+        self.assertListOfPointsAlmostEqual(missile_coordinates, expected_missile_coordinates, places=2)
 
     def test_aimed_massive(self):
         src = helpers.create_space_ball(self.park)

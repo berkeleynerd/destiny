@@ -175,7 +175,11 @@ class TestCollision(helpers.BallparkTestCase):
 class TestCapsuleCollision(helpers.BallparkTestCase):
     def setUp(self):
         super(TestCapsuleCollision, self).setUp()
-        self.capsule = self.park.AddCapsule(-1, 100.0, 100.0, 0.0, 200.0, 100.0, 0.0, 1.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0.0, y=0.0, z=0.0, radius=500.0)
+        self.capsule = parentBall.AddMiniCapsule(
+            100.0, 100.0, 0.0,
+            200.0, 100.0, 0.0, 1.0
+        )
 
     def test_collision_from_left(self):
         ball = helpers.create_space_ball(self.park, x=90.0, y=100, z=0)
@@ -293,11 +297,13 @@ class TestCapsuleCollision(helpers.BallparkTestCase):
 class TestBoxCollision(helpers.BallparkTestCase):
     def setUp(self):
         super(TestBoxCollision, self).setUp()
-        self.box = self.park.AddOrientedBox(-1,
-                                            0.0, 0.0, 0.0,
-                                            100.0, 0.0, 0.0,
-                                            0.0, 100.0, 0.0,
-                                            0.0, 0.0, 100.0)
+        parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0, radius=500.0)
+        self.box = parentBall.AddMiniBox(
+            0.0, 0.0, 0.0,
+            100.0, 0.0, 0.0,
+            0.0, 100.0, 0.0,
+            0.0, 0.0, 100.0
+        )
 
     def test_collision_from_left(self):
         ball = helpers.create_space_ball(self.park, x=-10, y=50, z=50)

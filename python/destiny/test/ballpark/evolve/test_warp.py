@@ -1,6 +1,7 @@
 import destiny
 from destiny.test import helpers
 
+
 class TestWarp(helpers.BallparkTestCase):
     def setUp(self):
         self.maxDiff = None

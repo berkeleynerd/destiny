@@ -7,6 +7,10 @@ class TestFormation(helpers.BallparkTestCase):
         self.park.LoadFormations(helpers.FORMATIONS)
         self.maxDiff = None
 
+    def tearDown(self):
+        self.park.ClearAll()
+        del self.park
+
 
     def test_formation_follow_stopped_ball(self):
         follower = helpers.create_space_ball(self.park)

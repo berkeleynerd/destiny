@@ -1,5 +1,5 @@
-import destiny
 from destiny.test import helpers
+
 
 class TestTime(helpers.BallparkTestCase):
     def test_ballpark_time_initialises_to_zero(self):
@@ -25,4 +25,3 @@ class TestPauseAndStart(helpers.BallparkTestCase):
         self.park.Start()
         self.park.Pause()
         self.assertFalse(self.park.isRunning)
-

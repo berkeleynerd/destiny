@@ -308,18 +308,6 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 		MAP_METHOD_AS_METHOD
 		(
-			"AddCapsule",
-			PyAddCapsule,
-			"Add a capsule shaped collision object to the ballpark. Create the object if necessary."
-		)
-		MAP_METHOD_AS_METHOD
-		(
-			"AddOrientedBox",
-			PyAddOrientedBox,
-			"Add a box shaped collision object to the ballpark. Create the object if necessary."
-		)
-		MAP_METHOD_AS_METHOD
-		(
 			"FollowBall",
 			PyFollowBall,
 			"no comment"
@@ -366,20 +354,6 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			RemoveBall,
 			1,
 			"Schedules the Ball for removal during the next evolution."
-		)
-		MAP_METHOD_AND_WRAP_OPTIONAL_ARGS
-		(
-			"RemoveCapsule",
-			RemoveCapsule,
-			1,
-			"Schedules the capsule for removal during the next evolution."
-		)
-		MAP_METHOD_AND_WRAP_OPTIONAL_ARGS
-		(
-			"RemoveOrientedBox",
-			RemoveOrientedBox,
-			1,
-			"Schedules the oriented box for removal during the next evolution."
 		)
 		MAP_METHOD_AS_METHOD
 		(

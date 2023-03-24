@@ -4135,7 +4135,7 @@ void Ballpark::ClearAll(
 		c->DeleteFromBoxes();
 		c->mPark = 0;
 	}
-	
+
 	mStaticCollidables.clear();
 	mCapsules.clear();
 	mOrientedBoxes.clear();

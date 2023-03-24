@@ -3,6 +3,7 @@ from destiny.test import helpers
 
 import math
 
+
 class TestCheckVisibility(helpers.BallparkTestCase):
     def test_returns_zero_when_there_is_no_occlusion(self):
         src, dst = self.add_balls(2)
