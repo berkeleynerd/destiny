@@ -134,6 +134,8 @@ void Ball::RegisterBallNotInPark()
 {
     if( Ballpark::s_ballNotInParkCallback && Ballpark::s_ballNotInParkCallback != Py_None )
     {
+        auto gil = PyGILState_Ensure();
+        ON_BLOCK_EXIT([&gil] { PyGILState_Release(gil); });
         PyObject* pyThis = PyOS->WrapBlueObject((IBall *)this);
         PyObject* ret = PyObject_CallFunction( Ballpark::s_ballNotInParkCallback, (char*)"O", pyThis );
         Py_XDECREF(pyThis);
