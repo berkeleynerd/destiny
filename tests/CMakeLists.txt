@@ -67,7 +67,7 @@ if(WIN32)
     # Discover and run Python tests as a single CTest test.
     set(EXEFILE_CONSOLE_EXECUTABLE "$<TARGET_FILE_DIR:DestinyTest>/ExefileConsole.exe")
     add_test(NAME PythonTests
-        COMMAND ${EXEFILE_CONSOLE_EXECUTABLE} /buildflavor=$<LOWER_CASE:$<CONFIG>> /lib=${BRANCH_ROOT_DIR}/carbon/common/stdlib\\\;${BRANCH_ROOT_DIR}/packages /bin=$<TARGET_FILE_DIR:DestinyTest>\\\;$<TARGET_FILE_DIR:destiny> /py -m unittest discover -v .
+        COMMAND ${EXEFILE_CONSOLE_EXECUTABLE} /buildflavor=$<LOWER_CASE:$<CONFIG>> /lib=${BRANCH_ROOT_DIR}/carbon/common/stdlib\\\;${BRANCH_ROOT_DIR}/carbon/common/lib\\\;${BRANCH_ROOT_DIR}/packages /bin=$<TARGET_FILE_DIR:DestinyTest>\\\;$<TARGET_FILE_DIR:destiny> /py -m unittest discover -v .
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../python
         COMMAND_EXPAND_LISTS
     )
