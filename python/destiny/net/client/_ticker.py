@@ -139,6 +139,7 @@ class Ticker(BaseTicker):
         self._ballpark.ego = long(ego_ball_id)  # This is a ballID Long int.
         self._ballpark.Start()
         self._state_is_valid = True
+        self.flush_simulation_history()
 
     def _real_flush_state(self, state):
         """
