@@ -1,0 +1,9 @@
+iteration_count: 1000
+initializers:
+-   - EnclosingCubeInitializer
+    - width: 5000
+-   - OverlappingBallsInitializer
+    - count: 1000
+policies:
+-   - ChangeDirectionAtRandom
+    - tick_interval: 100

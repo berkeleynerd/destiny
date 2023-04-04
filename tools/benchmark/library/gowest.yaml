@@ -1,0 +1,13 @@
+iteration_count: 20
+initializers:
+-   - EnclosingCubeInitializer
+    - width: 1000
+-   - OverlappingBallsInitializer
+    - count: 1
+policies:
+-   - GoToDirection
+    - x: -1.0
+      y: 0.0
+      z: 0.0
+-   - OutputBallState
+    - filter_ids: [1]

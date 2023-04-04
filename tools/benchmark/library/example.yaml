@@ -1,0 +1,14 @@
+#
+# "iteration_count" specifies the number of iterations to run.
+# "initializers" is a list of initializer classes that help set up state in the ballpark
+# "policies" is a list of "policy" classes that perform actions on the balls in the ballpark every tick or at a configured "tick_interval"
+# Parameters can be authored on initializers and policies. These will show up as keyword arguments in the corresponding classes.
+#
+iteration_count: 500
+initializers:
+-   - OverlappingBallsInitializer
+    - count: 14
+policies:
+-   - ChangeDirectionAtRandom
+    - tick_interval: 1
+-   - AddInteractive
