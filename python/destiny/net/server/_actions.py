@@ -579,3 +579,85 @@ class Actions(object):
         """
         for followerID in self._park.GetRemoteFollowers():
             self.stop(followerID)
+
+    @bluepy.TimedFunction("destiny.net::actions::undo_pending_cloak")
+    def undo_pending_cloak(self, src_id):
+        removed_count = self._prune_pending_actions(src_id, "CloakBall")
+        logger.info(
+            "undo_pending_cloak trying to prune pending CloakBall calls from the system history for ship %s, count=%s",
+            src_id,
+            removed_count
+        )
+
+    def _prune_pending_actions(self, src_id, event_name):
+        """
+        Remove any actions with of the event_name variety for
+        the specified ball.
+        """
+        history_length_before_removal = len(self._system_history)
+        self._system_history = [
+            event
+            for event in self._system_history if
+            event[0] != src_id or event[2][0] != event_name
+        ]
+        removed_count = history_length_before_removal - len(self._system_history)
+        return removed_count
+
+    def _get_pending_actions(self, src_id, event_name):
+        """
+        Dig through upcoming actions to see if something
+        is about to happen and return a list of matching events.
+        """
+        return [
+            event
+            for ball_id, timestamp, event in self._system_history
+            if ball_id == src_id and event[0] == event_name
+        ]
+
+    def _has_pending_action(self, src_id, event_name):
+        """
+        Dig through upcoming actions to see if something
+        is about to happen and return True if it is.
+        """
+        for ball_id, timestamp, event in self._system_history:
+            if ball_id == src_id and event[0] == event_name:
+                return True
+        return False
+
+    def has_pending_cloak(self, src_id):
+        return self._has_pending_action(src_id, "CloakBall")
+
+    def has_pending_uncloak(self, src_id):
+        return self._has_pending_action(src_id, "UncloakBall")
+
+    def get_pending_cloak_mode(self, src_id):
+        events = self._get_pending_actions(src_id, "CloakBall")
+        if events:
+            return events[-1][1][1]
+        if src_id not in self._park.balls:
+            return None
+        return self._park.balls[src_id].isCloaked
+
+    def has_pending_set_free(self, src_id):
+        events = self._get_pending_actions(src_id, "SetBallFree")
+        return len(events) and events[-1][1][1] == 1
+
+    def has_pending_set_not_free(self, src_id):
+        events = self._get_pending_actions(src_id, "SetBallFree")
+        return len(events) and events[-1][1][1] == 0
+
+    def get_pending_interactive_state(self, src_id):
+        events = self._get_pending_actions(src_id, "SetBallInteractive")
+        if events:
+            return bool(events[-1][1][1])
+        if src_id not in self._park.balls:
+            return None
+        return self._park.balls[src_id].isInteractive
+
+    def get_pending_speed_fraction(self, src_id):
+        events = self._get_pending_actions(src_id, "SetSpeedFraction")
+        if events:
+            return events[-1][1][1]
+        if src_id not in self._park.balls:
+            return None
+        return self._park.balls[src_id].speedFraction

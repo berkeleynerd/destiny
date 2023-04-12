@@ -372,3 +372,119 @@ class TestActions(DestinyTestCase):
         self._actions.clean_up_followers()
         expected_action = ("Stop", (follower.id,))
         self.assertSingleActionHistory(follower.id, expected_action)
+
+    def test_undo_pending_cloak(self):
+        ball = add_ball_to_park(self._park)
+        self._actions.cloak_ball(ball.id, destiny.DSTNORMALCLOAK, 1000.0)
+        self._actions.undo_pending_cloak(ball.id)
+        self.assertHistoryEmpty()
+
+    def test_undo_pending_cloak_ignores_other_balls(self):
+        ball = add_ball_to_park(self._park)
+        uncloak_range_meters = 1000.0
+        cloak_mode = destiny.DSTNORMALCLOAK
+        self._actions.cloak_ball(ball.id, cloak_mode, uncloak_range_meters)
+        self._actions.undo_pending_cloak(ball.id + 1)
+        expected_action = ("CloakBall", (ball.id, cloak_mode, uncloak_range_meters), ball.oldBubbleId)
+        self.assertSingleActionHistory(ball.id, expected_action)
+
+    def test_undo_pending_cloak_ignores_other_actions(self):
+        radius_meters = 42.0
+        self._actions.set_ball_radius(BALL_ID_1, radius_meters)
+        expected_action = ("SetBallRadius", (BALL_ID_1, radius_meters))
+        self._actions.undo_pending_cloak(BALL_ID_1)
+        self.assertSingleActionHistory(BALL_ID_1, expected_action)
+
+    def test_has_pending_cloak_returns_false_when_no_pending_cloak(self):
+        has_pending_cloak = self._actions.has_pending_cloak(BALL_ID_1)
+        self.assertFalse(has_pending_cloak)
+
+    def test_has_pending_cloak_returns_true_when_pending_cloak(self):
+        ball = add_ball_to_park(self._park)
+        self._actions.cloak_ball(ball.id, destiny.DSTNORMALCLOAK, 1000.0)
+        has_pending_cloak = self._actions.has_pending_cloak(ball.id)
+        self.assertTrue(has_pending_cloak)
+
+    def test_has_pending_uncloak_returns_false_when_no_pending_uncloak(self):
+        has_pending_uncloak = self._actions.has_pending_uncloak(BALL_ID_1)
+        self.assertFalse(has_pending_uncloak)
+
+    def test_has_pending_uncloak_returns_true_when_pending_uncloak(self):
+        self._actions.uncloak_ball(BALL_ID_1)
+        has_pending_uncloak = self._actions.has_pending_uncloak(BALL_ID_1)
+        self.assertTrue(has_pending_uncloak)
+
+    def test_get_pending_cloak_mode_returns_none_when_ball_does_not_exist(self):
+        cloak_mode = self._actions.get_pending_cloak_mode(BALL_ID_1)
+        self.assertIsNone(cloak_mode)
+
+    def test_get_pending_cloak_mode_returns_existing_mode_when_no_cloak_pending(self):
+        ball = add_ball_to_park(self._park)
+        cloak_mode = self._actions.get_pending_cloak_mode(ball.id)
+        self.assertEqual(0, cloak_mode)
+
+    def test_get_pending_cloak_mode_returns_pending_cloak_mode_when_no_cloak_pending(self):
+        ball = add_ball_to_park(self._park)
+        self._actions.cloak_ball(ball.id, destiny.DSTNORMALCLOAK, 1000.0)
+        cloak_mode = self._actions.get_pending_cloak_mode(ball.id)
+        self.assertEqual(destiny.DSTNORMALCLOAK, cloak_mode)
+
+    def test_has_pending_set_free_returns_false_when_freedom_not_pending(self):
+        freedom_pending = self._actions.has_pending_set_free(BALL_ID_1)
+        self.assertFalse(freedom_pending)
+
+    def test_has_pending_set_free_returns_false_when_freedom_not_pending_and_ball_already_free(self):
+        ball = add_ball_to_park(self._park)
+        self._park.SetBallFree(ball.id, True)
+        freedom_pending = self._actions.has_pending_set_free(ball.id)
+        self.assertFalse(freedom_pending)
+
+    def test_has_pending_set_free_returns_true_when_freedom_pending(self):
+        self._actions.set_ball_free(BALL_ID_1, True)
+        freedom_pending = self._actions.has_pending_set_free(BALL_ID_1)
+        self.assertTrue(freedom_pending)
+
+    def test_has_pending_set_not_free_returns_false_when_freedom_removal_not_pending(self):
+        freedom_removal_pending = self._actions.has_pending_set_not_free(BALL_ID_1)
+        self.assertFalse(freedom_removal_pending)
+
+    def test_has_pending_set_not_free_returns_false_when_freedom_removal_not_pending_and_ball_already_not_free(self):
+        ball = add_ball_to_park(self._park)
+        self._park.SetBallFree(ball.id, False)
+        freedom_removal_pending = self._actions.has_pending_set_not_free(ball.id)
+        self.assertFalse(freedom_removal_pending)
+
+    def test_has_pending_set_not_free_returns_true_when_freedom_removal_pending(self):
+        self._actions.set_ball_free(BALL_ID_1, False)
+        freedom_removal_pending = self._actions.has_pending_set_not_free(BALL_ID_1)
+        self.assertTrue(freedom_removal_pending)
+
+    def test_get_pending_interactive_state_returns_none_when_ball_does_not_exist(self):
+        state = self._actions.get_pending_interactive_state(BALL_ID_1)
+        self.assertIsNone(state)
+
+    def test_get_pending_interactive_state_returns_current_state_when_ball_exists(self):
+        ball = add_ball_to_park(self._park, is_interactive=True)
+        state = self._actions.get_pending_interactive_state(ball.id)
+        self.assertEqual(True, state)
+
+    def test_get_pending_interactive_state_returns_pending_state_when_available(self):
+        ball = add_ball_to_park(self._park, is_interactive=True)
+        self._actions.set_ball_interactive(ball.id, False)
+        state = self._actions.get_pending_interactive_state(ball.id)
+        self.assertEqual(False, state)
+
+    def test_get_pending_speed_fraction_returns_none_when_ball_does_not_exist(self):
+        speed_fraction = self._actions.get_pending_speed_fraction(BALL_ID_1)
+        self.assertIsNone(speed_fraction)
+
+    def test_get_pending_speed_fraction_returns_current_state_when_ball_exists(self):
+        ball = add_ball_to_park(self._park, speed_fraction=0.5)
+        speed_fraction = self._actions.get_pending_speed_fraction(ball.id)
+        self.assertEqual(0.5, speed_fraction)
+
+    def test_get_pending_speed_fraction_returns_pending_state_when_available(self):
+        ball = add_ball_to_park(self._park, speed_fraction=0.5)
+        self._actions.set_speed_fraction(ball.id, 1.0)
+        speed_fraction = self._actions.get_pending_speed_fraction(ball.id)
+        self.assertEqual(1.0, speed_fraction)
