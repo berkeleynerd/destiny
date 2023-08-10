@@ -23,6 +23,31 @@ if(APPLE)
     target_link_libraries(DestinyTest PRIVATE "-framework CoreFoundation")
 endif()
 
+# Copy shared library dependencies to folder containing test executable.
+if(WIN32)
+    add_custom_command(TARGET DestinyTest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${Python_ROOT}/bin/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/python38.dll"
+        $<TARGET_FILE_DIR:DestinyTest>
+    )
+    add_custom_command(TARGET DestinyTest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${Blue_DIR}/bin/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/$<IF:$<CONFIG:Release>,blue.pyd,blue_$<LOWER_CASE:$<CONFIG>>.pyd>"
+        $<TARGET_FILE_DIR:DestinyTest>
+    )
+elseif(APPLE)
+    add_custom_command(TARGET DestinyTest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${Python_ROOT}/lib/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/libpython2.7.dylib"
+        $<TARGET_FILE_DIR:DestinyTest>
+    )
+    add_custom_command(TARGET DestinyTest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${Blue_DIR}/lib/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/$<IF:$<CONFIG:Release>,blue.so,blue_$<LOWER_CASE:$<CONFIG>>.so>"
+        $<TARGET_FILE_DIR:DestinyTest>
+    )
+endif()
+
 set_target_properties(DestinyTest PROPERTIES FOLDER "Tests")
 gtest_discover_tests(DestinyTest myListOfTests)
 
