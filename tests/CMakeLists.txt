@@ -53,7 +53,7 @@ gtest_discover_tests(DestinyTest myListOfTests)
 
 if(WIN32)
     # Discover and run Python tests as a single CTest test.
-    set(PYTHON_INTERPRETER_PATH "${BRANCH_ROOT_DIR}/eve/server/pythonInterpreter.bat")
+    set(PYTHON_INTERPRETER_PATH "${BRANCH_ROOT_DIR}/eve/client/pythonInterpreter.bat")
     set(PYTHON_TEST PythonTests)
     add_test(NAME ${PYTHON_TEST}
         COMMAND ${PYTHON_INTERPRETER_PATH} -m unittest discover -v
