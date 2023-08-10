@@ -28,7 +28,7 @@ class BubbleUpdater(object):
 
     def _process_additions_and_deletions_for_tick(self):
         # Find those interactives that belong to this solar system
-        self.user_balls = list(itertools.chain(*self._park.bubbleInteractives.itervalues()))
+        self.user_balls = list(itertools.chain(*self._park.bubbleInteractives.values()))
         # For users who have changed bubbles since the last tick, we'll get a user-specific set of adds/deletes here
         # key   : ball_id
         # value : A single bubble_id OR a list of ballIDs

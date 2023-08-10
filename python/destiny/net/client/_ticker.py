@@ -136,7 +136,7 @@ class Ticker(BaseTicker):
         ms.Write(state)
         # Make a full SetState
         self._ballpark.ReadFullStateFromStream(ms)
-        self._ballpark.ego = long(ego_ball_id)  # This is a ballID Long int.
+        self._ballpark.ego = int(ego_ball_id)  # This is a ballID int.
         self._ballpark.Start()
         self._state_is_valid = True
         self.flush_simulation_history()
@@ -203,10 +203,10 @@ class Ticker(BaseTicker):
                     self._should_rebase = True
                     # We are now in the correct state to be applied to.
                     if func_name in LOCAL_ACTIONS: # These are functions that are applied to ourself
-                        apply(getattr(self, func_name), args)
+                        getattr(self, func_name)(*args)
                     else:
                         # These are functions that are applied directly to the ballpark
-                        apply(getattr(self._ballpark, '_parent_' + func_name), args)
+                        getattr(self._ballpark, '_parent_' + func_name)(*args)
                         self._client_ticker_interface.on_ballpark_local_action(func_name, args)
                         if func_name == 'CloakBall':
                             event_ball_id = args[0]
@@ -215,7 +215,6 @@ class Ticker(BaseTicker):
                 except Exception:
                     message = "{} failed.".format(func_name)
                     logger.error(message, exc_info=1)
-                    sys.exc_clear()
                     continue
         else:
             logger.info("Events ignored")
@@ -385,7 +384,7 @@ class Ticker(BaseTicker):
             self._client_ticker_interface.clean_up_after_multiple_ball_removal(ball_ids, is_release=is_release)
             removal_delays = self._client_ticker_interface.get_ball_destruction_delays(ball_ids, is_release=is_release)
 
-            for ball_id, delay in removal_delays.iteritems():
+            for ball_id, delay in removal_delays.items():
                 self._ballpark._parent_RemoveBall(ball_id, delay)
         finally:
             blue.statistics.LeaveZone()
@@ -405,7 +404,7 @@ class Ticker(BaseTicker):
         as not having valid state.
         """
         # Remove all balls
-        self.RemoveBalls(self._ballpark.balls.iterkeys(), is_release=True)
+        self.RemoveBalls(self._ballpark.balls.keys(), is_release=True)
         # Clean up the ball park, it would be nice if this would clean up the blue balls efficiently as well.
         self._ballpark.ClearAll()
         self.flush_simulation_history(new_base_snapshot=False)

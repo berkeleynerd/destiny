@@ -5,9 +5,9 @@ import destiny
 from destiny.test.net.server.helpers import add_ball_to_park, DestinyTestCase
 from destiny.net.server import Actions
 
-BALL_ID_1 = 1000000000001L
-BALL_ID_2 = 1000000000002L
-BALL_ID_3 = 1000000000003L
+BALL_ID_1 = 1000000000001
+BALL_ID_2 = 1000000000002
+BALL_ID_3 = 1000000000003
 INITIAL_TIMESTAMP = 0
 
 

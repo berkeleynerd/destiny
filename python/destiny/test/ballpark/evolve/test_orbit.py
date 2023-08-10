@@ -12,7 +12,7 @@ class TestOrbit(helpers.BallparkTestCase):
 
         orbiter_coordinates = []
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             orbiter_coordinates.append((orbiter.x, orbiter.y, orbiter.z))
 

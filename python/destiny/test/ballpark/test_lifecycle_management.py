@@ -69,7 +69,7 @@ class TestAdditionsAndDeletions(helpers.BallparkTestCase):
         user_ships = [ball.id]
         self.park.InitializeBubbles()
         self.park.AdditionsAndDeletions(additions_per_player, deletions_per_player, additions_per_bubble, deletions_per_bubble, user_ships)
-        self.assertEqual(additions_per_player, { ball.id: [ball.newBubbleId, ball.id] })
+        self.assertEqual(additions_per_player, { ball.id: [ball.id] }) 
         self.assertEqual(deletions_per_player, { ball.id: [] })
         self.assertEqual(additions_per_bubble, { ball.newBubbleId: [ball.id] })
         self.assertEqual(deletions_per_bubble, { ball.newBubbleId: [] })

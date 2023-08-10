@@ -46,14 +46,14 @@ class BallTest(helpers.BallparkTestCase):
         self.park.LoadFormations(helpers.FORMATIONS)
         b = helpers.add_ball_to_park(self.park)
         self.park.SetBallFormation(b.id, 1)
-        for i in xrange(len(helpers.FORMATIONS[b.formationID][1])):
+        for i in range(len(helpers.FORMATIONS[b.formationID][1])):
             self.assertEqual(b.ReserveFormationSlot(), i)
 
     def test_reserving_too_many_formation_slots_fails(self):
         self.park.LoadFormations(helpers.FORMATIONS)
         b = helpers.add_ball_to_park(self.park)
         self.park.SetBallFormation(b.id, 1)
-        for i in xrange(len(helpers.FORMATIONS[b.formationID][1])):
+        for i in range(len(helpers.FORMATIONS[b.formationID][1])):
             b.ReserveFormationSlot()
         slot = b.ReserveFormationSlot()
         self.assertEqual(slot, -1)
@@ -62,7 +62,7 @@ class BallTest(helpers.BallparkTestCase):
         self.park.LoadFormations(helpers.FORMATIONS)
         b = helpers.add_ball_to_park(self.park)
         self.park.SetBallFormation(b.id, 1)
-        for i in xrange(helpers.MAX_FORMATION_SLOTS_FOR_BALLS):
+        for i in range(helpers.MAX_FORMATION_SLOTS_FOR_BALLS):
             b.ReserveFormationSlot()
         b.FreeFormationSlot(2)
         slot = b.ReserveFormationSlot()

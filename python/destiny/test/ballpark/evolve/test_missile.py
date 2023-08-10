@@ -7,7 +7,7 @@ class TestMissile(helpers.BallparkTestCase):
         owner = helpers.create_space_ball(self.park)
         self.park.LaunchMissile(src.id, dst.id, owner.id, False, False)
         missile_coordinates = []
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             missile_coordinates.append((src.x, src.y, src.z))
 
@@ -31,7 +31,7 @@ class TestMissile(helpers.BallparkTestCase):
         owner = helpers.create_space_ball(self.park)
         self.park.LaunchMissile(src.id, dst.id, owner.id, True, False)
         missile_coordinates = []
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             missile_coordinates.append((src.x, src.y, src.z))
 
@@ -55,7 +55,7 @@ class TestMissile(helpers.BallparkTestCase):
         owner = helpers.create_space_ball(self.park)
         self.park.LaunchMissile(src.id, dst.id, owner.id, False, True)
         missile_coordinates = []
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             missile_coordinates.append((src.x, src.y, src.z))
 
@@ -79,7 +79,7 @@ class TestMissile(helpers.BallparkTestCase):
         owner = helpers.create_space_ball(self.park)
         self.park.LaunchMissile(src.id, dst.id, owner.id, True, True)
         missile_coordinates = []
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             missile_coordinates.append((src.x, src.y, src.z))
 

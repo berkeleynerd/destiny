@@ -13,7 +13,7 @@ class TestCollision(helpers.BallparkTestCase):
         a_coordinates = []
         b_coordinates = []
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             a_coordinates.append((ball_a.x, ball_a.y, ball_a.z))
             b_coordinates.append((ball_b.x, ball_b.y, ball_b.z))
@@ -55,7 +55,7 @@ class TestCollision(helpers.BallparkTestCase):
         a_coordinates = []
         b_coordinates = []
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             a_coordinates.append((ball_a.x, ball_a.y, ball_a.z))
             b_coordinates.append((ball_b.x, ball_b.y, ball_b.z))
@@ -99,7 +99,7 @@ class TestCollision(helpers.BallparkTestCase):
         self.park.GotoPoint(ball_a.id, 10, 10, 10)
         self.park.GotoPoint(ball_b.id, 0, 0, 0)
 
-        for i in xrange(20):
+        for i in range(20):
             self.park.Evolve()
             a_coordinates.append((ball_a.x, ball_a.y, ball_a.z))
             b_coordinates.append((ball_b.x, ball_b.y, ball_b.z))
@@ -162,7 +162,7 @@ class TestCollision(helpers.BallparkTestCase):
         self.park.WarpTo(ball_a.id, 100000.0, 0, 0)
         self.park.WarpTo(ball_b.id, -100000.0, 0, 0)
 
-        for i in xrange(80):
+        for i in range(80):
             self.park.Evolve()
 
         self.assertGreater(ball_a.x, ball_b.x)

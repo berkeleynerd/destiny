@@ -123,20 +123,20 @@ Ballpark::Ballpark(IRoot* lockobj) :
 
     if (ballparkCounter == 0)
     {   // these strings are really static and we make sure that they are only allocated one time
-        Timer_ResolveBubbleConflicts = PyString_FromString("Destiny::ResolveBubbleConflicts");
-        Timer_HandleProximities = PyString_FromString("Destiny::HandleProximities");
-        Timer_InsertBallInBoxes = PyString_FromString("Destiny::InsertBallInBoxes");
-        Timer_Gradient = PyString_FromString("Destiny::Gradient");
-        Timer_CheckVisibility = PyString_FromString("Destiny::CheckVisibility");
-        Timer_CopyBubbles = PyString_FromString("Destiny::CopyBubbles");
-        Timer_AdditionsAndDeletions = PyString_FromString("Destiny::AdditionsAndDeletions");
-        Timer_GetBallIdsInRange = PyString_FromString("Destiny::GetBallIdsInRange");
-        Timer_WarpDistance = PyString_FromString("Destiny::WarpDistance");
-        Timer_CalculateYawPitchRoll = PyString_FromString("Destiny::CalculateYawPitchRoll");
-        Timer_WriteBallsToStream = PyString_FromString("Destiny::WriteBallsToStream");
-        Plus  = PyInt_FromLong(1);
-        Zero  = PyInt_FromLong(0);
-        Minus = PyInt_FromLong(-1);
+        Timer_ResolveBubbleConflicts = PyUnicode_FromString("Destiny::ResolveBubbleConflicts");
+        Timer_HandleProximities = PyUnicode_FromString("Destiny::HandleProximities");
+        Timer_InsertBallInBoxes = PyUnicode_FromString("Destiny::InsertBallInBoxes");
+        Timer_Gradient = PyUnicode_FromString("Destiny::Gradient");
+        Timer_CheckVisibility = PyUnicode_FromString("Destiny::CheckVisibility");
+        Timer_CopyBubbles = PyUnicode_FromString("Destiny::CopyBubbles");
+        Timer_AdditionsAndDeletions = PyUnicode_FromString("Destiny::AdditionsAndDeletions");
+        Timer_GetBallIdsInRange = PyUnicode_FromString("Destiny::GetBallIdsInRange");
+        Timer_WarpDistance = PyUnicode_FromString("Destiny::WarpDistance");
+        Timer_CalculateYawPitchRoll = PyUnicode_FromString("Destiny::CalculateYawPitchRoll");
+        Timer_WriteBallsToStream = PyUnicode_FromString("Destiny::WriteBallsToStream");
+        Plus  = PyLong_FromLong(1);
+        Zero  = PyLong_FromLong(0);
+        Minus = PyLong_FromLong(-1);
     }
 
     bubbles = PyDict_New();
@@ -4337,7 +4337,7 @@ void Ballpark::CopyBubbles()
         Py_ssize_t pos2 = 0;
         while (PyDict_Next(bubble, &pos2, &ballID, &value))
         {
-            long action = PyInt_AS_LONG(value);
+            long action = PyLong_AS_LONG(value);
             if(action == 1)
             {
                 PyDict_SetItem(bubble, ballID, Zero);
@@ -4594,13 +4594,13 @@ void Ballpark::IncreaseInteractiveCnt(Partitionable *p, long inBubble)
 void Ballpark::AddToBubble(Partitionable *p)
 {
 	if(!bubbles)
-	{
+	{ 
 		// Bubbles are kept as a dictionary, containing a map to ball IDs
 		bubbles = PyDict_New();
 	}
 
-	PyObject *newBubbleId = PyInt_FromLong(p->mNewBubble);
-	PyObject *oldBubbleId = PyInt_FromLong(p->mOldBubble);
+	PyObject *newBubbleId = PyLong_FromLong(p->mNewBubble);
+	PyObject *oldBubbleId = PyLong_FromLong(p->mOldBubble);
 	PyObject *ballId      = PyLong_FromLongLong(p->mId);
 
 	if(p->mNewBubble != -1)
@@ -4612,20 +4612,20 @@ void Ballpark::AddToBubble(Partitionable *p)
 			newBubble = PyDict_New();
 			// Add the item to it
 			PyDict_SetItem(bubbles, newBubbleId, newBubble);
-			Py_DECREF(newBubble);
+			Py_DECREF(newBubble);  
 		}
-
+        
 		PyObject *value = PyDict_GetItem(newBubble, ballId);
 
 		if(!value)
 		{
-			// Need to add me to this thing
+            // Need to add me to this thing
 			PyDict_SetItem(newBubble, ballId, Plus);
 		}
 		else
 		{
 			// Already in bubble. Check how.
-			long val = PyInt_AS_LONG(value);
+			long val = PyLong_AS_LONG(value);
 
 			if(val==-1)
 			{
@@ -4673,7 +4673,7 @@ void Ballpark::AddToBubble(Partitionable *p)
 			if(value)
 			{
 				// Already in bubble. Check how.
-				long val = PyInt_AS_LONG(value);
+				long val = PyLong_AS_LONG(value);
 
 				if(val==0)
 				{
@@ -4740,8 +4740,11 @@ void Ballpark::InitializeBubbles()
     mBubbleId = 0;
 
     // Clear the bubble dicts, if they exist
-    if(bubbles)
+    if (bubbles)
+    {
         Py_DECREF(bubbles);
+        bubbles = nullptr;
+    }
 
     if(bubbleInteractives)
         PyDict_Clear(bubbleInteractives);
@@ -4789,8 +4792,8 @@ void Ballpark::InitializeBubbles()
         ball->mNewBubble = mBubbleId;
 
         AddToBubble(ball);
-
-        mBubbleId++;
+ 
+        mBubbleId++; 
     }
 }
 

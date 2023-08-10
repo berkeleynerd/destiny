@@ -12,7 +12,7 @@ class TestGoto(helpers.BallparkTestCase):
         x, y, z = 10, 20, 30
         self.park.GotoDirection(ball.id, x, y, z)
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             locations.append((ball.x, ball.y, ball.z))
 
@@ -38,7 +38,7 @@ class TestGoto(helpers.BallparkTestCase):
         x, y, z = 10, 20, 30
         self.park.GotoPoint(ball.id, x, y, z)
 
-        for i in xrange(18):
+        for i in range(18):
             self.park.Evolve()
             locations.append((ball.x, ball.y, ball.z))
 

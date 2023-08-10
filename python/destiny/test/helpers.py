@@ -43,7 +43,7 @@ class BallparkTestCase(unittest.TestCase):
         del self.park
 
     def add_balls(self, n):
-        for i in xrange(n):
+        for i in range(n):
             yield add_ball_to_park(self.park, objectID=i+1)
 
     def assertMiniBallEqual(self, first, second):
@@ -133,7 +133,7 @@ class BallparkTestCase(unittest.TestCase):
                 break
             second_point = second[i]
             if first_point != second_point:
-                for j in xrange(3):
+                for j in range(3):
                     if round(first_point[j], places) != round(second_point[j], places):
                         msg = "Points differ. First differing element: %s. %s != %s up to %s decimal places" % (
                             i, first_point, second_point, places)
@@ -148,7 +148,7 @@ class BallparkTestCase(unittest.TestCase):
 
     def evolve_ball_and_get_coordinates(self, ball, step_count):
         coordinates = []
-        for i in xrange(step_count):
+        for i in range(step_count):
             self.park.Evolve()
             coordinates.append((ball.x, ball.y, ball.z))
         return coordinates

@@ -8,15 +8,15 @@ class TestInitialize_bubbles(helpers.BallparkTestCase):
         ball, = self.add_balls(1)
         self.assertEqual(ball.newBubbleId, -1)
         self.park.InitializeBubbles()
-        self.assertNotEquals(ball.newBubbleId, -1)
-        self.assertEquals(ball.oldBubbleId, -1)
+        self.assertNotEqual(ball.newBubbleId, -1)
+        self.assertEqual(ball.oldBubbleId, -1)
 
     def test_can_initialize_bubble_for_specific_ball(self):
         ball, other_ball = self.add_balls(2)
         self.assertEqual(ball.newBubbleId, -1)
         self.park.InitializeBubbles(ball.id)
-        self.assertNotEquals(ball.newBubbleId, -1)
-        self.assertEquals(ball.oldBubbleId, -1)
+        self.assertNotEqual(ball.newBubbleId, -1)
+        self.assertEqual(ball.oldBubbleId, -1)
         self.assertEqual(other_ball.newBubbleId, -1)
 
 
@@ -53,7 +53,7 @@ class TestGetBallIdsAndDistInRange(helpers.BallparkTestCase):
         ball, other = self.add_balls(2)
         self.park.InitializeBubbles()
         result = self.park.GetBallIdsAndDistInRange(ball.id, 100)
-        self.assertListEqual(result, [(0.0, 2L)])
+        self.assertListEqual(result, [(0.0, 2)])
 
     def test_returns_distance_squared(self):
         ball, other = self.add_balls(2)

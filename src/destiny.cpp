@@ -135,17 +135,17 @@ static PyObject* FindShortestPath(PyObject* module, PyObject *args)
 	while (PyDict_Next(jumps, &pos, &key, &value))
 	{
 		//safety.  Ignore non-ints and non lists
-		if (!PyInt_Check(key) || !PyList_Check(value))
+		if (!PyLong_Check(key) || !PyList_Check(value))
 			continue;
 		if (PyList_GET_SIZE(value) < 8)
 			continue;
 
-		if(PyInt_AS_LONG(key)==originSolarSystemID)
+		if(PyLong_AS_LONG(key)==originSolarSystemID)
 		{
 			// If this is the origin we want to initialize distance to zero
 			// and not subject it to any filtering.
 			// use the non-macro version to release old values)
-			PyList_SetItem(value, 0, PyInt_FromLong(0)); // number of jumps
+			PyList_SetItem(value, 0, PyLong_FromLong(0)); // number of jumps
 			PyList_SetItem(value, 7, PyFloat_FromDouble(0.0)); // this is the weighted distance
 			Py_INCREF(Py_None);
 			PyList_SetItem(value, 2, Py_None); //the prev field.
@@ -153,7 +153,7 @@ static PyObject* FindShortestPath(PyObject* module, PyObject *args)
 		else
 		{
 			// Initialize jump count to infinity for all other systems
-			PyList_SetItem(value, 0, PyInt_FromLong(maxInt));
+			PyList_SetItem(value, 0, PyLong_FromLong(maxInt));
 			PyList_SetItem(value, 7, PyFloat_FromDouble(maxFloat));
 			// Now check if we want to exclude the system due to some filtering option
 			if(avoidSystems)
@@ -210,10 +210,10 @@ static PyObject* FindShortestPath(PyObject* module, PyObject *args)
 		//set the jump count, this comes from the prev. member
 		PyObject *prev = PyList_GET_ITEM(currentVertex,2);
 		if (prev != Py_None) 
-			PyList_SetItem(currentVertex, 0, PyInt_FromLong(PyInt_AS_LONG(PyList_GET_ITEM(prev, 0)) + 1));
+			PyList_SetItem(currentVertex, 0, PyLong_FromLong(PyLong_AS_LONG(PyList_GET_ITEM(prev, 0)) + 1));
 
 		// if this is the destination vertex, we can stop here
-		if (destinationSolarSystemID != -1 && PyInt_AS_LONG(PyList_GET_ITEM(currentVertex, 1)) == destinationSolarSystemID)
+		if (destinationSolarSystemID != -1 && PyLong_AS_LONG(PyList_GET_ITEM(currentVertex, 1)) == destinationSolarSystemID)
 			break;
 		
 		// Cycle over all the neighbouring vertices running to that point
@@ -384,13 +384,23 @@ BOOL APIENTRY DllMain(HINSTANCE instance, DWORD  reason, LPVOID)
 //--------------------------------------------------------------------
 // init_destiny - python dll module entry function
 //--------------------------------------------------------------------
-extern "C" void
+static struct PyModuleDef ModuleDef =
+{
+	PyModuleDef_HEAD_INIT,
+	CCP_STRINGIZE(CCP_CONCATENATE(_destiny, CCP_BUILD_FLAVOR)),
+	"",
+	-1,
+	destiny_methods
+};
+
+extern "C"
 #ifdef _MSC_VER
 __declspec(dllexport)
 #else
 __attribute__((visibility("default")))
 #endif
-CCP_CONCATENATE( init_destiny, CCP_BUILD_FLAVOR )()
+PyObject*
+CCP_CONCATENATE( PyInit__destiny, CCP_BUILD_FLAVOR )()
 {
     CCP_LOG( "Destiny compiled %s %s starting", __DATE__, __TIME__);
 	CCP_LOG( "Size of balls: %d bytes", sizeof(Ball));
@@ -398,13 +408,14 @@ CCP_CONCATENATE( init_destiny, CCP_BUILD_FLAVOR )()
 	BeClasses->RegisterClasses(classes);
     
 	// put myself into python as a module
-	PyObject* module = Py_InitModule( CCP_STRINGIZE( CCP_CONCATENATE( _destiny, CCP_BUILD_FLAVOR ) ), destiny_methods );
+	PyObject* module = PyModule_Create(&ModuleDef);
 	gThisModule = module;
 	PyObject* dict = PyModule_GetDict(module);
     
     
 	// constants
 	AddDstConstants(dict);
+	return module;
 }
 
 

@@ -3,7 +3,7 @@ import unittest
 from destiny.net.client import merge_state_into_history
 
 
-SHIP_ID_1 = 1000000176143L
+SHIP_ID_1 = 1000000176143
 GOTO_DIRECTION = ('GotoDirection', (SHIP_ID_1, 1.0, 0.0, 0.0))
 STOP = ('Stop', (SHIP_ID_1,))
 

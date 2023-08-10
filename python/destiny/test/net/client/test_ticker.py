@@ -37,7 +37,7 @@ class TestTicker(unittest.TestCase):
         bp.Orbit(ball_2.id, ball_1.id)
         bp.GotoPoint(ball_3.id, 0, 0, 0)
         bp.GotoDirection(ball_1.id, 0.0, 1.0, 0.0)
-        for _ in xrange(TICKS_ELAPSED):
+        for _ in range(TICKS_ELAPSED):
             bp.Evolve()
         return bp
 
