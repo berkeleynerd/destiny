@@ -1,4 +1,4 @@
-import mock
+import unittest.mock as mock
 
 import destiny
 from destiny.test.net.server.helpers import add_ball_to_park, DestinyTestCase
