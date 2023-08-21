@@ -38,7 +38,7 @@ if(WIN32)
 elseif(APPLE)
     add_custom_command(TARGET DestinyTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${Python_ROOT}/lib/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/libpython2.7.dylib"
+        "${Python_ROOT}/bin/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/libpython3.8.dylib"
         $<TARGET_FILE_DIR:DestinyTest>
     )
     add_custom_command(TARGET DestinyTest POST_BUILD
