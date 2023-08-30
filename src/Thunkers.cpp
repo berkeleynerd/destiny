@@ -93,6 +93,12 @@ PyObject* Ballpark::PyAddBall(
 		))
 		return NULL;
 
+	if (inEvolve)
+	{
+		PyErr_SetString(PyExc_RuntimeError, "Can not add ball during Evolve().");
+		return nullptr;
+	}
+
 	Ball *b = AddBall(srcId, mass, radius, maxVel,
 				isFree!=0, isGlobal!=0, isMassive!=0, isInteractive!=0, isSpaceJunk!=0,
 				x, y, z,
