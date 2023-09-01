@@ -905,7 +905,7 @@ PyObject* Ballpark::PySetBoid(
 	)
 {
 	ID srcId;
-	long turnOn;
+	int turnOn;
 
 	if (!PyArg_ParseTuple(args, "Li",
 		&srcId,
