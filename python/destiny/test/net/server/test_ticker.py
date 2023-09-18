@@ -75,7 +75,7 @@ class TestTicker(DestinyTestCase):
         if timestamp is None:
             timestamp = self._ticker.stamp_for_system - 1
         for entry in self._network.narrowcasts:
-            clients, method_name, actions, wait_for_bubble = entry
+            clients, method_name, actions, wait_for_bubble, casts_in_batch = entry
             if method_name != "DoDestinyUpdate":
                 continue
             if set(clients) != set(client_ids):
@@ -88,7 +88,7 @@ class TestTicker(DestinyTestCase):
         if timestamp is None:
             timestamp = self._ticker.stamp_for_system - 1
         for entry in self._network.singlecasts:
-            entry_client_id, method_name, actions, wait_for_bubble = entry
+            entry_client_id, method_name, actions, wait_for_bubble, casts_in_batch = entry
             if method_name != "DoDestinyUpdate":
                 continue
             if entry_client_id != client_id:
@@ -205,7 +205,7 @@ class TestTicker(DestinyTestCase):
     def assertAddBallsToParkSinglecastExistsForBall(self, ball_id, client_id):
         found = 0
         for entry in self._network.singlecasts:
-            entry_client_id, method_name, actions, wait_for_bubble = entry
+            entry_client_id, method_name, actions, wait_for_bubble, casts_in_batch = entry
             if method_name != "DoDestinyUpdate":
                 continue
             if entry_client_id != client_id:
@@ -217,7 +217,7 @@ class TestTicker(DestinyTestCase):
     def assertAddBallsToParkNarrowcastExistsForBall(self, ball_id, client_ids):
         found = 0
         for entry in self._network.narrowcasts:
-            entry_client_id, method_name, actions, wait_for_bubble = entry
+            entry_client_id, method_name, actions, wait_for_bubble, casts_in_batch = entry
             if method_name != "DoDestinyUpdate":
                 continue
             if set(entry_client_id) != set(client_ids):

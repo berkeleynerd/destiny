@@ -1,6 +1,7 @@
 import blue
 import destiny
 from destiny.net.server import ParkUpdateBatcher, BubbleUpdater
+from destiny.net.server.const import ClientUpdateCountThisTick
 from destiny.test.net.server.helpers import (
     add_ball_to_park,
     DestinyTestCase,
@@ -17,8 +18,8 @@ CLIENT_ID_1 = 13579
 
 BUBBLE_1 = 21
 
-GOTO_ACTION = (1, ("GotoPoint", (BALL_ID_1, 1.0, 2.0, 3.0)))
-STOP_ACTION = (1, ("Stop", (BALL_ID_1)))
+GOTO_ACTION = (0, ("GotoPoint", (BALL_ID_1, 1.0, 2.0, 3.0)))
+STOP_ACTION = (0, ("Stop", (BALL_ID_1)))
 
 
 class TestUpdateBatcher(DestinyTestCase):
@@ -79,6 +80,65 @@ class TestUpdateBatcher(DestinyTestCase):
         self.assertListEqual(
             [GOTO_ACTION],
             self._update_batcher.get_bubble_history(BUBBLE_1)
+        )
+
+    def asssertCastsInBatchSinglecast(self, client_id, expected, cast_list):
+        found = False
+        for cast in cast_list:
+            cast_client_id, name, _, _, casts_in_batch = cast
+            if name == "DoDestinyUpdate" and cast_client_id == client_id:
+                self.assertEqual(expected, casts_in_batch)
+                found = True
+        self.assertTrue(found)
+
+    def asssertCastsInBatchNarrowcast(self, client_id, expected, cast_list):
+        found = False
+        for cast in cast_list:
+            cast_client_id_list, name, _, _, casts_in_batch = cast
+            if name == "DoDestinyUpdate" and client_id in cast_client_id_list:
+                self.assertEqual(expected, casts_in_batch)
+                found = True
+        self.assertTrue(found)
+
+
+    def test_character_history_only_has_cast_count_one(self):
+        self._set_up_ball(BALL_ID_1, CHAR_ID_1, CLIENT_ID_1)
+        self._update_batcher.add_to_character_history(CHAR_ID_1, GOTO_ACTION)
+        self._update_batcher.send_batch()
+        self.assertEqual(1, len(self._network.singlecasts))
+        self.assertEqual(0, len(self._network.narrowcasts))
+        self.asssertCastsInBatchSinglecast(
+            CLIENT_ID_1,
+            ClientUpdateCountThisTick.ONE,
+            self._network.singlecasts
+        )
+
+    def test_bubble_history_only_has_cast_count_one(self):
+        ball = self._set_up_ball(BALL_ID_1, CHAR_ID_1, CLIENT_ID_1)
+        self._update_batcher.add_to_bubble_history(ball.newBubbleId, GOTO_ACTION)
+        self._update_batcher.send_batch()
+        self.assertEqual(0, len(self._network.singlecasts))
+        self.assertEqual(1, len(self._network.narrowcasts))
+        self.asssertCastsInBatchNarrowcast(
+            CLIENT_ID_1,
+            ClientUpdateCountThisTick.ONE,
+            self._network.narrowcasts
+        )
+
+    def test_character_and_bubble_history_has_cast_count_two(self):
+        ball = self._set_up_ball(BALL_ID_1, CHAR_ID_1, CLIENT_ID_1)
+        self._update_batcher.add_to_character_history(CHAR_ID_1, GOTO_ACTION)
+        self._update_batcher.add_to_bubble_history(ball.newBubbleId, GOTO_ACTION)
+        self._update_batcher.send_batch()
+        self.asssertCastsInBatchNarrowcast(
+            CLIENT_ID_1,
+            ClientUpdateCountThisTick.TWO,
+            self._network.narrowcasts
+        )
+        self.asssertCastsInBatchSinglecast(
+            CLIENT_ID_1,
+            ClientUpdateCountThisTick.TWO,
+            self._network.singlecasts
         )
 
     def _set_up_ball(self, ball_id, char_id, client_id):
@@ -169,3 +229,19 @@ class TestUpdateBatcher(DestinyTestCase):
         timestamp, action = char_history[0]
         self.assertEqual(self._park.currentTime, timestamp)
         self.assertPackagedRemoveBallsActionRemovesBalls(action, [BALL_ID_2])
+
+    def test_character_has_history(self):
+        self.assertFalse(
+            self._update_batcher.character_has_history(CHAR_ID_1)
+        )
+        self._update_batcher.add_to_character_history(CHAR_ID_1, GOTO_ACTION)
+        self.assertTrue(
+            self._update_batcher.character_has_history(CHAR_ID_1)
+        )
+
+    def test_bubble_has_history(self):
+        self.assertFalse(
+            self._update_batcher.bubble_has_history(BUBBLE_1)
+        )
+        self._update_batcher.add_to_bubble_history(BUBBLE_1, GOTO_ACTION)
+        self.assertTrue(self._update_batcher.bubble_has_history(BUBBLE_1))
