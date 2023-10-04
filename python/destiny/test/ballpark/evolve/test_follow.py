@@ -21,7 +21,7 @@ class TestFormation(helpers.BallparkTestCase):
 
         follower_coordinates = []
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             follower_coordinates.append((follower.x, follower.y, follower.z))
 
@@ -51,7 +51,7 @@ class TestFormation(helpers.BallparkTestCase):
 
         follower_coordinates = []
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             follower_coordinates.append((follower.x, follower.y, follower.z))
 
@@ -80,7 +80,7 @@ class TestFollow(helpers.BallparkTestCase):
 
         follower_coordinates = []
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             follower_coordinates.append((follower.x, follower.y, follower.z))
 
@@ -108,7 +108,7 @@ class TestFollow(helpers.BallparkTestCase):
 
         follower_coordinates = []
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             follower_coordinates.append((follower.x, follower.y, follower.z))
 

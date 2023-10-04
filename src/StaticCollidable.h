@@ -11,6 +11,19 @@ public:
 	StaticCollidable();
 	virtual Vector3d GetCenter() = 0;
 	virtual void CollideWithBall(Ball* ball) = 0;
+	// -------------------------------------------
+	// Description:
+	//    Checks for collision with a ball. Calculates time of impact and normal if collision exists.
+	// Arguments:
+	//    p0 - location of the ball at the start of the time step.
+	//    p1 - location of the ball at the end of the time step if no collision occurs.
+	//    radius - radius of the ball
+	//    normal (out) - A normal vector pointing in the direction of the collision impact.
+	//    timeOfImpact (out) - The time of impact in the range between 0.0 and 1.0 as a fraction of the time step.
+	// Return Value:
+	//    True if collision takes place, false otherwise.
+	// -------------------------------------------
+	virtual bool CheckCollision(const Vector3d &p0, const Vector3d &p1, float radius, Vector3d& normal, double& timeOfImpact) = 0;
 
 	void ClearBoxes();
 	void DeleteFromBoxes();

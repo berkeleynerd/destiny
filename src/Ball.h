@@ -142,6 +142,7 @@ public:
     bool mHasProximity;
 	bool mWithinRange;
 	bool mHandled;    // Flag used when processing balls.
+	bool mInDeadBubble; // Flag for dead bubble, used in Evolve
 
 	float mRadius; // radius of ball (meters)
 	float mMaxVel; // the maximum velocity this ball can move (meters/second)

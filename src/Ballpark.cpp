@@ -10,6 +10,8 @@
 #include "Ball.h"
 #include "Box.h"
 #include "Quaternion.h"
+#include "Collision.h"
+#include "Settings.h"
 
 #include <ITaskletTimer.h>
 
@@ -46,8 +48,6 @@ const char* TICK_EVOLVE = "Destiny::Tick";
 #define SIGNUM(X) (X>=0.0?1.0:-1.0)
 #define ABS(X) ((X)<0.0f?-(X):(X))
 
-bool Quadratic(double& v1, double& v2, double a, double b, double c);
-
 PyObject * Ballpark::s_ballNotInParkCallback = NULL;
 static int ballparkCounter = 0;
 
@@ -61,7 +61,6 @@ double WARP_FACTOR_TO_DECELERATION = 1.0 / 3000; // Higher value means shorter m
 
 // These ball movement modes use mFollowId and mFollowPtr
 extern const std::array<int,4> followModes = {DSTBALL_FOLLOW, DSTBALL_ORBIT, DSTBALL_MISSILE, DSTBALL_FORMATION};
-
 // Used in ORBIT move-mode - Controls how quickly the rotational axis itself will rotate (rad/s)
 double ORBITAL_PRECESSION = 0.001;
 
@@ -330,6 +329,79 @@ void Ballpark::OnTick(
     //CCP_LOG_CH( s_chPark,"Requesting tick after %d msec",mTickInterval - timer.GetTime()/10000);
 }
 
+void Ballpark::CalculateIterativeCollisionResponses()
+{
+	// Use a special loop to calculate collision responses iteratively
+	// Re-initialize the previous responses.
+	for (auto &pair : mCollisionLocations)
+		pair.second.Initialize(pair.second.m_ball, dt);
+
+	// We keep the vectors around so memory is not constantly being allocated for them
+	for (auto &pair : mPotentialCollisionBalls)
+		pair.second.clear();
+	for (auto &pair : mPotentialCollidables)
+		pair.second.clear();
+
+	// Keep track of balls that no longer require their responses calculated to reduce load on server
+	// Store both Id and pointer to save on a lookup in freeballs.  This has to be ordered
+	DictOfFreeBalls currentBalls, nextBalls;
+
+	// First loop is over free balls, all others over currentBalls
+	auto ballIt = mFreeBalls.begin();
+	auto ballItEnd = mFreeBalls.end();
+
+	size_t collisionIteration = 0;
+	Ball *ball = nullptr;
+	do
+	{
+		for (; ballIt != ballItEnd; ++ballIt)
+		{
+			ball = ballIt->second;
+
+			//Ignore dead balls
+			if (ball->isMoribund)
+				continue;
+
+			if (ball->mInDeadBubble)
+				continue;
+
+			// Ignore non-massive balls
+			if (!ball->isMassive)
+				continue;
+
+			// Calculate responses for the ball
+			bool found = CalculateCollisionResponse(ball, collisionIteration);
+
+			// Look for a new collision response and add all free balls within the collision zone to the next balls
+			if (found)
+			{
+				// Find the balls, and add the free balls.  This does not include current ball
+				for (auto* neighbor : mPotentialCollisionBalls[ball->mId])
+				{
+					if (neighbor->isFree)
+						nextBalls[neighbor->mId] = neighbor;
+				}
+				nextBalls[ball->mId] = ball;
+			}
+		}
+
+		if( nextBalls.empty() )
+			break;
+
+		++collisionIteration;
+
+		// Performance cap, reducing this allows agile ships to fly through thin collision regions.
+		if( collisionIteration >= s_collisionMaxIterations )
+			break;
+
+		// Next balls become current and we empty next balls
+		std::swap( currentBalls, nextBalls );
+		nextBalls.clear();
+		ballIt = currentBalls.begin();
+		ballItEnd = currentBalls.end();
+	} while( true );
+}
+
 
 //---------------------------------------------------------------------------------------
 // Evolve advances the whole simulation by one timestep
@@ -349,8 +421,12 @@ void Ballpark::Evolve(Be::Time timestamp)
         if(ball->isMoribund)
             continue; // don't handle dead balls
 
-        if(InDeadBubble(ball))
+        // Cache this call
+        if (InDeadBubble(ball))
+        {
+            ball->mInDeadBubble = true;
             continue;
+        }
 
         EvolveBehaviorForBall(ball);
     }
@@ -361,6 +437,10 @@ void Ballpark::Evolve(Be::Time timestamp)
 
     // Now that we have accumulated accelerations due to intrisic ball behavior
     // Calculate the possible collision responses
+	if( s_useIterativeCollision )
+	{
+		CalculateIterativeCollisionResponses();
+	}
 
     for(sit = mFreeBalls.begin(); sit != mFreeBalls.end(); ++sit)
     {
@@ -369,15 +449,15 @@ void Ballpark::Evolve(Be::Time timestamp)
         if(ball->isMoribund)
             continue; // don't handle dead balls
 
-        if(InDeadBubble(ball))
+        if(ball->mInDeadBubble)
             continue;
 
-        // Get the gradient term, with contribution from nearby objects
-        if(ball->isMassive)
-        {
-            ball->mLastCollision = -1.0;
-            Gradient(ball);
-        }
+		if( !s_useIterativeCollision && ball->isMassive )
+		{
+			// Get the gradient term, with contribution from nearby objects
+			ball->mLastCollision = -1.0;
+			Gradient(ball);
+		}
 
         Vector3d p,v;
         p = ball->mNewPos;
@@ -405,7 +485,7 @@ void Ballpark::Evolve(Be::Time timestamp)
         }
         else
         {
-            Integrate(p,v, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, dt);
+            CalculateBallPositionVelocity(ball, dt, p, v);
         }
         ball->mOldPos = p;
         ball->mOldVel = v;
@@ -424,8 +504,11 @@ void Ballpark::Evolve(Be::Time timestamp)
         if(ball->isMoribund)
             continue; // don't handle dead balls
 
-        if(InDeadBubble(ball))
+        if(ball->mInDeadBubble)
+        {
+            ball->mInDeadBubble = false;
             continue;
+        }
 
         if(ball->mMode == DSTBALL_TROLL)
         {
@@ -491,6 +574,18 @@ void Ballpark::Evolve(Be::Time timestamp)
         // otherwise trigger a missile explosion by adding a fake collision with self
         if (ball->mMode == DSTBALL_MISSILE)
         {
+			if( s_useIterativeCollision )
+			{
+				// TODO: This should probably be changed, but for now use the mCollisions storage of ball
+				// I don't think it is used anywhere else, but just be on the safe side
+				auto coll_iter = mCollisionLocations.find(ball->mId);
+				if (coll_iter != mCollisionLocations.end())
+				{
+					for (auto &loc : coll_iter->second.m_locations)
+						if (loc.collider != -1)
+							ball->mCollisions.push_back(loc.collider);
+				}
+			}
             if(isMaster)
             {
                 // HACK ALERT: The ABS taken here is because of the defender missile hack (negative owner means defender)
@@ -526,17 +621,30 @@ void Ballpark::Evolve(Be::Time timestamp)
 }
 
 
-void Ballpark::Integrate(Vector3d& p,Vector3d& v, const Vector3d& a,double m,double k, double timeFactor, double t)
+void Ballpark::Integrate(Vector3d& p, Vector3d& v, const Vector3d& a, double m, double k, double timeFactor, double t)
 {
-    if(t==0.0)
-        return;
+	if (t == 0.0)
+		return;
 
-    if(t!=dt)
-        timeFactor = exp(-k/m*t);
+	if (t != dt)
+		timeFactor = exp(-k / m * t);
 
-    double k2=k*k;
-    p = (m*(m*a*(timeFactor - 1.0) + k*(a*t + v - timeFactor*v) )+p*k2)/k2;
-    v = (m*a - (m*a - v*k)*timeFactor)/k;
+	const double k2 = k * k;
+	const double ook2 = 1. / k2;
+	const double ook = 1. / k;
+
+	if (k < 1e-10 * m * t)
+	{
+		//Taylor Series expansion
+		//timeFactor = 1 - k/m*t
+		p = (m * (a * (-k * t) + k * (a * t + v * k / m * t)) + p * k2) * ook2;
+		v = (m * a - (m * a - v * k) * timeFactor) * ook;
+	}
+	else
+	{
+		p = (m * (m * a * (timeFactor - 1.0) + k * (a * t + v - timeFactor * v)) + p * k2) * ook2;
+		v = (m * a - (m * a - v * k) * timeFactor) * ook;
+	}
 
 }
 #pragma endregion
@@ -1004,13 +1112,623 @@ Vector3d Ballpark::GotoThrust(const Ball *ball, const Vector3d& target, bool mis
 
 
 #pragma region Collisions
+
+
+bool Ballpark::CalculateCollisionResponse(Ball* ball, size_t collisionIteration)
+{
+	if (!ball)
+	{
+		CCP_LOGWARN_CH(s_chPark, "CalculateCollisionResponses called with a null pointer for ball");
+		return false;
+	}
+
+	// Find or create our collision responses
+	auto collIter = mCollisionLocations.find(ball->mId);
+
+	if (collIter == mCollisionLocations.end())
+	{
+		// Insert it and initialize
+		collIter = mCollisionLocations.insert(collIter, std::pair<ID, CollisionBallProperties>(ball->mId, CollisionBallProperties()));
+		collIter->second.Initialize(ball, dt);
+	}
+
+	auto& ballProperties = collIter->second;
+
+	// Only need to call this on the first iteration
+	if (collisionIteration == 0)
+		mPartition->GetCollisionCandidates(ball, mPotentialCollisionBalls[ball->mId], mPotentialCollidables[ball->mId], isMaster);
+
+	// Nothing to do if we already have a collision as early as possible
+	if (ballProperties.m_tStart >= ballProperties.m_tEnd)
+	{
+		// Need to update the end
+		ballProperties.CalculateEnd();
+		return false;
+	}
+
+	// Also ignore any collision if we happen to have a collision at t=0
+	// This time we don't have to update the end, because that happens above or below when the collision was added.
+	if (ballProperties.m_locations.front().collider != -1)
+		return false;
+
+	auto& balls = mPotentialCollisionBalls[ball->mId];
+	auto& collidables = mPotentialCollidables[ball->mId];
+
+	// Only calculate if needed
+	if (balls.size() == 0 && collidables.size() == 0)
+		return false;
+
+	// The collision for us and a possible neighbor
+	CollisionItem collisionItem, neighborCollision;
+
+	// Start with the static collisions, they are cheaper so better to have them calculated sooner
+	GetNextCollisionStatic(ballProperties, collisionItem, balls, collidables);
+
+	// Finish with the neighbor collisions, if needed
+	if (collisionItem.timeOfImpact != ballProperties.m_tStart)
+		GetNextCollisionFree(ballProperties, collisionItem, balls, collisionIteration);
+
+	// Add the collisions to the collision structure, making sure we keep things in order.
+	// In particular, we may need to delete collisions from prior free ball collisions
+
+	// Nothing to do if there is no collision
+	if (collisionItem.collider != nullptr)
+	{
+		// Static collisions have a different property
+		if (collisionItem.mbIndex2 == -2)
+		{
+			CalculateCollisionImpactStatic(ballProperties, collisionItem);
+		}
+		else
+		{
+			// The other ball properties are already calculated, so safe to use [] access.
+			neighborCollision = CalculateCollisionImpactFree(ballProperties, mCollisionLocations[collisionItem.collider->mId], collisionItem);
+		}
+
+		// Need to check for neighbor collisions first so we can return in the next if statement
+		if (neighborCollision.impact != nullptr && neighborCollision.impact->collider != -1)
+			AddImpact(*neighborCollision.impact, collisionIteration, dynamic_cast<Ball*>(neighborCollision.collider));
+
+		// In rare cases we may have a positive collision calculation but no impact.
+		if (collisionItem.impact != nullptr && collisionItem.impact->collider != -1)
+		{
+			AddImpact(*collisionItem.impact, collisionIteration, ball);
+
+			// We need to update the end here, this ball has already calculated everything.
+			ballProperties.CalculateEnd();
+			return true;
+		}
+	}
+
+	// We need to update the end here, this ball has already calculated everything.
+	ballProperties.CalculateEnd();
+
+	return false;
+}
+
+void Ballpark::GetNextCollisionStatic(CollisionBallProperties& ballProp, CollisionItem& collisionItem, VectorOfBalls& balls, VectorOfStaticCollidables& collidables)
+{
+	// A convenience shorthand
+	auto* ball = ballProp.m_ball;
+
+	// Store a static version of the miniballs, to reduce allocations
+	static std::vector<Vector3d> mb_p0, mb_p1;
+	ON_BLOCK_EXIT([]() { mb_p0.clear(); mb_p1.clear(); });
+
+	Vector3d p0, p1;
+	Vector3d vjunk;
+	ballProp.CalculatePosition(p0, vjunk, ballProp.m_tStart);
+	ballProp.CalculatePosition(p1, vjunk, ballProp.m_tEnd);
+
+	// Start looping over static collideables, which apparently are not seen by missiles and mushrooms
+	// Which is somewhat strange, because MiniBalls are seen by defender missiles, unless owned by same owner.
+	// Not sure this matters in the game, but it is inconsistent
+	if (ball->mMode != DSTBALL_MISSILE && ball->mMode != DSTBALL_MUSHROOM)
+	{
+		for (auto collidable : collidables)
+		{
+			Vector3d normal;
+			double timeOfImpact(0.0);
+
+			// Check for collision with the main ball
+			bool collides = collidable->CheckCollision( p0, p1, ball->mRadius, normal, timeOfImpact );
+
+			if (collides)
+			{
+				// Ignore if last collision was with same item and we have not moved.
+				if (ballProp.IgnoreCollision(collidable->mId, timeOfImpact))
+					continue;
+
+				//Calculate the actual time of impact
+				timeOfImpact = ballProp.m_tStart + (ballProp.m_tEnd - ballProp.m_tStart) * timeOfImpact;
+
+				//Only add if sooner than previous
+				if( collisionItem.timeOfImpact < 0.0 || timeOfImpact < collisionItem.timeOfImpact )
+				{
+					collisionItem.normal = normal;
+					collisionItem.collider = collidable;
+					collisionItem.timeOfImpact = timeOfImpact;
+					collisionItem.mbIndex1 = -1;
+					collisionItem.impact = nullptr;
+				}
+			}
+
+			// Can break if we already found the first collision
+			if( collisionItem.timeOfImpact == ballProp.m_tStart )
+				break;
+
+		}
+	}
+
+	// Now all the fixed balls, if needed
+	if( collisionItem.timeOfImpact != ballProp.m_tStart )
+	{
+		for (auto neighbor : balls)
+		{
+			if (!neighbor->isFree)
+			{
+				// Don't include missile launchers and mushrooms.  Not sure if static objects can be owners of missiles.
+				if (CollisionBallNeighborIgnore(ball, neighbor))
+					continue;
+
+				// Check for collision with the main ball
+				double timeOfImpact = CollideTwoSpheres(p0, p1, neighbor->mNewPos, neighbor->mNewPos, static_cast<double>(ball->mRadius) + static_cast<double>(neighbor->mRadius));
+
+				if (timeOfImpact >= 0.0)
+				{
+					// Ignore if last collision was with same item and we have not moved.
+					if (ballProp.IgnoreCollision(neighbor->mId, timeOfImpact))
+						continue;
+
+					//Calculate the actual time of impact
+					const double toi = ballProp.m_tStart + timeOfImpact * (ballProp.m_tEnd - ballProp.m_tStart);
+
+					//Overwrite only if more recent or first
+					if( collisionItem.timeOfImpact < 0.0 || timeOfImpact < collisionItem.timeOfImpact )
+					{
+						// Use linear approximation for the positions to get the normal
+						const auto position = p0 + (p1 - p0) * timeOfImpact;
+						collisionItem.normal = position - neighbor->mNewPos;
+						collisionItem.normal.Normalize();
+
+						collisionItem.collider = neighbor;
+						collisionItem.timeOfImpact = toi;
+						collisionItem.mbIndex1 = -1;
+						collisionItem.impact = nullptr;
+					}
+				}
+			}
+
+			// Can break if we already found the first collision
+			if( collisionItem.timeOfImpact == ballProp.m_tStart )
+				break;
+		}
+	}
+}
+
+void Ballpark::GetNextCollisionFree(CollisionBallProperties& ballProp, CollisionItem& collisionItem, VectorOfBalls& balls, size_t collisionIteration)
+{
+	// For convenience
+	auto* ball = ballProp.m_ball;
+
+	// Store these vectors statically to reduce memory allocations
+	static std::vector<double> times;
+	static std::vector<Vector3d> ballMbP0, ballMbP1;
+	static std::vector<Vector3d> otherMbP0, otherMbP1;
+
+	// Positions for the main balls
+	Vector3d ballP0, ballP1, otherP0, otherP1;
+	Vector3d vjunk;
+
+	ON_BLOCK_EXIT([]() {
+		times.clear();
+		ballMbP0.clear();
+		ballMbP1.clear();
+		otherMbP0.clear();
+		otherMbP1.clear();
+	});
+
+
+	for (auto other : balls)
+	{
+		// Only do free balls with higher Id, unless we are a missile
+		if (other->isFree && (other->mId > ball->mId || ball->mMode == DSTBALL_MISSILE))
+		{
+			// Don't include missile launchers and mushrooms.
+			if (CollisionBallNeighborIgnore(ball, other))
+				continue;
+
+			// Get, or Initialize, the other balls properties
+			auto iter = mCollisionLocations.find(other->mId);
+			if (iter == mCollisionLocations.end())
+			{
+				iter = mCollisionLocations.insert(iter, std::pair<ID, CollisionBallProperties>(other->mId, CollisionBallProperties()));
+				iter->second.Initialize(other, dt);
+			}
+			auto& otherProp = iter->second;
+
+			// The end time here is the smaller of the end times of both balls
+			double endTime = std::min(ballProp.m_tEnd, otherProp.m_tEnd);
+
+			// We can continue if that is later than start time, which can happen
+			if (ballProp.m_tStart >= endTime)
+				continue;
+
+			// We have to be extra careful that the other ball does not have later collisions already assigned.
+			times.clear();
+			otherMbP0.clear();
+			otherMbP1.clear();
+
+			// Loop through the locations and add the times that come after m_tStart, but before m_tEnd
+			times.push_back(ballProp.m_tStart);
+			for (auto& positions : otherProp.m_locations)
+			{
+				if (positions.time > ballProp.m_tStart && positions.time < endTime)
+					times.push_back(positions.time);
+			}
+			times.push_back(endTime);
+
+			// If we have more than just the start and the end, we need to invalidate the miniballs
+			if (times.size() > 2 || endTime != ballProp.m_tEnd)
+			{
+				ballMbP0.clear();
+				ballMbP1.clear();
+			}
+
+			// To save time, we only calculate one position in the loop
+			ballProp.CalculatePosition(ballP0, vjunk, times[0]);
+			otherProp.CalculatePosition(otherP0, vjunk, times[0]);
+
+			for (size_t ii = 0; ii < times.size() - 1; ++ii)
+			{
+				double tstart = times[ii];
+				double tend = times[ii + 1];
+
+				ballProp.CalculatePosition(ballP1, vjunk, tend);
+				otherProp.CalculatePosition(otherP1, vjunk, tend);
+
+				double comparisonRadius = static_cast<double>(ball->mRadius) + static_cast<double>(other->mRadius);
+				double timeOfImpact = CollideTwoSpheres(ballP0, ballP1, otherP0, otherP1, comparisonRadius);
+
+				if (timeOfImpact >= 0.0)
+				{
+					// Keep track of added collision
+					bool added = false;
+
+					// Make sure the actual time of impact is relevant
+					double toi = tstart + (tend - tstart) * timeOfImpact;
+
+					if( collisionItem.timeOfImpact < 0 || toi < collisionItem.timeOfImpact )
+					{
+						// Ignore if we already have a collision with this ball at this time
+						if (ballProp.IgnoreCollision(other->mId, timeOfImpact))
+							continue;
+
+						collisionItem.timeOfImpact = toi;
+						collisionItem.collider = other;
+						collisionItem.mbIndex1 = -1;
+						collisionItem.mbIndex2 = -1;
+						collisionItem.impact = nullptr;
+
+						added = true;
+
+						if (added)
+						{
+							// No need to search further with this ball
+							break;
+						}
+					}
+				}
+
+				// Need to update the initial positions of both balls if there are substeps.
+				if (times.size() > 2)
+				{
+					ballP0 = ballP1;
+					otherP0 = otherP1;
+
+					if (ballMbP1.size() > 0)
+						ballMbP0 = ballMbP1;
+					if (otherMbP1.size() > 0)
+						otherMbP0 = otherMbP1;
+				}
+
+			}
+
+			// Can break if we already found the first collision
+			if( collisionItem.timeOfImpact == ballProp.m_tStart )
+				break;
+
+			// Need to invalidate the miniballs for our ball if there were substeps
+			if (times.size() > 2 || endTime != ballProp.m_tEnd)
+			{
+				ballMbP0.clear();
+				ballMbP1.clear();
+			}
+
+		}
+	}
+}
+
+Vector3d Ballpark::ApproximateEllipsePointOfImpact(Ball* ball, BallLocation& ballLoc, const CollisionItem& collision)
+{
+	// Cannot do anything special if we do not have the orientation, just use the collision normal times the radius
+	return -collision.normal * ball->mRadius;
+}
+
+void Ballpark::CalculateCollisionImpactStatic(CollisionBallProperties& ballProp, CollisionItem& collision)
+{
+
+	// We only need to calculate the impact once and this only works for static collisions
+	if (collision.impact == nullptr && collision.mbIndex2 == -2)
+	{
+		collision.impact.reset(new CollisionImpact());
+		collision.impact->timeOfImpact = collision.timeOfImpact;
+
+		// If we are already in collision at the start of the time step then turn on acceleration away from the object.
+		if( ballProp.m_tStart == collision.timeOfImpact )
+		{
+			const auto anormal = ballProp.m_ball->mLastG * collision.normal;
+			const auto maxAcceleration = ballProp.m_ball->mMaxVel * mFriction / (ballProp.m_ball->mMass * ballProp.m_ball->mAgility) - anormal;
+			ballProp.m_ball->mLastC = maxAcceleration * collision.normal;
+		}
+
+		// Calculate the ball location to use for the impact
+		BallLocation bloc;
+		ballProp.CalculatePosition( bloc.p, bloc.v, collision.timeOfImpact );
+
+		// We have the normal, time of impact, and pre-calculated ball properties
+		// Calculate the point of impact
+		auto pointOfImpact = ApproximateEllipsePointOfImpact(ballProp.m_ball, bloc, collision);
+
+		// We need the relative velocity at the point of impact, which is just our velocity, including rotation
+		auto relVel = bloc.v;
+
+		// Calculate the relative velocity change at the point of impact, assuming perfectly elastic collision
+		const double vimpulse = -2.0 * relVel * collision.normal;
+
+		// If the impulse is negative, we have no collision.  This can happen if we are already colliding with the object
+		// or if this is not the first collision in a series of simultaneous collisions.
+		if (vimpulse < 0.0)
+		{
+			// The response in the impact is at 0, just return.
+			return;
+		}
+
+		const double impulse = vimpulse;
+
+		// Now we can calculate the impact
+		collision.impact->velocityChange = impulse * collision.normal;
+
+		// Need to add the actual collider
+		collision.impact->collider = collision.collider->mId;
+	}
+}
+
+CollisionItem Ballpark::CalculateCollisionImpactFree(CollisionBallProperties& ballProp, CollisionBallProperties& otherProp, CollisionItem& collision)
+{
+
+	if( collision.impact != nullptr || collision.mbIndex2 == -2 )
+	{
+		// This should never be called with an impact already calculated
+		return CollisionItem();
+	}
+
+	// Create the collision item for the other ball
+	CollisionItem otherCollision;
+
+	otherCollision.timeOfImpact = collision.timeOfImpact;
+	// Need to store a pointer to the other ball here
+	otherCollision.collider = collision.collider;
+	otherCollision.mbIndex1 = collision.mbIndex2;
+	otherCollision.mbIndex2 = collision.mbIndex1;
+
+	// And the collision impacts
+	otherCollision.impact.reset(new CollisionImpact());
+	otherCollision.impact->timeOfImpact = collision.timeOfImpact;
+	collision.impact.reset(new CollisionImpact());
+	collision.impact->timeOfImpact = collision.timeOfImpact;
+
+	// Calculate all the location information needed for both balls
+	BallLocation ballLoc, otherLoc;
+
+	ballProp.CalculatePosition( ballLoc.p, ballLoc.v, collision.timeOfImpact );
+	otherProp.CalculatePosition( otherLoc.p, otherLoc.v, collision.timeOfImpact );
+
+	// Need to find the normal of the collision.  It points from the collided balls
+	collision.normal = ballLoc.p - otherLoc.p;
+
+	// Normalize the normal, making sure it actually is a direction
+	const auto length = collision.normal.Length();
+	if (length > 0.0)
+		collision.normal /= length;
+	else
+		collision.normal.z = 1.0;  // This is a random direction
+
+	otherCollision.normal = -collision.normal;
+
+	// If we are already in collision, the timeOfImpact will be 0 and we turn on acceleration away from each other
+	if( 0.0 == collision.timeOfImpact )
+	{
+		auto anormal = ballProp.m_ball->mLastG * collision.normal;
+		auto maxAcceleration = ballProp.m_ball->mMaxVel * mFriction / (ballProp.m_ball->mMass * ballProp.m_ball->mAgility) - anormal;
+		ballProp.m_ball->mLastC = maxAcceleration * collision.normal;
+
+		anormal = otherProp.m_ball->mLastG * otherCollision.normal;
+		maxAcceleration = otherProp.m_ball->mMaxVel * mFriction / (otherProp.m_ball->mMass * otherProp.m_ball->mAgility) - anormal;
+		otherProp.m_ball->mLastC = maxAcceleration * otherCollision.normal;
+
+	}
+
+	// Now get the point of impact for both balls
+	auto poi1 = ApproximateEllipsePointOfImpact(ballProp.m_ball, ballLoc, collision);
+	auto poi2 = ApproximateEllipsePointOfImpact(otherProp.m_ball, otherLoc, otherCollision);
+	auto relVel = otherLoc.v - ballLoc.v;
+
+	// To get the sign correct, use the otherBall normal
+	const double vimpulse = -2.0 * (relVel * otherCollision.normal);
+
+	// A positive vimpulse is required for an actual collision
+	if (vimpulse < 0.0)
+	{
+		// The impacts are both set at 0, just return
+		return otherCollision;
+	}
+
+	// Calculate impulse, multiply with m1m2/m1m2 to make things pretty.
+	// Assume I = 0.5 m R^2
+	const double m1 = ballProp.m_ball->mMass;
+	const double m2 = otherProp.m_ball->mMass;
+	const double r1 = ballProp.m_ball->mRadius;
+	const double r2 = otherProp.m_ball->mRadius;
+	const double impulse = m1 * m2 * vimpulse / (m1 + m2);
+
+	// Now we can calculate the impact
+	collision.impact->velocityChange = (impulse / m1) * collision.normal;
+	otherCollision.impact->velocityChange = (impulse / m2) * otherCollision.normal;
+
+	collision.impact->collider = otherProp.m_ball->mId;
+	otherCollision.impact->collider = ballProp.m_ball->mId;
+
+	return otherCollision;
+}
+
+void Ballpark::AddImpact(CollisionImpact& impact, size_t collIter, Ball* ball)
+{
+	bool addImpact = false;
+
+	// It is an error at this point not to have the item in the storage
+	auto cIter = mCollisionLocations.find(ball->mId);
+
+	if (cIter == mCollisionLocations.end())
+	{
+		CCP_LOGERR_CH(s_chPark, "Collision structure not found for %I64d when adding impacts", ball->mId);
+		return;
+	}
+
+	// We should not add the impact unless it comes sooner than m_tEnd
+	if (cIter->second.m_tEnd <= impact.timeOfImpact)
+		return;
+
+	static std::vector<std::pair<double, ID>> collisionsInvalidated;
+	ON_BLOCK_EXIT([]() { collisionsInvalidated.clear(); });
+
+	// Limit the impacts velocity and angular velocity change
+	// 5 times the maximum for the velocity change
+	const auto speed2 = impact.velocityChange.LengthSq();
+	const auto fraction = 25 * ball->mMaxVel * ball->mMaxVel / speed2;
+	if (fraction < 1)
+	{
+		impact.velocityChange *= fraction;
+	}
+
+	// Use the impact adder of the collision structure which returns all the impacts this action invalidates
+	// It does not invalidate collsions in current iteration unless this one happens sooner.
+	collisionsInvalidated = cIter->second.AddImpact(impact);
+
+	// Use the recursive function remove from free to remove all relevant collisions
+	for (const auto& pair : collisionsInvalidated)
+	{
+		auto ballIter = mFreeBalls.find(pair.second);
+		if (ballIter != mFreeBalls.end())
+		{
+			RemoveImpactFromFree(pair.first, ball->mId, ballIter->second);
+		}
+	}
+
+	// Loop over the impacts and flag out of order impacts.  THIS IS FOR DEBUGGING AND SHOULD BE REMOVED ONCE FIXED
+	double prev(0), curr(0);
+	for (const auto& loc : cIter->second.m_locations)
+	{
+		prev = curr;
+		curr = loc.time;
+		if (curr < prev)
+		{
+			CCP_LOGWARN_CH(s_chPark, "Adding impacts out of order! This should not happen.");
+		}
+	}
+}
+
+
+// Remove an impact from another free ball if necessary
+// Returns true if iterators to mCollisions are invalidated
+void Ballpark::RemoveImpactFromFree(double time, ID collider, Ball* ball)
+{
+	// Make sure we are a free ball
+	if (!ball || !ball->isFree)
+		return;
+
+	// Find our structure, it is an error if it is not here
+	auto c_iter = mCollisionLocations.find(ball->mId);
+
+	if (c_iter == mCollisionLocations.end())
+	{
+		CCP_LOGERR_CH(s_chPark, "Collision structure not found for %I64d when removing impacts", ball->mId);
+		return;
+	}
+
+	// Remove it, and all that are possibly invalidated
+	auto invalidatedCollisions = c_iter->second.RemoveImpact(time, collider);
+
+	for (const auto& pair : invalidatedCollisions)
+	{
+		auto ball_iter = mFreeBalls.find(pair.second);
+		if (ball_iter != mFreeBalls.end())
+		{
+			RemoveImpactFromFree(pair.first, ball->mId, ball_iter->second);
+		}
+	}
+}
+
+inline bool Ballpark::CollisionBallNeighborIgnore(Ball* b, Ball* neighbor)
+{
+	// Capture the logic for ignoring collisions.  We loop twice to have fixed balls come before free balls.
+	return (b->mMode == DSTBALL_MISSILE && (neighbor->mId == b->mOwnerId || (neighbor->mMode == DSTBALL_MINIBALL && neighbor->mOwnerId == b->mOwnerId))) // I am a missile, and the other guy is my daddy
+		|| ((neighbor->mMode == DSTBALL_MISSILE || neighbor->mMode == DSTBALL_MUSHROOM) && b->mId == neighbor->mOwnerId) // The other guy is a missile and I am his daddy
+		|| (neighbor->mMode == DSTBALL_MISSILE && b->mId == neighbor->mFollowId) // The other guy is a missile and I am his target
+		|| ((neighbor->isSpaceJunk && !b->isSpaceJunk) || (!neighbor->isMassive));
+}
+
+void Ballpark::CalculateBallPositionVelocity(Ball* ball, double t, Vector3d& position, Vector3d& velocity)
+{
+	if (!ball)
+	{
+		CCP_LOGERR_CH(s_chPark, "Null pointer for ball in CalculateBallPositionVelocity");
+		return;
+	}
+
+	// A quick solution if t is zero
+	if (t == 0)
+		return;
+
+	// If iterative collisions are disabled, just do the integration
+	if( !s_useIterativeCollision )
+	{
+		Integrate(position, velocity, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, t);
+		return;
+	}
+
+	// Stuff is pre-calculated if the ball was already in last evolve function
+	auto collisionIter = mCollisionLocations.find(ball->mId);
+
+	if (collisionIter == mCollisionLocations.end())
+	{
+		// No collisions, a single pass to the integrator will do
+		Integrate(position, velocity, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, t);
+	}
+	else
+	{
+		// Use the already pre-calculated points
+		collisionIter->second.CalculatePosition(position, velocity, t);
+	}
+}
+
 //---------------------------------------------------------------------------------------
 // Gradient sums up influence of nearby balls on a single ball
 //---------------------------------------------------------------------------------------
 void Ballpark::Gradient(Ball *ball)
 {
-	if( !ball )
-        return;
+	if (!ball)
+		return;
 
 	// Keep static vectors for accumulating balls and collidables and clear it after we're done.
 	// These vector will grow to the largest set of balls/collidables ever needed, which should
@@ -1018,80 +1736,34 @@ void Ballpark::Gradient(Ball *ball)
 	// and that is a worthwhile optimization.
 	static VectorOfBalls s_uni;
 	static VectorOfStaticCollidables s_staticCollidables;
-	
-	ON_BLOCK_EXIT( [=] { s_uni.clear(); } );
-	ON_BLOCK_EXIT( [=] { s_staticCollidables.clear(); } );
+
+	ON_BLOCK_EXIT( [=] { s_uni.clear(); s_staticCollidables.clear(); } );
 
 	VectorOfBalls::iterator kt;
 	VectorOfStaticCollidables::iterator st;
-    Ball *neighbor;
-    
-    mPartition->GetCollisionCandidates(ball, s_uni, s_staticCollidables, isMaster);
-        
-    for(kt = s_uni.begin(); kt != s_uni.end(); ++kt)
-    {
-        neighbor = *kt;
+	Ball *neighbor;
 
-        if( (ball->mMode==DSTBALL_MISSILE && (neighbor->mId == ball->mOwnerId || (neighbor->mMode==DSTBALL_MINIBALL && neighbor->mOwnerId==ball->mOwnerId))) // I am a missile, and the other guy is my daddy
-            || ( (neighbor->mMode==DSTBALL_MISSILE || neighbor->mMode==DSTBALL_MUSHROOM) && ball->mId == neighbor->mOwnerId) // The other guy is a missile and I am his daddy
-            || ( neighbor->mMode==DSTBALL_MISSILE && ball->mId == neighbor->mFollowId ) // The other guy is a missile and I am his target
-            || (neighbor->isSpaceJunk && !ball->isSpaceJunk) )
-            continue; // Don't include missile launchers and mushrooms
-        
-        Potential(ball, neighbor);
-    }
+	mPartition->GetCollisionCandidates(ball, s_uni, s_staticCollidables, isMaster);
 
-	for( st = s_staticCollidables.begin(); st != s_staticCollidables.end(); ++st )
+	for (kt = s_uni.begin(); kt != s_uni.end(); ++kt)
 	{
-		if( ball->mMode==DSTBALL_MISSILE || ball->mMode == DSTBALL_MUSHROOM )
+		neighbor = *kt;
+
+		if ((ball->mMode == DSTBALL_MISSILE && (neighbor->mId == ball->mOwnerId || (neighbor->mMode == DSTBALL_MINIBALL && neighbor->mOwnerId == ball->mOwnerId))) // I am a missile, and the other guy is my daddy
+			|| ((neighbor->mMode == DSTBALL_MISSILE || neighbor->mMode == DSTBALL_MUSHROOM) && ball->mId == neighbor->mOwnerId) // The other guy is a missile and I am his daddy
+			|| (neighbor->mMode == DSTBALL_MISSILE && ball->mId == neighbor->mFollowId) // The other guy is a missile and I am his target
+			|| (neighbor->isSpaceJunk && !ball->isSpaceJunk))
+			continue; // Don't include missile launchers and mushrooms
+
+		Potential(ball, neighbor);
+	}
+
+	for (st = s_staticCollidables.begin(); st != s_staticCollidables.end(); ++st)
+	{
+		if (ball->mMode == DSTBALL_MISSILE || ball->mMode == DSTBALL_MUSHROOM)
 			continue; // Don't include missile launchers and mushrooms
 		(*st)->CollideWithBall(ball);
 	}
-}
-
-double CollideTwoSpheres(const Vector3d& p0, const Vector3d& p1, const Vector3d& q0, const Vector3d& q1, const double collRadius)
-{
-	Vector3d p0q0 = p0 - q0;
-	Vector3d dpq  = (p1 - p0) - (q1 - q0);
-
-	double p0q0_2 = p0q0*p0q0;
-	double dpq_2 = dpq*dpq;
-	double p0q0dpq = p0q0*dpq;
-	double s1,s2,s = -1.0;
-
-	if(Quadratic(s1,s2, dpq_2, 2.0*p0q0dpq, p0q0_2-collRadius*collRadius) )
-	{
-		// We have a bona fide collision. Just a question of when
-		//CCP_LOG_CH( s_chPark,"We have a bona fide overlap between %I64d and %I64d. Just a question of when",me->mId,other->mId);
-		if(s1 >= 0.0 && s1 <= 1.0)
-		{
-			s = s1;
-		}
-
-		if(s2 >= 0.0 && s2 <= 1.0 && s2 < s1)
-		{
-			s = s2;
-		}
-
-		if(p0q0_2 < collRadius*collRadius)
-		{
-			//CCP_LOG_CH( s_chPark,"Ball %I64d and %I64d within each other\n",me->mId,other->mId);
-			// We do have a collision. Use s = 0
-			s = 0.0;
-		}
-
-	}
-	else
-	{
-		// we don't have a collision as such, but we might be within collision
-		if(p0q0_2 < collRadius*collRadius)
-		{
-			//CCP_LOG_CH( s_chPark,"Balls %I64d and %I64d within each other\n",me->mId,other->mId);
-			// We do have a collision. Use s = 0
-			s = 0.0;
-		}
-	}
-	return s;
 }
 
 //---------------------------------------------------------------------------------------
@@ -1100,366 +1772,222 @@ double CollideTwoSpheres(const Vector3d& p0, const Vector3d& p1, const Vector3d&
 void Ballpark::Potential(Ball *me, Ball *other, int recursionDepth)
 {
 	// First task is to estimate where I will be at next dt
-    Vector3d p0,p1,q0,q1,vp1,vq1;
-    double m1,m2;
-    double collRadius = (double)me->mRadius + (double)other->mRadius;
+	Vector3d p0, p1, q0, q1, vp1, vq1;
+	double m1, m2;
+	double collRadius = (double)me->mRadius + (double)other->mRadius;
 
-    if(me->isFree)
-        m1 = me->mMass * me->mAgility;
-    else
-        m1 = 1.0e34;
+	if (me->isFree)
+		m1 = me->mMass * me->mAgility;
+	else
+		m1 = 1.0e34;
 
-    if(other->isFree)
-        m2 = other->mMass * other->mAgility;
-    else
-        m2 = 1.0e34;
+	if (other->isFree)
+		m2 = other->mMass * other->mAgility;
+	else
+		m2 = 1.0e34;
 
-    p0 = p1 = me->mNewPos;
-    vp1 = me->mNewVel;
+	p0 = p1 = me->mNewPos;
+	vp1 = me->mNewVel;
 
-    q0 = q1 = other->mNewPos;
-    vq1 = other->mNewVel;
+	q0 = q1 = other->mNewPos;
+	vq1 = other->mNewVel;
 
-    // Get the new point for me
-    Integrate(p1, vp1, me->mLastG, m1, mFriction, me->mTimeFactor, dt);
-    // Get the new point for the other guy
-    Integrate(q1, vq1, other->mLastG, m2, mFriction, other->mTimeFactor, dt);
+	// Get the new point for me
+	Integrate(p1, vp1, me->mLastG, m1, mFriction, me->mTimeFactor, dt);
+	// Get the new point for the other guy
+	Integrate(q1, vq1, other->mLastG, m2, mFriction, other->mTimeFactor, dt);
 
-    // Calculate when collision occurs
-    double s = CollideTwoSpheres(p0, p1, q0, q1, collRadius);
-	if( s == -1.0 )
+	// Calculate when collision occurs
+	double s = CollideTwoSpheres(p0, p1, q0, q1, collRadius);
+	if (s == -1.0)
 	{
 		return;
 	}
 
-    // Now 's' contains the collision time...
+	// Now 's' contains the collision time...
 
-    //CCP_LOG_CH( s_chPark,"Collision in %f seconds between %I64d and %I64d\n",s*dt,me->mId,other->mId);
+	//CCP_LOG_CH( s_chPark,"Collision in %f seconds between %I64d and %I64d\n",s*dt,me->mId,other->mId);
 
-    // Estimate impact point
-    p1 = me->mNewPos;
-    vp1 = me->mNewVel;
+	// Estimate impact point
+	p1 = me->mNewPos;
+	vp1 = me->mNewVel;
 
-    q1 = other->mNewPos;
-    vq1 = other->mNewVel;
+	q1 = other->mNewPos;
+	vq1 = other->mNewVel;
 
-    //if(me->mId == mEgo)
-    //    CCP_LOGWARN_CH( s_chPark,"[ %d ] Collision between ship %I64d and %I64d", mCurrentTime, me->mId, other->mId);
-    // Now p1 and q1 are at the supposed impact point
+	//if(me->mId == mEgo)
+	//    CCP_LOGWARN_CH( s_chPark,"[ %d ] Collision between ship %I64d and %I64d", mCurrentTime, me->mId, other->mId);
+	// Now p1 and q1 are at the supposed impact point
 
-    Vector3d a1,a2;
+	Vector3d a1, a2;
 
-    if(s > 0.0)
-    {
-        // Get the new point for me
-        Integrate(p1, vp1, me->mLastG, m1, mFriction, me->mTimeFactor, s*dt);
-        // Get the new point for the other guy
-        Integrate(q1, vq1, other->mLastG, m2, mFriction, other->mTimeFactor, s*dt);
+	if (s > 0.0)
+	{
+		// Get the new point for me
+		Integrate(p1, vp1, me->mLastG, m1, mFriction, me->mTimeFactor, s*dt);
+		// Get the new point for the other guy
+		Integrate(q1, vq1, other->mLastG, m2, mFriction, other->mTimeFactor, s*dt);
 
-        // Now we have the exact point of collision, and the velocity vectors there.
-        Vector3d normal = (q1-p1);
-        normal.Normalize();
+		// Now we have the exact point of collision, and the velocity vectors there.
+		Vector3d normal = (q1 - p1);
+		normal.Normalize();
 
-        double v1,v2,v1p,v2p;
-        double eps = 1.0;
+		double v1, v2, v1p, v2p;
+		double eps = 1.0;
 
-        // These are the radial components of velocity
-        v1 = vp1*normal;
-        v2 = vq1*normal;
+		// These are the radial components of velocity
+		v1 = vp1 * normal;
+		v2 = vq1 * normal;
 
-        if(!other->isFree)
-        {
-            //CCP_LOG_CH( s_chPark,"[ %d ]Other ball %I64d is not free, i.e. %I64d hitting a fixed object", mCurrentTime, other->mId, me->mId);
-            // This is the simple case of someone hitting a fixed object. Speed is thus inverted along the radial direction
-            // Now given that. I would be situated at:
-            vp1 -= 2.0*v1*normal;
-            Integrate(p1, vp1, me->mLastG, m1, mFriction, me->mTimeFactor, (1.0-s)*dt);
-            // In order to get there, my acceleration needs to be:
-            double k = mFriction;
-            a1 = -(-m1*me->mLastG + me->mTimeFactor*m1*me->mLastG - me->mTimeFactor*me->mNewVel*k + vp1*k)/m1/(me->mTimeFactor-1.0);
-        }
-        else
-        {
-            //CCP_LOG_CH( s_chPark,"[ %d ] Other ball %I64d is free",other->mId);
-            double mm1 = me->mMass;
-            double mm2 = other->mMass;
-            // Use base mass when calculating collision response.
-            v1p =  (mm1*v1 - mm2*v1 + 2.0*mm2*v2)/(mm1+mm2);
-            v2p =  (mm2*v2 - mm1*v2 + 2.0*mm1*v1)/(mm1+mm2);
+		if (!other->isFree)
+		{
+			//CCP_LOG_CH( s_chPark,"[ %d ]Other ball %I64d is not free, i.e. %I64d hitting a fixed object", mCurrentTime, other->mId, me->mId);
+			// This is the simple case of someone hitting a fixed object. Speed is thus inverted along the radial direction
+			// Now given that. I would be situated at:
+			vp1 -= 2.0*v1*normal;
+			Integrate(p1, vp1, me->mLastG, m1, mFriction, me->mTimeFactor, (1.0 - s)*dt);
 
-            vp1 += (v1p - v1)*normal;
-            Integrate(p1, vp1, me->mLastG, m1, mFriction, me->mTimeFactor, (1.0-s)*dt);
-            double k = mFriction;
-            a1 = -(-m1*me->mLastG + me->mTimeFactor*m1*me->mLastG - me->mTimeFactor*me->mNewVel*k + vp1*k)/m1/(me->mTimeFactor-1.0);
-            //CCP_LOG_CH( s_chPark,"[ %d ] Free ball %I64d has calculated vp1 (%f, %f, %f) and a1 (%f, %f, %f) at time %f", mCurrentTime, me->mId, vp1.x, vp1.y, vp1.z, a1.x, a1.y, a1.z, s);
-        }
-    }
-    else
-    {
-        //CCP_LOG_CH( s_chPark,"[ %d ] %I64d already in collision, need to get out of it, time is %f",mCurrentTime, me->mId,s);
+			// In order to get there, my acceleration needs to be:
+			double k = mFriction;
+			// This is really (me->mNewVel - vp1)*(k/m1/(me-mTimeFactor-1.0)) - me->mLastG. 
+			a1 = -(-m1 * me->mLastG + me->mTimeFactor*m1*me->mLastG - me->mTimeFactor*me->mNewVel*k + vp1 * k) / m1 / (me->mTimeFactor - 1.0);
+		}
+		else
+		{
+			//CCP_LOG_CH( s_chPark,"[ %d ] Other ball %I64d is free",other->mId);
+			double mm1 = me->mMass;
+			double mm2 = other->mMass;
+			// Use base mass when calculating collision response.
+			v1p = (mm1*v1 - mm2 * v1 + 2.0*mm2*v2) / (mm1 + mm2);
+			v2p = (mm2*v2 - mm1 * v2 + 2.0*mm1*v1) / (mm1 + mm2);
 
-        // This is a situtation where the balls are already in collision
-        Vector3d normal;
+			vp1 += (v1p - v1)*normal;
+			Integrate(p1, vp1, me->mLastG, m1, mFriction, me->mTimeFactor, (1.0 - s)*dt);
+
+			double k = mFriction;
+			a1 = -(-m1 * me->mLastG + me->mTimeFactor*m1*me->mLastG - me->mTimeFactor*me->mNewVel*k + vp1 * k) / m1 / (me->mTimeFactor - 1.0);
+			//CCP_LOG_CH( s_chPark,"[ %d ] Free ball %I64d has calculated vp1 (%f, %f, %f) and a1 (%f, %f, %f) at time %f", mCurrentTime, me->mId, vp1.x, vp1.y, vp1.z, a1.x, a1.y, a1.z, s);
+		}
+	}
+	else
+	{
+		//CCP_LOG_CH( s_chPark,"[ %d ] %I64d already in collision, need to get out of it, time is %f",mCurrentTime, me->mId,s);
+
+		// This is a situtation where the balls are already in collision
+		Vector3d normal;
 		Vector3d p0q0 = q0 - p0;
-		double p0q0_2 = p0q0*p0q0;
-        if(p0q0_2==0.0)
-        {// I'm right into the other guy...choose an arbitary normal
-            if(me->mId > other->mId)
-                normal = Vector3d( 1.0, 0.0, 0.0);
-            else
-                normal = Vector3d(-1.0, 0.0, 0.0);
-        }
-        else
-        {
-            normal = (q1-p1);
-            normal.Normalize();
-        }
-        // Calculate the distance I need to move to be in the clear
-        // + 1 below is forcing extra distance to make sure that the recursed-with-values 
-        // actually takes us out of the collision, otherwise, we may end in infinite 
-        // recursion where the displacement doesn't progress at all over a tiny distance.
-        double dist = collRadius - sqrt(p0q0_2) + 1; 
-        //CCP_LOG_CH( s_chPark,"[ %d ] %I64d need dist %.32f ",mCurrentTime, me->mId, dist);
-        
-        // distribute the distance amongst the two of us pro-rata of our mass
-        double d1, d2;
-        d1 = m2/(m1+m2)*dist;
-        d2 = m1/(m1+m2)*dist;
-        
-        //CCP_LOG_CH( s_chPark,"[ %d ] %I64d distance distributed is d1 %.32f and d2 %.32f",mCurrentTime, me->mId, d1, d2);
-     
-        // if one of us is a fixed object, we just forcefully move them out of collision regardless of mass and other stuffz
-        // However, if both of us are moveable, we use the recursive method.
-        if(me->isFree && other->isFree)
-        {
-            //CCP_LOG_CH( s_chPark," %I64d both me and other are free; Using fake impact point ",me->mId);
-            if( recursionDepth < 2) // Should never recurse more then once, but we allow two times :P
-            {
-                Vector3d tmpMe, tmpOther;
+		double p0q0_2 = p0q0 * p0q0;
+		if (p0q0_2 == 0.0)
+		{// I'm right into the other guy...choose an arbitary normal
+			if (me->mId > other->mId)
+				normal = Vector3d(1.0, 0.0, 0.0);
+			else
+				normal = Vector3d(-1.0, 0.0, 0.0);
+		}
+		else
+		{
+			normal = (q1 - p1);
+			normal.Normalize();
+		}
+		// Calculate the distance I need to move to be in the clear
+		// + 1 below is forcing extra distance to make sure that the recursed-with-values
+		// actually takes us out of the collision, otherwise, we may end in infinite
+		// recursion where the displacement doesn't progress at all over a tiny distance.
+		double dist = collRadius - sqrt(p0q0_2) + 1;
+		//CCP_LOG_CH( s_chPark,"[ %d ] %I64d need dist %.32f ",mCurrentTime, me->mId, dist);
 
-                // Save the position values, as we will restore them
-                tmpMe = me->mNewPos;
-                tmpOther = other->mNewPos;
+		// distribute the distance amongst the two of us pro-rata of our mass
+		double d1, d2;
+		d1 = m2 / (m1 + m2)*dist;
+		d2 = m1 / (m1 + m2)*dist;
 
-                // forcibly move the balls out of collision along their normal
-                me->mNewPos = me->mNewPos - d1*normal;
-                other->mNewPos = other->mNewPos + d2*normal;
+		//CCP_LOG_CH( s_chPark,"[ %d ] %I64d distance distributed is d1 %.32f and d2 %.32f",mCurrentTime, me->mId, d1, d2);
 
-                // Now pretend that the collision actually occurs there, and get the collision response from there
-                //CCP_LOG_CH( s_chPark,"[ %d ] Before recursing; me->LastC: (%f,%f,%f)\n", mCurrentTime, me->mLastC.x, me->mLastC.y, me->mLastC.z);
-                Potential(me, other, recursionDepth+1); 
-                //CCP_LOG_CH( s_chPark,"[ %d ] After recursing; me->LastC: (%f,%f,%f)\n", mCurrentTime, me->mLastC.x, me->mLastC.y, me->mLastC.z);
-                // Restore the old positions
-                me->mNewPos = tmpMe;
-                other->mNewPos = tmpOther;
+		// if one of us is a fixed object, we just forcefully move them out of collision regardless of mass and other stuffz
+		// However, if both of us are moveable, we use the recursive method.
+		if (me->isFree && other->isFree)
+		{
+			//CCP_LOG_CH( s_chPark," %I64d both me and other are free; Using fake impact point ",me->mId);
+			if (recursionDepth < 2) // Should never recurse more then once, but we allow two times :P
+			{
+				Vector3d tmpMe, tmpOther;
 
-                if( m2/m1 > 25.0 ) 
-                {    /* I.e. I'm the lighter party/will need to move much more then the other guy.
-                    We exagerate the acceleration of this guy to get him out quickly.  Otherwise the collision response 
-                     may fail to get us out of the other guy and by clicking a couple of times in space to change directions
-                     we canfly right through him. This requires effort and will and is only possible with light agile ships.
-                     To counter this I scale the acceleration vector to the distance we need to get out. This works
-                     well for light small ships but is hillarious to watch if two titans are added to park at the same spot. */
-                    //CCP_LOGWARN_CH( s_chPark,"[ %d ] Scaling collision response vector of %I64d: (%f,%f,%f)\n", mCurrentTime, me->mId, me->mLastC.x, me->mLastC.y, me->mLastC.z);
-                    me->mLastC = me->mLastC.Normalize() * dist;
-                    //CCP_LOGWARN_CH( s_chPark,"[ %d ] After scaling lastC we effectively made it: (%f,%f,%f)\n", mCurrentTime, me->mLastC.x, me->mLastC.y, me->mLastC.z);
-                }
-                
-                if( (me->mNewVel - other->mNewVel).LengthSq() > 0.0001)
-                    return;
-            }
-            else
-            {
-                CCP_LOGERR_CH( s_chPark,"[ %d ] EEEEK! ball %I64d heading for infinite recursion into ball %I64d",mCurrentTime,  me->mId, other->mId);
-                // will fall through to use old forceful method.
-            }
-            
-            CCP_LOG_CH( s_chPark,"[ %d ] %I64d did not return early.  acceleration for me (%f, %f, %f)",mCurrentTime, me->mId, a1.x, a1.y, a1.z);
-            // ---------------------------------------------
-        }
+				// Save the position values, as we will restore them
+				tmpMe = me->mNewPos;
+				tmpOther = other->mNewPos;
 
-        double tmp;
+				// forcibly move the balls out of collision along their normal
+				me->mNewPos = me->mNewPos - d1 * normal;
+				other->mNewPos = other->mNewPos + d2 * normal;
 
-        double normalComp = me->mLastG*normal;
-        // Calculate the acceleration
-        tmp = 1.0/(m1+dt*mFriction);
-        a1 = ( (-d1/(dt*tmp*m1) )*normal - me->mNewVel)/dt -normalComp*normal;
-        //CCP_LOG_CH( s_chPark,"[ %d ] %I64d acceleration for me (%f, %f, %f)",mCurrentTime, me->mId, a1.x, a1.y, a1.z);
-    }
+				// Now pretend that the collision actually occurs there, and get the collision response from there
+				//CCP_LOG_CH( s_chPark,"[ %d ] Before recursing; me->LastC: (%f,%f,%f)\n", mCurrentTime, me->mLastC.x, me->mLastC.y, me->mLastC.z);
+				Potential(me, other, recursionDepth + 1);
+				//CCP_LOG_CH( s_chPark,"[ %d ] After recursing; me->LastC: (%f,%f,%f)\n", mCurrentTime, me->mLastC.x, me->mLastC.y, me->mLastC.z);
+				// Restore the old positions
+				me->mNewPos = tmpMe;
+				other->mNewPos = tmpOther;
 
-    // Don't disrupt a missile's path if it is colliding with its target
-    if((me->mMode!=DSTBALL_MISSILE || other->mId!=me->mFollowId) && s >= me->mLastCollision)
-    {
-        Vector3d lastC = 0.85*a1;
-        if(s==me->mLastCollision)
-        {
-            //CCP_LOG_CH( s_chPark,"[ %d ] %I64d s %f equals last collision",mCurrentTime, me->mId, s);
-            // Use the stronger collision of the two
-            if(lastC.LengthSq() > me->mLastC.LengthSq())
-            {
-                me->mLastC = lastC;
-                //CCP_LOG_CH( s_chPark,"[ %d ] %I64d Setting my lastC to (%f, %f, %f)",mCurrentTime, me->mId, me->mLastC.x, me->mLastC.y, me->mLastC.z);
-            }
-            //CCP_LOG_CH( s_chPark,"[ %d ] %I64d NOT resetting my lastC", mCurrentTime, me->mId);
-        }
-        else
-        {
-            me->mLastC = lastC;
-            me->mLastCollision = s;
-            //CCP_LOG_CH( s_chPark,"[ %d ] %I64d s is %f and we have set lastC to (%f, %f, %f)",mCurrentTime, me->mId, s, me->mLastC.x, me->mLastC.y, me->mLastC.z);
-        }
-    }
+				if (m2 / m1 > 25.0)
+				{    /* I.e. I'm the lighter party/will need to move much more then the other guy.
+					We exagerate the acceleration of this guy to get him out quickly.  Otherwise the collision response
+					 may fail to get us out of the other guy and by clicking a couple of times in space to change directions
+					 we canfly right through him. This requires effort and will and is only possible with light agile ships.
+					 To counter this I scale the acceleration vector to the distance we need to get out. This works
+					 well for light small ships but is hillarious to watch if two titans are added to park at the same spot. */
+					 //CCP_LOGWARN_CH( s_chPark,"[ %d ] Scaling collision response vector of %I64d: (%f,%f,%f)\n", mCurrentTime, me->mId, me->mLastC.x, me->mLastC.y, me->mLastC.z);
+					me->mLastC = me->mLastC.Normalize() * dist;
+					//CCP_LOGWARN_CH( s_chPark,"[ %d ] After scaling lastC we effectively made it: (%f,%f,%f)\n", mCurrentTime, me->mLastC.x, me->mLastC.y, me->mLastC.z);
+				}
 
-    me->mCollisions.push_back(other->mId);
+				if ((me->mNewVel - other->mNewVel).LengthSq() > 0.0001)
+					return;
+			}
+			else
+			{
+				CCP_LOGERR_CH(s_chPark, "[ %d ] EEEEK! ball %I64d heading for infinite recursion into ball %I64d", mCurrentTime, me->mId, other->mId);
+				// will fall through to use old forceful method.
+			}
+
+			CCP_LOG_CH(s_chPark, "[ %d ] %I64d did not return early.  acceleration for me (%f, %f, %f)", mCurrentTime, me->mId, a1.x, a1.y, a1.z);
+			// ---------------------------------------------
+		}
+
+		double tmp;
+
+		double normalComp = me->mLastG*normal;
+		// Calculate the acceleration
+		tmp = 1.0 / (m1 + dt * mFriction);
+		a1 = ((-d1 / (dt*tmp*m1))*normal - me->mNewVel) / dt - normalComp * normal;
+		//CCP_LOG_CH( s_chPark,"[ %d ] %I64d acceleration for me (%f, %f, %f)",mCurrentTime, me->mId, a1.x, a1.y, a1.z);
+	}
+
+	// Don't disrupt a missile's path if it is colliding with its target
+	if ((me->mMode != DSTBALL_MISSILE || other->mId != me->mFollowId) && s >= me->mLastCollision)
+	{
+		Vector3d lastC = 0.85 * a1;
+		if (s == me->mLastCollision)
+		{
+			//CCP_LOG_CH( s_chPark,"[ %d ] %I64d s %f equals last collision",mCurrentTime, me->mId, s);
+			// Use the stronger collision of the two
+			if (lastC.LengthSq() > me->mLastC.LengthSq())
+			{
+				me->mLastC = lastC;
+				//CCP_LOG_CH( s_chPark,"[ %d ] %I64d Setting my lastC to (%f, %f, %f)",mCurrentTime, me->mId, me->mLastC.x, me->mLastC.y, me->mLastC.z);
+			}
+			//CCP_LOG_CH( s_chPark,"[ %d ] %I64d NOT resetting my lastC", mCurrentTime, me->mId);
+		}
+		else
+		{
+			me->mLastC = lastC;
+			me->mLastCollision = s;
+			//CCP_LOG_CH( s_chPark,"[ %d ] %I64d s is %f and we have set lastC to (%f, %f, %f)",mCurrentTime, me->mId, s, me->mLastC.x, me->mLastC.y, me->mLastC.z);
+		}
+	}
+
+	me->mCollisions.push_back(other->mId);
 }
 
-
-#if 0 //not currently in use
-void Ballpark::CalculateBoidPotential(Ball *ball, ListOfBalls &close)
-{
-    ListOfBalls::iterator bIt;
-    DBLVECTOR3 center;
-    DBLVECTOR3 heading;
-    int cnt = 0;
-
-    for( bIt=close.begin() ; bIt != close.end() ; ++bIt)
-    {
-        Ball *other = *bIt;
-
-        if(other->mMode != DSTBALL_BOID || other==ball)
-            continue;
-
-        DBLVECTOR3 dir = other->mNewPos - ball->mNewPos;
-        dir.Normalize();
-        DBLVECTOR3 tmp = ball->mNewVel;
-        tmp.Normalize();
-
-        if(dir * tmp < -0.5)
-            continue;
-
-        double dist2 = dir.LengthSq();
-        double factor = 1.0;
-
-        if(dist2 > 400.0)
-            factor = 400.0/dist2;
-
-
-        // Get the average point of all surrounding boids
-        center += factor*other->mNewPos;
-        // Get the average velocity of all surrounding boids
-        heading += factor*other->mNewVel;
-        cnt++;
-    }
-
-    if(cnt==0)
-        return;
-
-    center = center/cnt;
-    heading = heading/cnt;
-
-    DBLVECTOR3 a;
-    // Tendency to go towards local center of gravity
-    a = GotoThrust(ball, center);
-    ball->mLastG = mPara1*a;
-
-    // Tendency to go in the general direction of the surrounding
-    a = GotoThrust(ball, ball->mNewPos+AU*heading);
-
-    ball->mLastG += (1.0-mPara1)*a;
-}
-#endif
-
-
-bool Quadratic(double& v1, double& v2, double a, double b, double c)
-{
-    if(a==0.0)
-    {
-        return false;
-    }
-
-    double det = b*b-4.0*a*c;
-    if(det < 0.0)
-        return false;
-
-    det = sqrt(det);
-    v1 = (-b+det)*0.5/a;
-    v2 = (-b-det)*0.5/a;
-
-    return true;
-}
-
-/*
-//---------------------------------------------------------------------------------------
-// Potential calculates actual collision response between two balls
-//---------------------------------------------------------------------------------------
-
-Vector3d Ballpark::Potential(Ball *me, Ball *other)
-{
-    double c = 1.0/(me->mLastMass+dt*mFriction);
-    double a = 0.0;
-
-    // difference between me and the other guy
-    Vector3d delta = other->mNewPos - me->mNewPos;
-
-    // If we need an impulse it will come in this direction
-    Vector3d impulse = -delta;
-    impulse.Normalize();
-
-    // This is the critical distance between us (slightly inflated)
-    double radius = me->mRadius + other->mRadius;
-    radius *= 1.3;
-
-    // This is the relative velocity at which I am flinging myself at him
-    Vector3d vel = other->mNewVel - me->mNewVel;
-
-
-    // This is the difference from the critical length
-    double dx = radius - delta.Length();
-
-    if(dx > 0.0)
-    {
-        // I am intruding on this guy. Better get the hell out of here
-
-        // This is the component of our relative velocity on the impulse direction
-        double dv = vel * impulse;
-        if(dv > 0.0)
-        {
-            // Need to nullify speed as well
-        }
-
-        // This is the  impulse magnitude I need to get myself out of this rut
-        a = ((dv+dx/dt)/(me->mMass*c)-dx/dt)/dt/2.0;
-    }
-    else
-    {
-        // I am not intruding, but I might...in the next timestep, check that
-        Vector3d myPos,otherPos;
-
-        for(int i = 1;i<100;i++)
-        {
-            myPos =       me->mNewPos + (i/90.0)*dt*me->mNewVel;
-            otherPos = other->mNewPos + (i/90.0)*dt*other->mNewVel;
-
-            delta = myPos-otherPos;
-            dx = radius - delta.Length();
-            if(dx > 0.0)
-            {
-                CCP_LOG_CH( s_chPark,"Future collision at %f\n",i/99.0);
-                impulse = -delta;
-                impulse.Normalize();
-
-                double dv = vel * impulse;
-                a = ((dv+dx/dt)/(me->mMass*c)-dx/dt)/dt/2.0;
-                break;
-            }
-        }
-
-    }
-
-    // This is the actual impulse vector
-    return a*impulse;
-}
-*/
 #pragma endregion
 #pragma endregion
 
@@ -1572,7 +2100,6 @@ void Ballpark::InsertInBoxes(Partitionable *p)
 {
 	Box *box1, *top = nullptr;
 	long newBubbleId = -1;
-	float boundingRadius = p->GetBoundingRadius();
 
 	// first determine in what box the center of the ball is. Use the distance it can travel in one time-step
 	// as an inflated radius. Note than an inflated radius will always result in the same bubble as a non-inflated one.
@@ -3801,6 +4328,14 @@ void Ballpark::RemoveBall(
     //remove from moribund balls. For safety, it should have been already removed.
     moribundBalls.erase(ball);
 
+	if( s_useIterativeCollision )
+	{
+		//Remove from collision calculations
+		mCollisionLocations.erase(ball->mId);
+		mPotentialCollidables.erase(ball->mId);
+		mPotentialCollisionBalls.erase(ball->mId);
+	}
+
     // Get the ball out of all boxes
     ball->DeleteFromBoxes();
 
@@ -4125,6 +4660,13 @@ void Ballpark::ClearAll(
 
     mBalls.Clear();
     mGlobals.Clear();
+
+	if( s_useIterativeCollision )
+	{
+		mCollisionLocations.clear();
+		mPotentialCollisionBalls.clear();
+		mPotentialCollidables.clear();
+	}
 
 	std::unordered_map<ID, StaticCollidable*>::iterator cit;
 	StaticCollidable *c;

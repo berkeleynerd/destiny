@@ -18,7 +18,7 @@ class TestWarp(helpers.BallparkTestCase):
         x, y, z = 100000.0, 200000.0, 300000.0
         self.park.WarpTo(ball.id, x, y, z)
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             self.assertEqual(ball.mode, destiny.DSTBALL_WARP)
             locations.append((ball.x, ball.y, ball.z))

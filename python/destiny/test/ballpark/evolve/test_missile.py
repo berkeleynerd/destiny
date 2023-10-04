@@ -1,98 +1,117 @@
 from destiny.test import helpers
 
-class TestMissile(helpers.BallparkTestCase):
-    def test_not_aimed_not_massive(self):
-        src = helpers.create_space_ball(self.park)
-        dst = helpers.create_space_ball(self.park, x=10.0)
-        owner = helpers.create_space_ball(self.park)
-        self.park.LaunchMissile(src.id, dst.id, owner.id, False, False)
-        missile_coordinates = []
-        for i in xrange(10):
-            self.park.Evolve()
-            missile_coordinates.append((src.x, src.y, src.z))
 
-        expected_missile_coordinates = [
-            (0.0, 0.0, -144.18395768140732),
-            (0.028743517593736632, 0.0, -276.54578027116486),
-            (0.09803783106128847, 0.0, -397.24664580273657),
-            (0.18655641597057487, 0.0, -507.24096664400145),
-            (0.28592059677481174, 0.0, -607.4056283618579),
-            (0.39159797696709886, 0.0, -698.5457962466971),
-            (0.5007884360362507, 0.0, -781.4007136373806),
-            (0.6116371320541193, 0.0, -856.6490812109938),
-            (0.7228658129569013, 0.0, -924.9140088245537),
-            (0.8335741171028117, 0.0, -986.7675660216928)
-        ]
-        self.assertListOfPointsAlmostEqual(missile_coordinates, expected_missile_coordinates, places=2)
+class TestMissile(helpers.BallparkTestCase):
+    def setUp(self):
+        super(TestMissile, self).setUp()
+
+        self.dst = helpers.create_space_ball(self.park, x=1e6)
+        self.owner = helpers.create_space_ball(self.park)
+
+        self.collider = helpers.create_space_ball(self.park, x=2e3)
+        self.collider.radius = 1.9e3
+        self.missile = helpers.create_space_ball(self.park)
+
+        # Set missile like properties
+        self.missile.maxVelocity = 300
+        self.missile.Agility = 0.01
+        try:
+            self.missile.maxAngularVelocity = 2.0
+            self.missile.RotationalAgility = 0.5
+        except AttributeError:
+            pass
+        self.missile.mass = 1e4
+
+    def tearDown(self):
+        super(TestMissile, self).tearDown()
+        del self.dst
+        del self.owner
+        del self.collider
+        del self.missile
+
+    def test_not_aimed_not_massive_from_stationary(self):
+        self.park.LaunchMissile(self.missile.id, self.dst.id, self.owner.id, False, False)
+
+        # Non-aimed missiles launched from stationary objects should go backwards
+        # at a high speed.  It uses 180-degree rotation, causing minor inaccuracies
+        self.assertAlmostEquals(self.missile.vx, 0.0)
+        self.assertAlmostEquals(self.missile.vy, 0.0)
+        self.assertAlmostEquals(self.missile.vz, -150)
+
+        for i in range(20):
+            self.park.Evolve()
+
+        # After launch, they aim for their destination, ignoring the intruder
+        self.assertAlmostEquals(self.missile.vx, self.missile.maxVelocity * self.missile.speedFraction, places=2)
+        self.assertAlmostEquals(self.missile.vy, 0.0, delta=0.5)
+        self.assertAlmostEquals(self.missile.vz, 0.0, delta=0.5)
+
+        # The intruder should not have moved
+        self.assertAlmostEquals(self.collider.x, 2e3)
+        self.assertAlmostEquals(self.collider.y, 0.0)
+        self.assertAlmostEquals(self.collider.z, 0.0)
+
+    def test_not_aimed_not_massive_from_moving(self):
+        self.owner.vz = 10
+        self.park.LaunchMissile(self.missile.id, self.dst.id, self.owner.id, False, False)
+        self.owner.vz = 0
+
+        # Non-aimed missiles launched with velocity should go in the
+        # direction of the velocity with 150 on top of the velocity
+        self.assertAlmostEquals(self.missile.vx, 0.0)
+        self.assertAlmostEquals(self.missile.vy, 0.0)
+        self.assertAlmostEquals(self.missile.vz, 160)
+
+        for i in range(20):
+            self.park.Evolve()
+
+        # After launch, they aim for their destination
+        self.assertAlmostEquals(self.missile.vx, self.missile.maxVelocity * self.missile.speedFraction, places=4)
+        self.assertAlmostEquals(self.missile.vy, 0.0, places=0)
+        self.assertAlmostEquals(self.missile.vz, 0.0, places=0)
+
+        # The intruder should not have moved
+        self.assertAlmostEquals(self.collider.x, 2e3)
+        self.assertAlmostEquals(self.collider.y, 0.0)
+        self.assertAlmostEquals(self.collider.z, 0.0)
 
     def test_aimed_not_massive(self):
-        src = helpers.create_space_ball(self.park)
-        dst = helpers.create_space_ball(self.park, x=10.0)
-        owner = helpers.create_space_ball(self.park)
-        self.park.LaunchMissile(src.id, dst.id, owner.id, True, False)
-        missile_coordinates = []
-        for i in xrange(10):
+        self.park.LaunchMissile(self.missile.id, self.dst.id, self.owner.id, True, False)
+
+        # Aimed missiles should go straight in the direction of the target
+        self.assertAlmostEquals(self.missile.vx, 1.0)
+        self.assertAlmostEquals(self.missile.vy, 0.0)
+        self.assertAlmostEquals(self.missile.vz, 0.0)
+
+        for i in range(20):
             self.park.Evolve()
-            missile_coordinates.append((src.x, src.y, src.z))
 
-        expected_missile_coordinates = [
-            (1.373887883884875, 0.0, 0.0),
-            (3.454421657712534, 0.0, 0.0),
-            (6.183713317356512, 0.0, 0.0),
-            (9.508617008994243, 0.0, 0.0),
-            (13.380340555020881, 0.0, 0.0),
-            (16.923226839336774, 0.0, 0.0),
-            (19.35668806611188, 0.0, 0.0),
-            (20.771607665396463, 0.0, 0.0),
-            (21.251423951591427, 0.0, 0.0),
-            (20.872740022821617, 0.0, 0.0)
-        ]
-        self.assertListOfPointsAlmostEqual(missile_coordinates, expected_missile_coordinates)
+        # After launch, they should just keep going in that direction
+        self.assertAlmostEquals(self.missile.vx, self.missile.maxVelocity * self.missile.speedFraction, places=4)
+        self.assertAlmostEquals(self.missile.vy, 0.0, places=4)
+        self.assertAlmostEquals(self.missile.vz, 0.0, places=4)
 
-    def test_not_aimed_massive(self):
-        src = helpers.create_space_ball(self.park)
-        dst = helpers.create_space_ball(self.park, x=10.0)
-        owner = helpers.create_space_ball(self.park)
-        self.park.LaunchMissile(src.id, dst.id, owner.id, False, True)
-        missile_coordinates = []
-        for i in xrange(10):
-            self.park.Evolve()
-            missile_coordinates.append((src.x, src.y, src.z))
+        # The intruder should not have moved
+        self.assertAlmostEquals(self.collider.x, 2e3)
+        self.assertAlmostEquals(self.collider.y, 0.0)
+        self.assertAlmostEquals(self.collider.z, 0.0)
 
-        expected_missile_coordinates = [
-            (0.0, 0.0, -144.18395768140732),
-            (0.028743517593736632, 0.0, -276.54578027116486),
-            (0.09803783106128847, 0.0, -397.24664580273657),
-            (0.18655641597057487, 0.0, -507.24096664400145),
-            (0.28592059677481174, 0.0, -607.4056283618579),
-            (0.39159797696709886, 0.0, -698.5457962466971),
-            (0.5007884360362507, 0.0, -781.4007136373806),
-            (0.6116371320541193, 0.0, -856.6490812109938),
-            (0.7228658129569013, 0.0, -924.9140088245537),
-            (0.8335741171028117, 0.0, -986.7675660216928)
-        ]
-        self.assertListOfPointsAlmostEqual(missile_coordinates, expected_missile_coordinates, places=2)
+        # The missile should have moved beyond the collider
+        self.assertGreater(self.missile.x, self.collider.x)
 
     def test_aimed_massive(self):
-        src = helpers.create_space_ball(self.park)
-        dst = helpers.create_space_ball(self.park, x=10.0)
-        owner = helpers.create_space_ball(self.park)
-        self.park.LaunchMissile(src.id, dst.id, owner.id, True, True)
-        missile_coordinates = []
-        for i in xrange(10):
-            self.park.Evolve()
-            missile_coordinates.append((src.x, src.y, src.z))
+        self.park.LaunchMissile(self.missile.id, self.dst.id, self.owner.id, True, True)
 
-        expected_missile_coordinates = [
-            (1.373887883884875, 0.0, 0.0),
-            (3.454421657712534, 0.0, 0.0),
-            (6.183713317356512, 0.0, 0.0),
-            (9.508617008994243, 0.0, 0.0),
-            (13.380340555020881, 0.0, 0.0),
-            (16.923226839336774, 0.0, 0.0),
-            (19.35668806611188, 0.0, 0.0),
-            (20.771607665396463, 0.0, 0.0),
-            (21.251423951591427, 0.0, 0.0),
-            (20.872740022821617, 0.0, 0.0)
-        ]
-        self.assertListOfPointsAlmostEqual(missile_coordinates, expected_missile_coordinates)
+        for i in range(20):
+            self.park.Evolve()
+
+        # After launch, they should just keep going in that direction
+        self.assertAlmostEquals(self.missile.vx, self.missile.maxVelocity * self.missile.speedFraction, places=4)
+        self.assertAlmostEquals(self.missile.vy, 0.0, places=4)
+        self.assertAlmostEquals(self.missile.vz, 0.0, places=4)
+
+        # The intruder should not have moved
+        self.assertAlmostEquals(self.collider.x, 2e3)
+        self.assertAlmostEquals(self.collider.y, 0.0)
+        self.assertAlmostEquals(self.collider.z, 0.0)
+

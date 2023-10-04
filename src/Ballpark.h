@@ -46,6 +46,8 @@ TYPEDEF_BLUECLASS(ClientBall);
 
 #include "MapOfBalls.h"
 #include "Capsule.h"
+#include "CollisionBallProperties.h"
+#include "CollisionStructures.h"
 #include "OrientedBox.h"
 
 const double AU = .1495978707e12;
@@ -89,9 +91,6 @@ typedef std::vector<Vector3d> VectorOfVectors;
 typedef std::unordered_set<Capsule *> SetOfCapsules;
 typedef std::unordered_set<OrientedBox *> SetOfOrientedBoxes;
 
-bool Quadratic(double& v1, double& v2, double a, double b, double c);
-double CollideTwoSpheres(const Vector3d& p0, const Vector3d& p1, const Vector3d& q0, const Vector3d& q1, const double collRadius);
-
 class Ballpark :
 	public IEveBallpark,
 	public IBlueEvents
@@ -100,6 +99,7 @@ class Ballpark :
 friend class Ball;
 friend class ClientBall;
 friend class Capsule;
+friend class CollisionBallProperties;
 friend class OrientedBox;
 public://Exposed
 
@@ -864,10 +864,142 @@ private:
 	PyObject* GetBallIdsInRangeOfTriangle(PyObject* args);
 	PyObject* GetBallIdsInCone(PyObject* args);
 	PyObject* GetBallIdsInCapsule(PyObject* args);
-	// Calculates the avoidance contribution to the dynamical state
-	void Gradient(Ball *b);
-	void Potential(Ball *me,Ball *other, int recurionsDepth=0);
-	//void CalculateBoidPotential(Ball *, ListOfBalls &);
+
+	void Gradient(Ball* b);
+	void Potential(Ball *me, Ball *other, int recurionsDepth = 0);
+	void CalculateIterativeCollisionResponses();
+
+	// Store the information in a map for fast lookup
+	std::unordered_map<ID, CollisionBallProperties> mCollisionLocations;
+
+	// Cache the potential colliders as these don't change during the iterations
+	std::unordered_map<ID, VectorOfBalls> mPotentialCollisionBalls;
+	std::unordered_map<ID, VectorOfStaticCollidables> mPotentialCollidables;
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Returns in collisionItem the collision that occur with
+	//     static collideables in the next step.
+	// Arguments:
+	//     ballProp - The ball properties, will be updated if needed
+	//     collisionItem - Contains, on output, the collision with static objects in the park
+	//     balls - The ball collision candidates
+	//     collidables - The collidable collision candidates
+	// -------------------------------------------------------------
+	void GetNextCollisionStatic(CollisionBallProperties& ballProp, CollisionItem& collisionItem, VectorOfBalls& balls, VectorOfStaticCollidables& collidables);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the collision and their responses with free balls.
+	//     Should be called after GetNextCollisionStatic with same collisionItem.
+	//     Separated, because it requires a more complicated logic.
+	// Arguments:
+	//     ballProp - The ball propertis, will be updated if needed
+	//     collisionItem - in: output from static collisions, out: the collision with free balls checked as well
+	//     balls - The ball collision candidates
+	// -------------------------------------------------------------
+	void GetNextCollisionFree(CollisionBallProperties& ballProp, CollisionItem& collisionItem, VectorOfBalls& balls, size_t collision_iteration);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Using elliptical approximation, calculates the vector from
+	//     the CM to the point of impact for ball.
+	//     Uses the miniball position if given in the collision.
+	//     NOTE: ballLoc has to be fully calculated before entry
+	// Arguments:
+	//     ballLoc - The location of the ball at time of collision
+	//     collision - The properties of the collision
+	// Return Value:
+	//     The point of impact
+	// -------------------------------------------------------------
+	Vector3d ApproximateEllipsePointOfImpact(Ball* ball, BallLocation& ballLoc, const CollisionItem& collision);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the actual impact on the ball from the collision.
+	//     Only works for static colliders.
+	//     Uses https://en.wikipedia.org/wiki/Collision_response
+	// Arguments:
+	//     ballProp - The pre-calculated properties of the ball
+	//     collision - The collision in question, on return the impact is correct
+	// -------------------------------------------------------------
+	void CalculateCollisionImpactStatic(CollisionBallProperties& ballProp, CollisionItem& collision);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the actual impact on the ball from the collision.
+	//     Only works for free ball collisions.
+	//     Uses https://en.wikipedia.org/wiki/Collision_response
+	// Arguments:
+	//     ballProp - The pre-calculated properties of the first ball
+	//     otherProp - The pre-calculated properties of the other ball
+	//     collision - Information on the collision. On return the impact is for the first ball
+	// Return Value:
+	//      The collision item for the other ball, with calculated impact
+	// -------------------------------------------------------------
+	CollisionItem CalculateCollisionImpactFree(CollisionBallProperties& ballProp, CollisionBallProperties& otherProp, CollisionItem& collision);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Takes the current impact and adds it to the ball.
+	//     Removes any impacts that have a later timeOfImpact
+	//     and makes sure ones with a free ball are properly
+	//     taken care of.
+	// Arguments:
+	//     impact - The impact to add
+	//     collIter - The current collision iteration
+	//     ball - The ball to add the impact to
+	// -------------------------------------------------------------
+	void AddImpact(CollisionImpact& impact, size_t collIter, Ball* ball);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Removes impact from ball with the given collider and time of impact.
+	//     Does nothing in rare cases with simultaneous collisions with two balls.
+	//     Goes recursively through all possible free-free removals.
+	// Arguments:
+	//     time - The time of impact
+	//     collider - The ID of the collider
+	//     ball - The ball to remove the impact from.</param>
+	// -------------------------------------------------------------
+	void RemoveImpactFromFree(double time, ID collider, Ball* ball);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Define this in one place only to avoid mistakes when changing things.
+	// Arguments:
+	//     ball - The ball colliding
+	//     neighbor - The ball it collides with
+	// Return Value:
+	//     True if no collision should happen
+	// -------------------------------------------------------------
+	static inline bool CollisionBallNeighborIgnore(Ball* ball, Ball* neighbor);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the collision responses for ball in current iteration.
+	//     Updates the mCollisionLocations structure.
+	// Arguments:
+	//     ball - The ball to calculate responses for
+	//     collisionIteration - Counter for the iterations
+	// Return Value:
+	//     True if a collision was added to the ball
+	// -------------------------------------------------------------
+	bool CalculateCollisionResponse(Ball* ball, size_t collisionIteration);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the velocity and position of the ball after a
+	//     time dt has passed from current time.  Assumes the
+	//     acceleration for the current timestep has already been
+	//     calculated and takes the current collision responses into account.
+	// Arguments:
+	//     ball - The ball for which to calculate
+	//     t - The time passed since initial position (Generally between 0 and park::dt, but is not checked for validity)
+	//     position - The position, should be the initial value at t=0 on input, final value on output
+	//     velocity - The velocity, should be the initial value at t=0 on input, final value on output
+	// -------------------------------------------------------------
+	void CalculateBallPositionVelocity(Ball* ball, double t, Vector3d& position, Vector3d& velocity);
 
 	// Actual infinitesimal integration
 	void Integrate(Vector3d& p, Vector3d& v, const Vector3d& a, double mass, double k, double timefactor, double step);
@@ -956,6 +1088,7 @@ public:
 	PyObject* PyGetBallBoxKeys(PyObject* args);
 	PyObject* PyGetBoxChildren(PyObject* args);
     PyObject* PyGetBoxKey(PyObject* args);    
+	PyObject* PyEnableIterativeCollision( PyObject* args );
 };
 
 TYPEDEF_BLUECLASS(Ballpark);

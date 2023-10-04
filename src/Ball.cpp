@@ -91,6 +91,7 @@ Ball::Ball(IRoot* lockobj) :
     mLastCollision(-1.0),
     mWithinRange(false),
     mHandled(false),
+    mInDeadBubble(false),
     mHasProximity(false),
     mNotificationRange(0.0),
     mTrackingPtr(0),
@@ -714,7 +715,19 @@ void Ball::InsertInBox(Box* box)
 
 double Ball::GetInflatedRadius(double dt)
 {
-	return mRadius + dt * mNewVel.Length();
+	if (isFree)
+	{
+		const auto m = mMass * mAgility;
+		const auto a = mPark->mFriction * mSpeedFraction * (double)mMaxVel / m;
+		const auto v = mNewVel.Length();
+		const auto k = mPark->mFriction;
+		const auto maxPossSpeed = (m * a - (m * a - v * k) * mTimeFactor) / k;
+		return mRadius + dt * maxPossSpeed;
+	}
+	else
+	{
+		return mRadius;
+	}
 }
 
 float Ball::GetBoundingRadius()
@@ -1052,7 +1065,7 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
     {
         mLastPos = mOldPos;
         mLastVel = mOldVel;
-        mPark->Integrate(mLastPos, mLastVel, mIntAcc, mMass * mAgility, mPark->mFriction, mTimeFactor, fraction);
+        mPark->CalculateBallPositionVelocity(this, fraction, mLastPos, mLastVel);
     }
 
     // Calculate the delta with last position and keep it

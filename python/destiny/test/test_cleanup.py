@@ -7,12 +7,12 @@ import blue
 import destiny
 
 
-CID_BALL = "destiny.Ball"
-CID_PARK = "destiny.Ballpark"
-CID_CLIENTBALL = "destiny.ClientBall"
-CID_MINIBALL = 'destiny.MiniBall'
-CID_MINIBOX = 'destiny.MiniBox'
-CID_MINICAPSULE = 'destiny.MiniCapsule'
+CID_BALL = "_destiny.Ball"
+CID_PARK = "_destiny.Ballpark"
+CID_CLIENTBALL = "_destiny.ClientBall"
+CID_MINIBALL = '_destiny.MiniBall'
+CID_MINIBOX = '_destiny.MiniBox'
+CID_MINICAPSULE = '_destiny.MiniCapsule'
 
 PYTHON_MODULE_PATH = os.path.abspath(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 

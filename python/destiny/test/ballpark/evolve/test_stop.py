@@ -4,7 +4,7 @@ class TestStop(helpers.BallparkTestCase):
     def test_stopped_ball_is_stopped(self):
         stopped_ball = helpers.create_space_ball(self.park)
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             self.assertEqual(stopped_ball.x, 0.0)
             self.assertEqual(stopped_ball.y, 0.0)
@@ -20,7 +20,7 @@ class TestStop(helpers.BallparkTestCase):
 
         self.park.Stop(stopped_ball.id)
 
-        for i in xrange(10):
+        for i in range(10):
             self.park.Evolve()
             stopped_velocity_list.append((stopped_ball.vx, stopped_ball.vy, stopped_ball.vz))
 

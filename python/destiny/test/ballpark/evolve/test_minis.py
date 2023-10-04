@@ -13,32 +13,6 @@ class TestMiniCapsule(helpers.BallparkTestCase):
         self.assertEqual(mini_capsule.by, 2)
         self.assertEqual(mini_capsule.bz, 3)
 
-    def test_collide(self):
-        parent, = self.add_balls(1)
-        parent.x = 100
-        parent.y = 0
-        parent.z = 0
-        parent.AddMiniCapsule(100, 0, 0, 200, 0, 0, 10)
-        src = helpers.create_space_ball(self.park, x=250, y=30, z=0)
-        src.radius = 10.0
-
-        self.park.GotoPoint(src.id, 250, 0, 0)
-        coords = self.evolve_ball_and_get_coordinates(src, 10)
-
-        expected_coords = [
-            (250.0, 29.60534057196273, 0.0),
-            (250.0, 28.46477715834572, 0.0),
-            (250.0, 26.639413762737924, 0.0),
-            (250.0, 24.18534878569255, 0.0),
-            (250.0, 21.15408508070178, 0.0),
-            (250.0, 20.40492196989744, 0.0),
-            (250.0, 21.67193142963499, 0.0),
-            (250.0, 22.056913993009132, 0.0),
-            (250.0, 21.632124770171952, 0.0),
-            (250.0, 20.463899776331143, 0.0)
-        ]
-
-        self.assertListOfPointsAlmostEqual(coords, expected_coords)
 
 class TestMiniBox(helpers.BallparkTestCase):
     def test_add(self):
@@ -101,36 +75,6 @@ class TestMiniBox(helpers.BallparkTestCase):
         self.assertEqual(mini_box.z2, 1.0)
 
 
-    def test_collide(self):
-        parent, = self.add_balls(1)
-        parent.x = 0
-        parent.y = 0
-        parent.z = 0
-        parent.AddMiniBox(100.0, 0.0, 0.0,
-                          10.0, 0.0, 0.0,
-                          0.0, 10.0, 0.0,
-                          0.0, 0.0, 10.0)
-        src = helpers.create_space_ball(self.park, x=105, y=30, z=5)
-        src.radius = 10.0
-
-        self.park.GotoPoint(src.id, 105, 5, 5)
-        coords = self.evolve_ball_and_get_coordinates(src, 10)
-
-        expected_coords = [
-            (105.0, 29.60534057196273, 5.0),
-            (105.0, 28.46477715834572, 5.0),
-            (105.0, 26.639413762737924, 5.0),
-            (105.0, 24.18534878569255, 5.0),
-            (105.0, 21.15408508070178, 5.0),
-            (105.0, 20.41896408511828, 5.0),
-            (105.0, 21.71251305959967, 5.0),
-            (105.0, 22.121861036713348, 5.0),
-            (105.0, 21.71944122765141, 5.0),
-            (105.0, 20.571753158732008, 5.0)
-        ]
-        self.assertListOfPointsAlmostEqual(coords, expected_coords)
-
-
 class TestMiniBall(helpers.BallparkTestCase):
     def test_add(self):
         parent, = self.add_balls(1)
@@ -140,30 +84,46 @@ class TestMiniBall(helpers.BallparkTestCase):
         self.assertEqual(mini_ball.y, 2)
         self.assertEqual(mini_ball.z, 3)
 
-
     def test_collide(self):
         parent, = self.add_balls(1)
         parent.x = 100
         parent.y = 0
         parent.z = 0
         parent.AddMiniBall(100, 0, 0, 10)
-        src = helpers.create_space_ball(self.park, x=200, y=30, z=0)
+        helpers.create_space_ball.next_object_id = 2
+        src = helpers.create_space_ball(self.park, x=200, y=0, z=-30)
         src.radius = 10.0
 
         self.park.GotoPoint(src.id, 200, 0, 0)
-        coords = self.evolve_ball_and_get_coordinates(src, 10)
+        coords = self.evolve_ball_and_get_coordinates(src, 20)
 
-        expected_coords = [
-            (200.0, 29.60534057196273, 0.0),
-            (200.0, 28.46477715834572, 0.0),
-            (200.0, 26.639413762737924, 0.0),
-            (200.0, 24.18534878569255, 0.0),
-            (200.0, 21.15408508070178, 0.0),
-            (200.0, 20.41896408511828, 0.0),
-            (200.0, 21.71251305959967, 0.0),
-            (200.0, 22.121861036713348, 0.0),
-            (200.0, 21.71944122765141, 0.0),
-            (200.0, 20.571753158732008, 0.0)
-        ]
+        # Make sure there is no significant overlap, and we move only in
+        # the z-direction
+        for coord in coords:
+            self.assertAlmostEquals(coord[0], 200)
+            self.assertAlmostEquals(coord[1], 0.0)
+            self.assertTrue(1.1*coord[2] < -20, "Significant overlap: %f, %f"%(coord[2], -20))
 
-        self.assertListOfPointsAlmostEqual(coords, expected_coords)
+    def test_collide_with_miniballs(self):
+        parent, = self.add_balls(1)
+        parent.x = 100
+        parent.y = 0
+        parent.z = 0
+        parent.AddMiniBall(100, 0, 0, 10)
+        helpers.create_space_ball.next_object_id = 2
+        src = helpers.create_space_ball(self.park, x=200, y=0, z=-30)
+        src.radius = 10.0
+        #Add several balls, only one of which should be hit
+        src.AddMiniBall(4, 0, 4, 3)
+        src.AddMiniBall(0, 0, 5, 2)
+        src.AddMiniBall(-4, 0, 4, 3)
+
+        self.park.GotoPoint(src.id, 200, 0, 0)
+        coords = self.evolve_ball_and_get_coordinates(src, 20)
+
+        # Make sure there is no significant overlap, and we move only in
+        # the z-direction.  The overlap is roughly estimated
+        for coord in coords:
+            self.assertAlmostEquals(coord[0], 200)
+            self.assertAlmostEquals(coord[1], 0.0)
+            self.assertTrue(1.01*coord[2] < -17, "Significant overlap: %f, %f"%(coord[2], -17))

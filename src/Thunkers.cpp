@@ -36,15 +36,10 @@ PyObject* Ballpark::Py__init__(
 	PyObject* args
 	)
 {
-	long is_master = isMaster;
-	if (!PyArg_ParseTuple(args, "|i", &is_master))
-		return NULL;
-	isMaster = false;
-	if(is_master)
-		isMaster = true;
+	if( !PyArg_ParseTuple( args, "|p", &isMaster ) )
+		return nullptr;
 
-	Py_INCREF(Py_None);
-	return Py_None;
+	Py_RETURN_NONE;
 }
 
 //---------------------------------------------------------------------------------------
