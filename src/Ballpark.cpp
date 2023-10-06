@@ -46,7 +46,10 @@ BLUE_DEFINE_INTERFACE( IEveBallpark );
 
 const char* TICK_EVOLVE = "Destiny::Tick";
 #define SIGNUM(X) (X>=0.0?1.0:-1.0)
+#define SIGNUMF( X ) ( X >= 0.0f ? 1.0f : -1.0f )
 #define ABS(X) ((X)<0.0f?-(X):(X))
+
+static constexpr double _PI_ = 3.141592653589793238462643383279502884197;
 
 PyObject * Ballpark::s_ballNotInParkCallback = NULL;
 static int ballparkCounter = 0;
@@ -391,7 +394,7 @@ void Ballpark::CalculateIterativeCollisionResponses()
 		++collisionIteration;
 
 		// Performance cap, reducing this allows agile ships to fly through thin collision regions.
-		if( collisionIteration >= s_collisionMaxIterations )
+		if( collisionIteration >= g_collisionMaxIterations )
 			break;
 
 		// Next balls become current and we empty next balls
@@ -402,6 +405,18 @@ void Ballpark::CalculateIterativeCollisionResponses()
 	} while( true );
 }
 
+
+//---------------------------------------------------------------------------------------
+// Check if dynamical orientation is disabled for this ball.
+//---------------------------------------------------------------------------------------
+bool DynamicalOrientationDisabledForBall( Ball* ball )
+{
+	if( g_disableDynamicalOrientationForMissiles )
+	{
+		return ball->mMode == DSTBALL_MISSILE;
+	}
+	return false;
+}
 
 //---------------------------------------------------------------------------------------
 // Evolve advances the whole simulation by one timestep
@@ -437,7 +452,7 @@ void Ballpark::Evolve(Be::Time timestamp)
 
     // Now that we have accumulated accelerations due to intrisic ball behavior
     // Calculate the possible collision responses
-	if( s_useIterativeCollision )
+	if( g_useIterativeCollision )
 	{
 		CalculateIterativeCollisionResponses();
 	}
@@ -452,7 +467,7 @@ void Ballpark::Evolve(Be::Time timestamp)
         if(ball->mInDeadBubble)
             continue;
 
-		if( !s_useIterativeCollision && ball->isMassive )
+		if( !g_useIterativeCollision && ball->isMassive )
 		{
 			// Get the gradient term, with contribution from nearby objects
 			ball->mLastCollision = -1.0;
@@ -485,8 +500,26 @@ void Ballpark::Evolve(Be::Time timestamp)
         }
         else
         {
-            CalculateBallPositionVelocity(ball, dt, p, v);
+			CalculateBallPositionVelocity( ball, dt, p, v );
         }
+		if( g_useDynamicalOrientation && !DynamicalOrientationDisabledForBall(ball) )
+		{
+			//Update the orientation
+			Quaternion rotation = ball->mNewRot;
+			Vector3 angVel = ball->mNewAngVel;
+
+			if(g_useIterativeCollision)
+			{
+				CalculateBallRotationVelocity( ball, 1.0, rotation, angVel );
+			}
+			else
+			{
+				const float tau = ( float( ball->mMass ) * ball->mAgility * ball->mRotAgility ) / float( mFriction );
+				ApplyTorque( rotation, angVel, ball->mTorque, ball->mRoll, tau, 1.0f );
+			}
+			ball->mOldRot = rotation;
+			ball->mOldAngVel = angVel;
+		}
         ball->mOldPos = p;
         ball->mOldVel = v;
     } // end of integrating over balls
@@ -551,8 +584,19 @@ void Ballpark::Evolve(Be::Time timestamp)
         std::swap( ball->mNewPos, ball->mOldPos );
         std::swap( ball->mNewVel, ball->mOldVel );
 
-        //CCP_LOGWARN_CH( s_chPark,"%I64d@%d: [%f,%f,%f]",ball->mId,mCurrentTime,ball->mNewPos.x,ball->mNewPos.y,ball->mNewPos.z);
-
+		if( g_useDynamicalOrientation )
+		{
+			// Do not update the values if we end up with NaNs or infs.
+			if( std::isfinite( LengthSq( ball->mOldRot ) ) )
+				std::swap( ball->mNewRot, ball->mOldRot );
+			if( std::isfinite( LengthSq( ball->mOldAngVel ) ) )
+				std::swap( ball->mNewAngVel, ball->mOldAngVel );
+			if( DynamicalOrientationDisabledForBall( ball ) )
+			{
+				ball->SnapOrientation();
+			}
+		}
+		else
         {
             ball->CalculateYawPitchRoll();
         }
@@ -574,7 +618,7 @@ void Ballpark::Evolve(Be::Time timestamp)
         // otherwise trigger a missile explosion by adding a fake collision with self
         if (ball->mMode == DSTBALL_MISSILE)
         {
-			if( s_useIterativeCollision )
+			if( g_useIterativeCollision )
 			{
 				// TODO: This should probably be changed, but for now use the mCollisions storage of ball
 				// I don't think it is used anywhere else, but just be on the safe side
@@ -620,6 +664,92 @@ void Ballpark::Evolve(Be::Time timestamp)
     //timer.Reset();
 }
 
+Vector3d Ballpark::GetOrbitalNormal( Ball* ball, Vector3d& toVector, double& dist )
+{
+	Vector3d orbitalVector( 0.0, 0.0, 0.0 );
+
+	if( !ball )
+		return orbitalVector;
+
+	if( ball->mMode != DSTBALL_ORBIT )
+		return orbitalVector;
+
+	Ball* other = ball->mFollowPtr;
+
+	// Calculate this difference first, used in all paths below
+	toVector = other->mNewPos - ball->mNewPos;
+
+	if( !g_useNewOrbit )
+	{
+		dist = toVector.Length();
+		// Make the vector unit
+		if( dist > 0 )
+			toVector /= dist;
+		else
+			// On top of the other ball, pick a "random" direction
+			toVector = Vector3d( 0.0, 0.0, 1.0 );
+
+		return DefaultOrbitalNormal( ball );
+	}
+
+	// Make a prediction on where he will be next timestep and calculate our
+	// distance to that point.
+	toVector += other->mNewVel * dt;
+	dist = toVector.Length();
+	// Make the vector unit
+	if( dist > 0 )
+		toVector /= dist;
+	else
+		// On top of the other ball, pick a "random" direction
+		toVector = Vector3d( 0.0, 0.0, 1.0 );
+
+	// Use the cross product between our velocity and the distance as the orbital plane.
+	orbitalVector = toVector;
+	orbitalVector.Cross( ball->mNewVel );
+	auto length = orbitalVector.LengthSq();
+	if( length > 1e-12 )
+	{
+		return orbitalVector / std::sqrt( length );
+	}
+
+	if( !g_useDynamicalOrientation )
+	{
+		return DefaultOrbitalNormal( ball );
+	}
+
+	// Use the cross product between our heading and the distance
+	Vector3 heading( 0.0, 0.0, 1.0 );
+	ball->GetRotatedVector( heading );
+	orbitalVector = toVector;
+	orbitalVector.Cross( Vector3d( heading ) );
+
+	// Normalize, with a fallback in case we are pointing straight to/away from the target
+	length = orbitalVector.LengthSq();
+	if( length <= 1e-12 )
+	{
+		return DefaultOrbitalNormal( ball );
+	}
+	else
+	{
+		return orbitalVector / std::sqrt( length );
+	}
+}
+
+Vector3d Ballpark::DefaultOrbitalNormal( Ball* ball )
+{
+	// Default precessing orbital plane
+	double phi1 = mCurrentTime * ORBITAL_PRECESSION;
+	// only use the last 16 bits of the mId
+	// this ensures that different ships orbiting the same target will have different orbital planes
+	double phi2 = ( ball->mId & 0x000000000000ffff ) + mCurrentTime * ORBITAL_PRECESSION;
+	Vector3d orbitalVector( cos( phi1 ) * cos( phi2 ), sin( phi2 ), sin( phi1 ) * cos( phi2 ) );
+	// shitround the components to 7 decimal digits
+	orbitalVector.x = (double)( ( int64_t )( orbitalVector.x * 10000000 ) ) / 10000000;
+	orbitalVector.y = (double)( ( int64_t )( orbitalVector.y * 10000000 ) ) / 10000000;
+	orbitalVector.z = (double)( ( int64_t )( orbitalVector.z * 10000000 ) ) / 10000000;
+
+	return orbitalVector;
+}
 
 void Ballpark::Integrate(Vector3d& p, Vector3d& v, const Vector3d& a, double m, double k, double timeFactor, double t)
 {
@@ -711,7 +841,64 @@ void Ballpark::EvolveBehaviorForBall(Ball* ball)
 
     }; // End of switch statement
 
-    CapAcceleration(ball, a);
+    if( g_useDynamicalOrientation && !DynamicalOrientationDisabledForBall( ball ) )
+	{
+		// This does not update the values for the ball, in case we adjust these
+		// for collision responses.
+
+		// Calculate the torque and roll
+		// Roll into acceleration, if it is large enough
+		const float accel = static_cast<float>( a.Length() );
+		const float maxAccel = static_cast<float>( mFriction ) * ball->mSpeedFraction * ball->mMaxVel / ( static_cast<float>( ball->mMass ) * ball->mAgility );
+
+		// To avoid rather annoying rotations when approaching a stationary ship using the follow command
+		// The 1e-2 is not a sacred number, it may need to be changed
+		if( accel > 1e-2 * maxAccel )
+		{
+			// Only need to evaluate the roll to adjust the acceleration
+			ball->mTorque = GotoTorqueBreaks( ball, a.AsVector3() );
+			ball->mRoll = GotoRollBreaks( ball, ball->mTorque );
+
+			// Evaluate the new rotation to get the direction for the acceleration
+			// Cheat here and use the new rotation for the acceleration
+			// That stabilizes the algorithm
+			auto rotation = ball->mNewRot;
+			auto angvel = ball->mNewAngVel;
+
+			const float tau = ( float( ball->mMass ) * ball->mAgility * ball->mRotAgility ) / float( mFriction );
+			ApplyTorque( rotation, angvel, ball->mTorque, ball->mRoll, tau, 1.0f );
+
+			const auto mat = RotationMatrix( rotation );
+			const auto heading = TransformCoord( Vector3( 0., 0., 1. ), mat );
+
+			const auto cosangle = std::min( 1.0f, Dot( heading, a.AsVector3() ) / accel );
+
+			if( cosangle <= 0. )
+				a = Vector3d( 0., 0., 0. );
+			else
+			{
+				const auto factor = cosangle * cosangle;
+				a = heading * ( factor * accel );
+			}
+		}
+		else
+		{
+			// Heading to last known potision can lead to very strange rotations.  Keep current heading and roll upwards
+			// When warping we should always align to goto position
+			if( ball->IsWarping() )
+				ball->mTorque = GotoTorqueBreaks( ball, ( ball->mGoto - ball->mNewPos ).AsVector3() );
+			else
+				ball->mTorque = Vector3( 0.0f, 0.0f, 0.0f );
+
+			//Evaluate the new roll
+			ball->mRoll = GotoRollBreaks( ball, ball->mTorque );
+		}
+	}
+	else
+	{
+		CapAcceleration( ball, a );
+	}
+
     ball->mLastG = a;
 }
 
@@ -919,6 +1106,24 @@ Vector3d Ballpark::EvolveFollow(Ball* ball)
     return GotoThrust(ball, target, ball->mMode==DSTBALL_MISSILE);
 }
 
+// -------------------------------------------------------------
+//  Description:
+//      Calculates the acceleration vector for a ball in an "orbit" mode using some insane math.
+//      Updates the goto position of the ball each time it is called.
+//      Uses the appropriate method to evolve the orbit depending on settings value.
+//  Arguments:
+//      ball - the ball to evolve
+//  Returns:
+//      Acceleration vector for the ball.
+// -------------------------------------------------------------
+Vector3d Ballpark::EvolveOrbit( Ball* ball, long currentTime )
+{
+	if(g_useNewOrbit)
+	{
+		return EvolveNewStyleOrbit( ball, currentTime );
+	}
+	return EvolveOldStyleOrbit(ball, currentTime);
+}
 
 // -------------------------------------------------------------
 //  Description:
@@ -929,7 +1134,119 @@ Vector3d Ballpark::EvolveFollow(Ball* ball)
 //  Returns:
 //      Acceleration vector for the ball.
 // -------------------------------------------------------------
-Vector3d Ballpark::EvolveOrbit(Ball* ball, long currentTime)
+Vector3d Ballpark::EvolveNewStyleOrbit( Ball* ball, long currentTime )
+{
+	// The maximum thrust of this ball, given its mass and current cruise velocity
+	const double cruiseVelocity = (double)( ball->mSpeedFraction ) * (double)( ball->mMaxVel );
+	const double k = mFriction;
+	const double tau = ( ball->mMass * ball->mAgility ) / k;
+	const double maxThrust = cruiseVelocity / tau;
+
+	// This is the guy we are following
+	Ball* other = ball->mFollowPtr;
+
+	// This is the desired distance between the balls
+	double r = (double)ball->mFollowRange + (double)ball->mRadius + (double)other->mRadius;
+
+	// Make a prediction on where he will be next timestep and calculate our
+	// distance to that point
+	Vector3d toVector;
+	double dist;
+	Vector3d orbitalVector = GetOrbitalNormal( ball, toVector, dist );
+
+	// This is in the direction of the orbit
+	Vector3d radialVector = orbitalVector;
+	radialVector.Cross( toVector );
+	radialVector.Normalize();
+	// radial is now transverse to the toVector
+
+	// Move along an exponential spiral, whose angle decreases linearly as we approach
+	// It is parameterised as x(t) = d * exp(a*t) * cos(t) and y(t) = d * exp(a*t) * sin(t)
+	// with a = tan(alpha) where alpha is the angle of impact
+	// The connection between t and the distance along the spiral s is given by
+	// s = d * sqrt(a**2 + 1)/a (exp(a*t) - 1)
+
+	// It is possible to have rather rapid speed variations, which will cause this to change.
+	// If we are currently moving at greater speed than our current speed, use that as our maximum speed
+	const double maxSpeed = std::max( cruiseVelocity, ball->mNewVel.Length() );
+
+	// Use the time to cover the distance at maximum velocity to set the
+	// exponential factor and therefore angle of impact.  Cap the exponential factor between -1 and 1
+	// equivalent to moving at most at 45 degree angle
+	double angle = 0.1 * ( r - dist ) / maxSpeed;
+	if( angle < -1 )
+		angle = -1;
+	if( angle > 1 )
+		angle = 1;
+
+	// put a lower limit on dist for the rest to work
+	if( dist < 0.1 )
+		dist = 0.1;
+
+
+	// Estimate the maximum velocity based on the curvature of the track.  This limits the velocity
+	// to a value where the maximum thrust is used to keep us on track, ignoring friction
+	const double max_velocity = std::sqrt( dist * maxThrust );
+
+	//Use the lower of cruise/current velocity and the curvature velocity.
+	const double estimatedVelocity = std::min( maxSpeed, max_velocity );
+	const double estimatedDistance = estimatedVelocity * dt;
+
+	// Heading this way, relative to our position
+	Vector3d gotoPoint;
+
+	// At that point, we want this velocity
+	Vector3d gotoVelocity;
+
+	// If angle is small, we really just want a circle
+	if( std::fabs( angle ) < 1e-10 )
+	{
+		const double t_desired = estimatedDistance / dist;
+		gotoPoint = toVector * ( dist * ( 1.0 - std::cos( t_desired ) ) ) +
+			radialVector * ( dist * std::sin( t_desired ) );
+
+		gotoVelocity = radialVector * ( std::cos( t_desired ) * estimatedVelocity ) + toVector * ( std::sin( t_desired ) * estimatedVelocity );
+	}
+	else
+	{
+		const double factor = estimatedDistance * angle / dist / std::sqrt( angle * angle + 1 );
+		const double t_desired = factor < -0.999 ?
+			std::log( 0.001 ) / angle :
+			( std::fabs( factor ) > 1e-10 ? std::log( 1 + factor ) / angle : factor / angle );
+
+		// Our desired destination is the current point plus that travelled along the spiral.  Set that as a goto direction
+		const auto dexpterm = dist * std::exp( angle * t_desired );
+		gotoPoint = toVector * ( dist - dexpterm * std::cos( t_desired ) ) +
+			radialVector * ( dexpterm * std::sin( t_desired ) );
+
+		// We want the velocity to be along the trajectory at maximum
+		gotoVelocity = toVector * ( -angle * std::cos( t_desired ) + std::sin( t_desired ) ) +
+			radialVector * ( angle * std::sin( t_desired ) + std::cos( t_desired ) );
+		gotoVelocity.Normalize();
+		gotoVelocity *= estimatedVelocity;
+	}
+
+	// Set that as the gotopoint
+	ball->mGoto = ball->mNewPos + gotoPoint;
+
+	// We want the velocity to be at maximum along the trajectory + whatever velocity the target is moving at
+	gotoVelocity += other->mNewVel;
+
+	// Use the gotothrust to get there, equal weights to velocity and point
+	return GotoThrustFollow( ball, ball->mGoto, gotoVelocity, 1.0 );
+}
+
+
+// -------------------------------------------------------------
+//  Description:
+//      Calculates the acceleration vector for a ball in an "orbit" mode using some insane math.
+//      Updates the goto position of the ball each time it is called.
+//  Arguments:
+//      ball - the ball to evolve
+//  Returns:
+//      Acceleration vector for the ball.
+// -------------------------------------------------------------
+Vector3d Ballpark::EvolveOldStyleOrbit(Ball* ball, long currentTime)
 {
     // The maximum thrust of this ball, given its mass and current cruise velocity
     double cruiseVelocity = (double)(ball->mSpeedFraction) * (double)(ball->mMaxVel);
@@ -1024,7 +1341,10 @@ Vector3d Ballpark::EvolveOrbit(Ball* ball, long currentTime)
 // -------------------------------------------------------------
 void Ballpark::EvolveStop(Ball* ball)
 {
-    ball->mNewVel[1] = (ball->mNewVel[1] - 0.07*ball->mNewVel[1]) * 0.9345794392523364485981308411215;
+	if( !g_useDynamicalOrientation )
+	{
+		ball->mNewVel[1] = ( ball->mNewVel[1] - 0.07 * ball->mNewVel[1] ) * 0.9345794392523364485981308411215;
+	}
 }
 #pragma endregion
 
@@ -1107,9 +1427,563 @@ Vector3d Ballpark::GotoThrust(const Ball *ball, const Vector3d& target, bool mis
 
     return a;
 }
+
+Vector3d Ballpark::OrbitThrust( const Ball* ball, const Vector3d& target )
+{
+	// The maximum acceleration depends on the maximum velocity, friction, mass, and agility.
+	const auto frictionOverMass = mFriction / ( ball->mMass * ball->mAgility );
+	const auto maxAccel = frictionOverMass * ball->mSpeedFraction * (double)ball->mMaxVel;
+
+	// maxAccel should be > 0 for the rest to work.  This should not happen, but who knows.
+	if( maxAccel <= 0 )
+	{
+		return Vector3d( 0.0, 0.0, 0.0 );
+	}
+
+	// The direction for the new acceleration
+	Vector3d a = ( target - ball->mNewPos );
+
+	// Regular ships strive to stop at their destination
+	// k/m(target - current) - velocity
+	a *= frictionOverMass;
+	a -= ball->mNewVel;
+
+	// Now we can calculate the time required for the current acceleration
+	const auto tacc = a.Length() / maxAccel;
+
+	// If tacc is greater than 1 we need to cap at maximum acceleration
+	// Otherwise we slow down gracefully
+	if( tacc > 1 )
+		a /= tacc;
+
+	// Simply stop if tacc is small enough.  This will reduce crazy wobbling
+	if( tacc < 0.1 )
+		return Vector3d(0.0, 0.0, 0.0);
+
+	return a;
+}
+
+Vector3d Ballpark::GotoThrustFollow( const Ball* b, const Vector3d& target, const Vector3d& targetVelocity, double weight )
+{
+	// If target velocity is small, use gotothrust
+	const double speed = targetVelocity.Length();
+
+	if( speed < 5e-2 * b->mMaxVel * b->mSpeedFraction )
+	{
+		if( g_useNewOrbit && b->mMode == DSTBALL_ORBIT )
+		{
+			return OrbitThrust( b, target );
+		}
+		return GotoThrust( b, target );
+	}
+
+	// The maximum acceleration depends on the maximum velocity, friction, mass, and agility.
+	const auto frictionOverMass = mFriction / ( b->mMass * b->mAgility );
+	const auto maxAccel = frictionOverMass * b->mSpeedFraction * (double)b->mMaxVel;
+
+	// maxAccel should be > 0 for the rest to work.  This should not happen, but who knows.
+	if( maxAccel <= 0 )
+	{
+		return Vector3d( 0.0, 0.0, 0.0 );
+	}
+
+	// This is the acceleration required to get to target in a single timestep
+	Vector3d a = ( ( target - b->mNewPos ) * frictionOverMass - b->mNewVel * ( 1 - b->mTimeFactor ) ) * frictionOverMass /
+		( dt * frictionOverMass - ( 1 - b->mTimeFactor ) );
+
+	// Here is the acceleration required to have the required velocity
+	const auto avel = ( targetVelocity - b->mNewVel * b->mTimeFactor ) * frictionOverMass / ( 1.0 - b->mTimeFactor );
+
+	// Use a weighted average of the two to regulate fluctuations
+	a = ( a + weight * avel ) / ( 1.0 + weight );
+
+	// Make sure we are within limits
+	double accel = a.LengthSq();
+
+	if( accel > maxAccel * maxAccel )
+	{
+		a *= maxAccel / std::sqrt( accel );
+	}
+
+	return a;
+}
+
 #pragma endregion
 #pragma endregion
 
+Vector3 Ballpark::GotoTorque( const Ball* ball, const Vector3& direction )
+{
+	// Start with some cheap tests before we start the calculations
+	const float tScale = float( mFriction ) / ( float( ball->mMass ) * ball->mAgility * ball->mRotAgility );
+	const auto maxAlpha = ball->mMaxAngVel * tScale;
+
+	// It has to be positive
+	if( maxAlpha <= 0.0f )
+		return Vector3( 0.0f, 0.0f, 0.0f );
+
+	// We need the direction to point somewhere
+	const auto lenDir = Length( direction );
+	if( lenDir == 0 )
+		return Vector3( 0.0f, 0.0f, 0.0f );
+
+	// Get the rotation from ship to world frame for the heading
+	const Matrix mat = RotationMatrix( ball->mNewRot );
+
+	const auto heading = Normalize( TransformCoord( Vector3( 0.0f, 0.0f, 1.0f ), mat ) );
+
+	// Calculate required rotation
+	// The coordinates are designed such the z is forward, y is up, and x is right.
+	// pitch is around x-axis, yaw around y axis, roll around z-axis
+	// The coordinates are left handed???  Lets find out.
+	// The rotation is perpendicular to heading and the new direction
+	auto rot = Cross( heading, direction ) / lenDir;
+
+	// The magnitude is the sin(angle) between the two, need to normalize to the actual angle
+	auto rotLength = Length( rot );
+
+	// Much simpler to use the dot product to calculate the direction
+	const auto rotAngle = std::acos( std::max( float( -1. ), std::min( float( 1. ), Dot( direction, heading ) / lenDir ) ) );
+
+	// The cross product gives the correct orientation, but need to scale it
+	// If we flip 180 degrees, we have no preferred rotation vector, use ships -x axis
+	// If rotLength is very small and the rotation is very small, the cross product gives the correct answer.
+	if( rotLength > 1e-12 )
+	{
+		rot *= rotAngle / rotLength;
+	}
+	else if( rotAngle > 1 )
+	{
+		rot = Vector3( -rotAngle, 0.0f, 0.0f );
+	}
+
+	// Roll is calculated separately and completely ignored here
+	// Need to subtract the roll from the angular velocity, roll is treated separately
+	const auto omega0 = ball->mNewAngVel - Dot( heading, ball->mNewAngVel ) * heading;
+
+	// Calculate both positive and negative rotation and pick the faster one
+	// The positive is faster in almost all cases
+	rot *= tScale;
+	auto tAlpha = rot - omega0;
+	// The negative turns the opposite direction
+	auto tAlphaNeg = ( Vector3( 1.0f, 1.0f, 1.0f ) * ( 2.0f * float( _PI_ ) * tScale ) - rot ) - omega0;
+	for( int32_t i( 0 ); i < 3; ++i )
+		if( fabs( tAlpha[i] ) > fabs( tAlphaNeg[i] ) )
+			tAlpha[i] = tAlphaNeg[i];
+
+
+	// Do nothing if tAcc is < 1, otherwise cap at maxAlpha
+	const auto tAcc = Length( tAlpha ) / maxAlpha;
+
+	if( tAcc > dt )
+		tAlpha /= tAcc;
+
+	return tAlpha;
+}
+
+static inline void CalculateN2Alpha2( int& n2, float& kappa2, Vector3& alpha2, const Vector3& omega0, const float lenOmega0, const Ball* ball, const float tf, const float dt, const float tScale )
+{
+	if( lenOmega0 > 1e-10 )
+	{
+		const auto factor = ball->mMaxAngVel / lenOmega0;
+		n2 = int( std::ceil( std::log( factor / ( 1.f + factor ) ) / ( -dt * tScale ) ) );
+		kappa2 = std::pow( tf, n2 );
+		alpha2 = -omega0 * ( tScale * kappa2 / ( 1 - kappa2 ) );
+	}
+	else
+	{
+		n2 = 0;
+		//alpha2 is never used if n2=0
+		alpha2 = Vector3( 0.f, 0.f, 0.f );
+		kappa2 = 1.f;
+	}
+}
+
+static inline void CalculateN2Alpha2( int& n2, float& kappa2, float& alpha2, const float omega0, const Ball* ball, const float tf, const float dt, const float tScale )
+{
+	if( std::fabs( omega0 ) > 1e-10 )
+	{
+		const auto factor = ball->mMaxAngVel / std::fabs( omega0 );
+		n2 = int( std::ceil( std::log( factor / ( 1.f + factor ) ) / ( -dt * tScale ) ) );
+		kappa2 = std::pow( tf, n2 );
+		alpha2 = -omega0 * ( tScale * kappa2 / ( 1 - kappa2 ) );
+	}
+	else
+	{
+		n2 = 0;
+		//alpha2 is never used if n2=0
+		alpha2 = 0.f;
+		kappa2 = 1.f;
+	}
+}
+
+Vector3 Ballpark::GotoTorqueBreaks( const Ball* ball, const Vector3& direction )
+{
+	// Use a fraction of the timescale as is used for linear motion.
+	// We can adjust this with a tuning factor
+	const float tScale = float( mFriction ) / ( float( ball->mMass ) * ball->mAgility * ball->mRotAgility );
+
+	const float maxAlpha = ball->mMaxAngVel * tScale;
+
+	// It has to be positive
+	if( maxAlpha <= 0.0f )
+		return Vector3( 0.0f, 0.0f, 0.0f );
+
+	// We need the direction to point somewhere
+	const auto lenDir = Length( direction );
+	if( lenDir == 0 )
+		return Vector3( 0.0f, 0.0f, 0.0f );
+
+	// Get the rotation from ship to world frame for the heading
+	const Matrix mat = RotationMatrix( ball->mNewRot );
+
+	const auto heading = Normalize( TransformCoord( Vector3( 0.0f, 0.0f, 1.0f ), mat ) );
+
+	// Calculate required rotation
+	// The coordinates are designed such the z is forward, y is up, and x is right.
+	// The rotation is perpendicular to heading and the new direction
+	auto rot = Cross( heading, direction ) / lenDir;
+
+	// The magnitude is the sin(angle) between the two, need to normalize to the actual angle
+	auto rotLength = Length( rot );
+
+	// Much simpler to use the dot product to calculate the direction
+	// Need to clip the value to be within -1 and 1.
+	const auto rotAngle = std::acos( std::max( float( -1. ), std::min( float( 1. ), Dot( direction, heading ) / lenDir ) ) );
+
+	// The cross product gives the correct orientation, but need to scale it
+	// If we flip 180 degrees, we have no preferred rotation vector, use ships -x axis
+	// If rotLength is very small and the rotation is very small, the cross product gives the correct answer.
+	if( rotLength > 1e-12 )
+	{
+		rot *= rotAngle / rotLength;
+	}
+	else if( rotAngle > 1 )
+	{
+		rot = Vector3( -rotAngle, 0.0f, 0.0f );
+	}
+
+	// Roll is calculated separately and completely ignored here
+	// Need to subtract the roll from the angular velocity, roll is treated separately
+	const auto omega0 = ball->mNewAngVel - Dot( heading, ball->mNewAngVel ) * heading;
+
+	//This is where we differ from the other version
+	//Apply an iterative algorithm to find the timesteps required for breaking and accelerating
+
+	//No torque if both rotation and omega are small
+	const auto lenOmega0 = Length( omega0 );
+	if( lenOmega0 * dt < 1e-4 && rotAngle < 1e-4 )
+		return Vector3( 0.f, 0.f, 0.f );
+
+	//Find two pairs of timesteps and alpha
+	//1 is acceleration, 2 is deceleration
+	int n1( 0 ), n2( 0 );
+	Vector3 alpha1, alpha2;
+	float kappa1( 1.f ), kappa2( 1.f );
+	const float tf = std::exp( -float( dt ) * tScale );
+	const float tau = 1.f / tScale;
+
+	//Start by finding n2 and alpha2 to stop the current velocity, if any
+	CalculateN2Alpha2( n2, kappa2, alpha2, omega0, lenOmega0, ball, tf, float( dt ), tScale );
+
+	//Now we can start the iterations.  There is a possibility of an ifinite loop, because the solution is not unique.
+	//If many iterations are needed, it means n1 is large
+	constexpr int NITER = 5;
+	for( int count = 0; count < NITER; ++count )
+	{
+		//First check to see if n1=0 is a match.
+		//Separate that out because it is different
+		if( n2 > 0 )
+		{
+			const auto theta2 = tau * alpha2 * ( float( n2 * dt ) - tau * ( 1.f - kappa2 ) ) + tau * omega0 * ( 1 - kappa2 );
+			if( Length( rot - theta2 ) < 1e-3 )
+			{
+				n1 = 0;
+				break;
+			}
+		}
+
+		//Then we find a proper value for n1 and alpha1
+		kappa1 = 1.f;
+		for( n1 = 1; n1 < 100; ++n1 )
+		{
+			kappa1 *= tf;
+			if( n2 == 0 )
+			{
+				alpha1 = ( rot - omega0 * ( tau * ( 1.f - kappa1 ) ) ) / ( tau * ( float( n1 * dt ) - tau * ( 1.f - kappa1 ) ) );
+			}
+			else
+			{
+				alpha1 = ( rot - omega0 * ( tau - kappa1 * kappa2 * float( n2 * dt ) / ( 1 - kappa2 ) ) ) / ( tau * ( float( n1 * dt ) - float( n2 * dt ) * kappa2 * ( 1 - kappa1 ) / ( 1 - kappa2 ) ) );
+			}
+
+			const auto lenAlpha1 = Length( alpha1 );
+			if( lenAlpha1 < maxAlpha )
+			{
+				break;
+			}
+		}
+
+		//Calculate a new value for n2 and see if it differs
+		const int n2Old = n2;
+		const auto omega1 = alpha1 * ( tau * ( 1 - kappa1 ) ) + omega0 * kappa1;
+		CalculateN2Alpha2( n2, kappa2, alpha2, omega1, Length( omega1 ), ball, tf, float( dt ), tScale );
+
+		//Stop if n2 does not change
+		if( n2Old == n2 )
+			break;
+	}
+
+	if( n1 > 0 )
+	{
+		if( n1 > 1 )
+		{
+			//Accelerate full speed in the beginning
+			alpha1 = Normalize( alpha1 );
+			alpha1 *= maxAlpha;
+		}
+		return alpha1;
+	}
+
+	if( n2 > 0 )
+		return alpha2;
+
+	//This should never happen, but keep it here for safety
+	return Vector3( 0.f, 0.f, 0.f );
+}
+
+float Ballpark::GotoRollBreaks( const Ball* ball, const Vector3& headingTorque )
+{
+	// Use a fraction of the timescale as is used for linear motion.
+	// We can adjust this with a tuning factor
+	const auto tScale = float( mFriction ) / ( float( ball->mMass ) * ball->mAgility * ball->mRotAgility );
+	const auto maxAlpha = tScale * ball->mMaxAngVel;
+
+	// It has to be positive
+	if( maxAlpha <= 0 )
+		return 0.;
+
+	// This matrix transforms from world frame to ship frame
+	const auto mat = RotationMatrix( Conjugate( ball->mNewRot ) );
+
+	// Transform the angular velocity to the ship frame to get the roll velocity
+	auto shipOmega = TransformCoord( ball->mNewAngVel, mat );
+	const auto omegaRoll = shipOmega.z;
+
+	// Roll into turns
+	// We want the heading torque to be completely aligned with the negative x-axis
+	// for very sharp turns only.
+	// This will look like an airplane
+	const auto lenTorque = Length( headingTorque );
+
+	// To avoid rolling into the breaking torque, make sure the current
+	// angular velocity aligns with the torque.
+	// Use maximum angular velocity to scale the turnRoll with upRoll
+	// Only roll into significant turns
+	float turnRoll = 0.f;
+	float weight = 0.f;
+	if( lenTorque > 0.05 * maxAlpha )
+	{
+		// Need to rotate the torque into the ships frame
+		auto shipTorque = TransformCoord( headingTorque, mat );
+		// Need to avoid the break roll turns, only roll into the torque when the angular velocity
+		// aligns with the turn
+		shipOmega.z = 0.f;
+		auto cosAngle = Dot( shipOmega, shipTorque );
+		if( cosAngle >= 0 || Length( shipOmega ) < 0.01f * ball->mMaxAngVel )
+		{
+			turnRoll = std::atan2( -shipTorque.y, -shipTorque.x );
+			// Use an absolute scale to roll into turns, depending on the maximum
+			// possible velocity and the fractional torque
+			weight = lenTorque / tScale;
+			if( weight > 1.f )
+				weight = 1.f;
+		}
+	}
+
+	// Also roll upwards if we are not turning strongly and not moving straight up
+	const auto up = TransformCoord( Vector3( 0.0f, 1.0f, 0.0f ), mat );
+	const auto upRoll = std::fabs( up.z < 0.95f ) ? std::atan2( -up.x, up.y ) : 0.0f;
+
+	// Use the upRoll when heading rotation is small
+	const auto desiredRoll = weight < 0.05f ? upRoll : weight * turnRoll;
+
+	// Short circuit if no rotation is required
+	if( std::fabs( omegaRoll ) < 1e-4 && std::fabs( desiredRoll ) < 1e-4 )
+		return 0.0f;
+
+	//Find two pairs of timesteps and alpha
+	//1 is acceleration, 2 is deceleration
+	int n1( 0 ), n2( 0 );
+	float alpha1, alpha2;
+	float kappa1( 1.f ), kappa2( 1.f );
+	const float timeFactor = std::exp( -float( dt ) * tScale );
+	const float tau = 1.f / tScale;
+
+	//Start by finding n2 and alpha2 to stop the current velocity, if any
+	CalculateN2Alpha2( n2, kappa2, alpha2, omegaRoll, ball, timeFactor, float( dt ), tScale );
+
+	//Now we can start the iterations.  There is a possibility of an ifinite loop, because the solution is not unique.
+	//If many iterations are needed, it means n1 is large
+	constexpr int NITER = 5;
+	for( int count = 0; count < NITER; ++count )
+	{
+		//First check to see if n1=0 is a match.
+		//Separate that out because it is different
+		if( n2 > 0 )
+		{
+			const auto theta2 = tau * alpha2 * ( float( n2 * dt ) - tau * ( 1.f - kappa2 ) ) + tau * omegaRoll * ( 1 - kappa2 );
+			if( std::fabs( desiredRoll - theta2 ) < 1e-3 )
+			{
+				n1 = 0;
+				break;
+			}
+		}
+
+		//Then we find a proper value for n1 and alpha1
+		kappa1 = 1.f;
+		for( n1 = 1; n1 < 100; ++n1 )
+		{
+			kappa1 *= timeFactor;
+			if( n2 == 0 )
+			{
+				alpha1 = ( desiredRoll - omegaRoll * ( tau * ( 1.f - kappa1 ) ) ) / ( tau * ( float( n1 * dt ) - tau * ( 1.f - kappa1 ) ) );
+			}
+			else
+			{
+				alpha1 = ( desiredRoll - omegaRoll * ( tau - kappa1 * kappa2 * float( n2 * dt ) / ( 1 - kappa2 ) ) ) / ( tau * ( float( n1 * dt ) - float( n2 * dt ) * kappa2 * ( 1 - kappa1 ) / ( 1 - kappa2 ) ) );
+			}
+
+			if( std::fabs( alpha1 ) < maxAlpha )
+			{
+				break;
+			}
+		}
+
+		//Calculate a new value for n2 and see if it differs
+		const int n2Old = n2;
+		const auto omega1 = alpha1 * tau * ( 1 - kappa1 ) + omegaRoll * kappa1;
+		CalculateN2Alpha2( n2, kappa2, alpha2, omega1, ball, timeFactor, float( dt ), tScale );
+
+		//Stop if n2 does not change
+		if( n2Old == n2 )
+			break;
+	}
+
+	if( n1 > 0 )
+	{
+		if( n1 > 1 )
+		{
+			//We can safely accelerate full speed one more time.  The code adjusts later
+			alpha1 = SIGNUMF( alpha1 ) * maxAlpha;
+		}
+		return alpha1;
+	}
+
+	if( n2 > 0 )
+		return alpha2;
+
+	//This should never happen, but keep it here for safety
+	return 0.f;
+}
+
+float Ballpark::GotoRoll( const Ball* ball, const Vector3& headingTorque )
+{
+	// Use a fraction of the timescale as is used for linear motion.
+	// We can adjust this with a tuning factor
+	const auto tScale = float( mFriction ) / ( float( ball->mMass ) * ball->mAgility * ball->mRotAgility );
+	const auto maxAlpha = tScale * ball->mMaxAngVel;
+
+	if( maxAlpha <= 0 )
+		return 0.;
+
+	// Roll into turns, but only if there is some heading torque
+	// We want the heading torque to be as much in the negative x-axis as possible
+	// This will look like an airplane
+	const auto lenTorque = Length( headingTorque );
+
+	// This matrix transforms from world frame to ship frame
+	const auto mat = RotationMatrix( Conjugate( ball->mNewRot ) );
+	float turnRoll = 0.;
+	if( lenTorque > 1e-10 )
+	{
+		// Need to rotate the torque into the ships frame
+		auto shipTorque = TransformCoord( headingTorque, mat );
+		turnRoll = std::atan2( -shipTorque.y, -shipTorque.x );
+	}
+
+	// Also roll upwards if we are not turning strongly and not moving straight up
+	const auto up = TransformCoord( Vector3( 0.0f, 1.0f, 0.0f ), mat );
+	const auto upRoll = std::fabs( up.z < 0.95f ) ? std::atan2( -up.x, up.y ) : 0.0f;
+
+	// Use a simple cut between the two
+	const auto weight = lenTorque / maxAlpha;
+	const auto desiredRoll = weight < 0.1 ? upRoll : turnRoll;
+
+	// The current rotation along the z-axis is the starting angular speed
+	// Use that to estimate the desired roll_torque direction
+	const auto omegaRoll = TransformCoord( ball->mNewAngVel, mat ).z;
+	auto tauRoll = desiredRoll * tScale - omegaRoll;
+	const auto tauRollNeg = ( 2.0f * float( _PI_ ) - desiredRoll ) * tScale - omegaRoll;
+	if( std::fabs( tauRollNeg ) < std::fabs( tauRoll ) )
+		tauRoll = tauRollNeg;
+
+	// Cap the roll at maximum alpha
+	const auto tAcc = std::fabs( tauRoll ) / maxAlpha;
+
+	if( tAcc > 1 )
+		tauRoll /= tAcc;
+
+	return tauRoll;
+}
+
+void Ballpark::ApplyTorque( Quaternion& rotation, Vector3& angvel, const Vector3& torque, const float roll, const float tau, float timeStepFraction )
+{
+	const float timeFactor = std::exp( -float( dt ) * timeStepFraction / tau );
+
+	//Need to separate the rotational velocity into heading and roll
+	const auto mat = RotationMatrix( rotation );
+	auto heading = TransformCoord( Vector3( 0.0f, 0.0f, 1.0f ), mat );
+	const auto omegaRoll = Dot( angvel, heading );
+	const auto omegaHeading = angvel - heading * omegaRoll;
+
+	// Use the heading vector for the roll rotation
+	const auto rotRoll = tau * ( roll * ( timeStepFraction * float( dt ) - tau * ( 1.0f - timeFactor ) ) + omegaRoll * ( 1.0f - timeFactor ) );
+	const auto rotHeading = tau * ( torque * ( timeStepFraction * float( dt ) - tau * ( 1.0f - timeFactor ) ) + omegaHeading * ( 1.0f - timeFactor ) );
+
+	// To apply the roll, we need to rotate the heading to the new position
+	// This code is rather inefficient, because RotationQuaternion normalizes rotHeading.
+	// TODO: Make this more efficient if needed
+	const auto angleHeading = Length( rotHeading );
+
+	// There are issues with the quaternion creation if the heading rotation is small enough
+	const bool applyHeading = angleHeading > 1e-10;
+
+	// Need to roll after we have changed the heading
+	const auto quatHeading = applyHeading ? RotationQuaternion( rotHeading, Length( rotHeading ) ) : Quaternion( 0.0f, 0.0f, 0.0f, 1.0f );
+
+	const auto headingRotated = applyHeading ? TransformCoord( heading, RotationMatrix( quatHeading ) ) : heading;
+
+	// Now we can update the angular velocity
+	angvel = torque * ( tau * ( 1.0f - timeFactor ) ) + omegaHeading * timeFactor;
+	angvel += headingRotated * ( tau * roll - ( tau * roll - omegaRoll ) * timeFactor );
+
+	// And the rotation quaternion
+	// The convention for Quaternions is opposite to most, a *= b applies b after a.
+	// The a *= b operator is equivalent to a = a * b, which in most conventions applies a after b
+	if( applyHeading )
+		rotation *= quatHeading;
+	rotation *= RotationQuaternion( headingRotated, rotRoll );
+
+	// Normalize to be safe
+	const auto norm = Length( rotation );
+	if( norm > 0 )
+		rotation /= norm;
+
+	if( std::isnan( norm ) )
+	{
+		CCP_LOGERR_CH( s_chPark, "NaNs in rotation" );
+	}
+}
 
 #pragma region Collisions
 
@@ -1451,6 +2325,47 @@ void Ballpark::GetNextCollisionFree(CollisionBallProperties& ballProp, Collision
 
 Vector3d Ballpark::ApproximateEllipsePointOfImpact(Ball* ball, BallLocation& ballLoc, const CollisionItem& collision)
 {
+	if( g_useDynamicalOrientation )
+	{
+		constexpr double fakeEllipticity = 0.3;
+
+		// We need to find the angle between the outward normal and the rotation of the ship at
+		// the point of impact
+
+		// The cosine of the angle is the dot product of outward normal and ship direction.
+		const auto toWorld = RotationMatrix( ballLoc.rot );
+		auto shipDirection = Vector3d( TransformCoord( Vector3( 0.0f, 0.0f, 1.0 ), toWorld ) );
+		const auto cosTheta = -collision.normal * shipDirection; // The normal points into ship, hence the minus sign.
+
+		// This is the normal distance to point of impact, need to rotate it to fake ellipticity
+		auto pointOfImpact = -collision.normal;
+
+		if( std::fabs( cosTheta ) < 1.0 && std::fabs( cosTheta ) > 0.0 )
+		{
+			// Need also sinTheta
+			const auto sinTheta = std::fabs( cosTheta ) < 1.0 ? std::sqrt( 1 - cosTheta * cosTheta ) : 0;
+
+			// Calculate the sine of the angle of rotation
+			const auto sinAlpha = 2 * fakeEllipticity * cosTheta * sinTheta /
+				std::sqrt( ( std::pow( cosTheta, 2 ) + std::pow( ( 1 - fakeEllipticity ) * sinTheta, 2 ) ) *
+						   ( std::pow( cosTheta, 2 ) + std::pow( ( 1 + fakeEllipticity ) * sinTheta, 2 ) ) );
+
+			// Need to rotate the outward normal by alpha around the vector defined by the negative cross product
+			// of outward normal and shipDirection.  Store it in shipDirection
+			shipDirection.Cross( collision.normal ); // The normal actually points inwards.
+
+			const auto alpha = std::asinf( static_cast<float>(sinAlpha) );
+			const auto rotMat = RotationMatrix( shipDirection.AsVector3(), alpha );
+
+			pointOfImpact = TransformCoord( pointOfImpact.AsVector3(), rotMat ) * ball->mRadius;
+
+			// Reduce the radius to match the ellipse to reduce the impact a bit
+			pointOfImpact *= ( 1 - fakeEllipticity ) * std::sqrt( 1. / ( sinTheta * sinTheta + ( 1 - fakeEllipticity ) * cosTheta * cosTheta ) );
+		}
+
+		return pointOfImpact;
+	}
+
 	// Cannot do anything special if we do not have the orientation, just use the collision normal times the radius
 	return -collision.normal * ball->mRadius;
 }
@@ -1476,6 +2391,11 @@ void Ballpark::CalculateCollisionImpactStatic(CollisionBallProperties& ballProp,
 		BallLocation bloc;
 		ballProp.CalculatePosition( bloc.p, bloc.v, collision.timeOfImpact );
 
+		if( g_useDynamicalOrientation )
+		{
+			ballProp.CalculateRotation( bloc.rot, bloc.omega, collision.timeOfImpact );
+		}
+
 		// We have the normal, time of impact, and pre-calculated ball properties
 		// Calculate the point of impact
 		auto pointOfImpact = ApproximateEllipsePointOfImpact(ballProp.m_ball, bloc, collision);
@@ -1483,18 +2403,36 @@ void Ballpark::CalculateCollisionImpactStatic(CollisionBallProperties& ballProp,
 		// We need the relative velocity at the point of impact, which is just our velocity, including rotation
 		auto relVel = bloc.v;
 
+		Vector3d vrot( bloc.omega );
+		if( g_useDynamicalOrientation )
+		{
+			vrot.Cross( pointOfImpact );
+			relVel += vrot;
+		}
+
 		// Calculate the relative velocity change at the point of impact, assuming perfectly elastic collision
-		const double vimpulse = -2.0 * relVel * collision.normal;
+		const double vImpulse = -2.0 * relVel * collision.normal;
 
 		// If the impulse is negative, we have no collision.  This can happen if we are already colliding with the object
 		// or if this is not the first collision in a series of simultaneous collisions.
-		if (vimpulse < 0.0)
+		if (vImpulse < 0.0)
 		{
 			// The response in the impact is at 0, just return.
 			return;
 		}
 
-		const double impulse = vimpulse;
+		double impulse = vImpulse;
+		if( g_useDynamicalOrientation )
+		{
+			Vector3d rcrossn = pointOfImpact;
+			rcrossn.Cross( collision.normal );
+			vrot = rcrossn;
+			vrot.Cross( pointOfImpact );
+
+			// Calculate impulse over mass (j/m), assuming I = 0.5*m*radius**2
+			impulse = vImpulse / ( 1.0 + ( vrot * collision.normal ) / ( 0.5 * ballProp.m_ball->mRadius * ballProp.m_ball->mRadius ) );
+			collision.impact->angularVelocityChange = rcrossn.AsVector3() * float( impulse / ( 0.5 * ballProp.m_ball->mRadius * ballProp.m_ball->mRadius ) );
+		}
 
 		// Now we can calculate the impact
 		collision.impact->velocityChange = impulse * collision.normal;
@@ -1534,6 +2472,12 @@ CollisionItem Ballpark::CalculateCollisionImpactFree(CollisionBallProperties& ba
 	ballProp.CalculatePosition( ballLoc.p, ballLoc.v, collision.timeOfImpact );
 	otherProp.CalculatePosition( otherLoc.p, otherLoc.v, collision.timeOfImpact );
 
+	if( g_useDynamicalOrientation )
+	{
+		ballProp.CalculateRotation( ballLoc.rot, ballLoc.omega, collision.timeOfImpact );
+		otherProp.CalculateRotation( otherLoc.rot, otherLoc.omega, collision.timeOfImpact );
+	}
+
 	// Need to find the normal of the collision.  It points from the collided balls
 	collision.normal = ballLoc.p - otherLoc.p;
 
@@ -1562,16 +2506,42 @@ CollisionItem Ballpark::CalculateCollisionImpactFree(CollisionBallProperties& ba
 	// Now get the point of impact for both balls
 	auto poi1 = ApproximateEllipsePointOfImpact(ballProp.m_ball, ballLoc, collision);
 	auto poi2 = ApproximateEllipsePointOfImpact(otherProp.m_ball, otherLoc, otherCollision);
-	auto relVel = otherLoc.v - ballLoc.v;
+
+	Vector3d relVel;
+	Vector3d vRot1( ballLoc.omega ), vRot2( otherLoc.omega );
+	if( g_useDynamicalOrientation )
+	{
+		// The relative velocity, use 2-1 as in the wikipedia page
+		vRot1.Cross( poi1 );
+		vRot2.Cross( poi2 );
+		relVel = ( otherLoc.v - ballLoc.v ) + ( vRot2 - vRot1 );
+	}
+	else
+	{
+		relVel = otherLoc.v - ballLoc.v;
+	}
 
 	// To get the sign correct, use the otherBall normal
-	const double vimpulse = -2.0 * (relVel * otherCollision.normal);
+	const double vImpulse = -2.0 * (relVel * otherCollision.normal);
 
-	// A positive vimpulse is required for an actual collision
-	if (vimpulse < 0.0)
+	// A positive vImpulse is required for an actual collision
+	if (vImpulse < 0.0)
 	{
 		// The impacts are both set at 0, just return
 		return otherCollision;
+	}
+
+	Vector3d rCrossN1 = poi1;
+	Vector3d rCrossN2 = poi2;
+	if( g_useDynamicalOrientation )
+	{
+		rCrossN1.Cross( collision.normal );
+		vRot1 = rCrossN1;
+		vRot1.Cross( poi1 );
+
+		rCrossN2.Cross( otherCollision.normal );
+		vRot2 = rCrossN2;
+		vRot2.Cross( poi2 );
 	}
 
 	// Calculate impulse, multiply with m1m2/m1m2 to make things pretty.
@@ -1580,11 +2550,26 @@ CollisionItem Ballpark::CalculateCollisionImpactFree(CollisionBallProperties& ba
 	const double m2 = otherProp.m_ball->mMass;
 	const double r1 = ballProp.m_ball->mRadius;
 	const double r2 = otherProp.m_ball->mRadius;
-	const double impulse = m1 * m2 * vimpulse / (m1 + m2);
+
+	double impulse = 0;
+	if( g_useDynamicalOrientation )
+	{
+		impulse = m1 * m2 * vImpulse / ( m1 + m2 + 2.0 * ( vRot1 * m2 / ( r1 * r1 ) - vRot2 * m1 / ( r2 * r2 ) ) * collision.normal );
+	}
+	else
+	{
+		impulse = m1 * m2 * vImpulse / ( m1 + m2 );
+	}
 
 	// Now we can calculate the impact
 	collision.impact->velocityChange = (impulse / m1) * collision.normal;
 	otherCollision.impact->velocityChange = (impulse / m2) * otherCollision.normal;
+
+	if( g_useDynamicalOrientation )
+	{
+		collision.impact->angularVelocityChange = rCrossN1.AsVector3() * float( impulse / ( 0.5 * m1 * r1 * r1 ) );
+		otherCollision.impact->angularVelocityChange = rCrossN2.AsVector3() * float( impulse / ( 0.5 * m2 * r2 * r2 ) );
+	}
 
 	collision.impact->collider = otherProp.m_ball->mId;
 	otherCollision.impact->collider = ballProp.m_ball->mId;
@@ -1619,6 +2604,17 @@ void Ballpark::AddImpact(CollisionImpact& impact, size_t collIter, Ball* ball)
 	if (fraction < 1)
 	{
 		impact.velocityChange *= fraction;
+	}
+
+	if(g_useDynamicalOrientation)
+	{
+		// Only twice for the angular velocity so ships don't spin many circles
+		const auto omega2 = LengthSq( impact.angularVelocityChange );
+		const auto frac = 4 * ball->mMaxAngVel * ball->mMaxAngVel / omega2;
+		if( frac < 1 )
+		{
+			impact.angularVelocityChange *= frac;
+		}
 	}
 
 	// Use the impact adder of the collision structure which returns all the impacts this action invalidates
@@ -1688,7 +2684,38 @@ inline bool Ballpark::CollisionBallNeighborIgnore(Ball* b, Ball* neighbor)
 		|| ((neighbor->isSpaceJunk && !b->isSpaceJunk) || (!neighbor->isMassive));
 }
 
-void Ballpark::CalculateBallPositionVelocity(Ball* ball, double t, Vector3d& position, Vector3d& velocity)
+//This function is not physically accurate, but it serves its purpose nicely
+void Ballpark::CalculateBallRotationVelocity( Ball* ball, double timeStepFraction, Quaternion& rotation, Vector3& omega )
+{
+	if( !ball )
+	{
+		CCP_LOGERR_CH( s_chPark, "Null pointer for ball in CalculateBallRotationVelocity" );
+		return;
+	}
+
+	// A quick solution if timeStepFraction is zero
+	if( timeStepFraction == 0.0 )
+		return;
+
+	// The time factor
+	const float tau = ( float( ball->mMass ) * ball->mAgility * ball->mRotAgility ) / float( mFriction );
+
+	// Stuff is pre-calculated if the ball was already in last evolve function
+	auto collisionIter = mCollisionLocations.find( ball->mId );
+
+	if( collisionIter == mCollisionLocations.end() )
+	{
+		// No collisions, a single pass to the integrator will do
+		ApplyTorque( rotation, omega, ball->mTorque, ball->mRoll, tau, static_cast<float>( timeStepFraction ) );
+	}
+	else
+	{
+		// Use the already pre-calculated points
+		collisionIter->second.CalculateRotation( rotation, omega, timeStepFraction );
+	}
+}
+
+void Ballpark::CalculateBallPositionVelocity(Ball* ball, double timeStepFraction, Vector3d& position, Vector3d& velocity)
 {
 	if (!ball)
 	{
@@ -1696,16 +2723,9 @@ void Ballpark::CalculateBallPositionVelocity(Ball* ball, double t, Vector3d& pos
 		return;
 	}
 
-	// A quick solution if t is zero
-	if (t == 0)
+	// A quick solution if timeStepFraction is zero
+	if (timeStepFraction == 0.0)
 		return;
-
-	// If iterative collisions are disabled, just do the integration
-	if( !s_useIterativeCollision )
-	{
-		Integrate(position, velocity, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, t);
-		return;
-	}
 
 	// Stuff is pre-calculated if the ball was already in last evolve function
 	auto collisionIter = mCollisionLocations.find(ball->mId);
@@ -1713,12 +2733,12 @@ void Ballpark::CalculateBallPositionVelocity(Ball* ball, double t, Vector3d& pos
 	if (collisionIter == mCollisionLocations.end())
 	{
 		// No collisions, a single pass to the integrator will do
-		Integrate(position, velocity, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, t);
+		Integrate(position, velocity, ball->mLastG + ball->mLastC, ball->mMass * ball->mAgility, mFriction, ball->mTimeFactor, timeStepFraction);
 	}
 	else
 	{
 		// Use the already pre-calculated points
-		collisionIter->second.CalculatePosition(position, velocity, t);
+		collisionIter->second.CalculatePosition(position, velocity, timeStepFraction);
 	}
 }
 
@@ -2431,12 +3451,6 @@ Ball * Ballpark::AddBall(
 
     // Now insert ball into the space partition
     InsertBallInBoxes(ball);
-    
-    if(ball->isFree)
-    {
-        // Snap ball orientation to velocity vector
-        ball->CalculateYawPitchRoll(true);
-    }
 
     // Register for ticks
 
@@ -2448,6 +3462,99 @@ Ball * Ballpark::AddBall(
     //CCP_LOG_CH( s_chPark, "  isCloaked %d, isMoribund %d, MaxVel, Agility, SpeedFraction", ball->isCloaked, ball->isMoribund, ball->mMaxVel, ball->mAgility, ball->mSpeedFraction);
 
     return ball;
+}
+
+//---------------------------------------------------------------------------------------
+// AddUnOrientedBall adds a ball with the given parameters to the current simulation.
+// Call this to add balls when Dynamical Orientation is disabled.
+//---------------------------------------------------------------------------------------
+Ball* Ballpark::AddOldStyleOrientedBall(
+	const ID& objectId,
+	double mass,
+	float radius,
+	float maxVel,
+	bool isFree,
+	bool isGlobal,
+	bool isMassive,
+	bool isInteractive,
+	bool isSpaceJunk,
+	double x,
+	double y,
+	double z,
+	double vx,
+	double vy,
+	double vz,
+	float agility,
+	float speedFraction
+)
+{
+	Ball* ball = AddBall( objectId, mass, radius, maxVel, isFree, isGlobal, isMassive, isInteractive, isSpaceJunk, x, y, z, vx, vy, vz, agility, speedFraction );
+	if( ball->isFree )
+	{
+		// Snap ball orientation to velocity vector
+		ball->CalculateYawPitchRoll( true );
+	}
+	return ball;
+}
+
+//---------------------------------------------------------------------------------------
+// AddOrientedBall adds a ball with the given parameters to the current simulation.
+// Call this to add balls when Dynamical Orientation is enabled.
+//---------------------------------------------------------------------------------------
+Ball* Ballpark::AddDynamicallyOrientedBall(
+	const ID& objectId,
+	double mass,
+	float radius,
+	float maxVel,
+	float maxAngVel,
+	bool isFree,
+	bool isGlobal,
+	bool isMassive,
+	bool isInteractive,
+	bool isSpaceJunk,
+	double x,
+	double y,
+	double z,
+	double vx,
+	double vy,
+	double vz,
+	float rx,
+	float ry,
+	float rz,
+	float rw,
+	float wx,
+	float wy,
+	float wz,
+	float agility,
+	float rotAgility,
+	float speedFraction )
+{
+	ID theID = GetIDForCollisionObject( objectId );
+	const bool isNewBall = mBalls[theID] == nullptr;
+
+	BallPtr ball = AddBall( objectId, mass, radius, maxVel, isFree, isGlobal, isMassive, isInteractive, isSpaceJunk, x, y, z, vx, vy, vz, agility, speedFraction );
+
+	ball->mNewRot.x = rx;
+	ball->mNewRot.y = ry;
+	ball->mNewRot.z = rz;
+	ball->mNewRot.w = rw;
+
+	ball->mNewAngVel.x = wx;
+	ball->mNewAngVel.y = wy;
+	ball->mNewAngVel.z = wz;
+
+	if( isNewBall )
+	{
+		ball->mOldRot = ball->mNewRot * RotationQuaternion( ball->mNewAngVel, -float( dt ) * Length( ball->mNewAngVel ) );
+
+		ball->mOldAngVel.x = wx;
+		ball->mOldAngVel.y = wy;
+		ball->mOldAngVel.z = wz;
+	}
+
+	ball->mMaxAngVel = ( maxAngVel < 0.0f ? 0.0f : maxAngVel );
+	ball->mRotAgility = ( rotAgility <= 0.0f ? 1.0f : rotAgility );
+	return ball;
 }
 
 //---------------------------------------------------------------------------------------
@@ -2504,6 +3611,22 @@ Ball * Ballpark::AddMiniball(
     ball->isMassive = 1;
     ball->isInteractive = 0;
     ball->isSpaceJunk = 0;
+
+	ball->mNewRot.x = 0.0f;
+	ball->mNewRot.y = 0.0f;
+	ball->mNewRot.z = 0.0f;
+	ball->mNewRot.w = 1.0f;
+	ball->mOldRot.x = 0.0f;
+	ball->mOldRot.y = 0.0f;
+	ball->mOldRot.z = 0.0f;
+	ball->mOldRot.w = 1.0f;
+
+	ball->mNewAngVel.x = 0.0f;
+	ball->mNewAngVel.y = 0.0f;
+	ball->mNewAngVel.z = 0.0f;
+	ball->mOldAngVel.x = 0.0f;
+	ball->mOldAngVel.y = 0.0f;
+	ball->mOldAngVel.z = 0.0f;
 
 	SetBallTimeFactor(ball);
     ball->SetMode(DSTBALL_MINIBALL);
@@ -2617,23 +3740,50 @@ void Ballpark::AddMushroom(
         CCP_LOGWARN_CH( s_chPark,"Non existing parent for mushroom. Canceled.\n");
         return;
     }
+	Ball *mushroom = nullptr;
 
-    Ball *mushroom = AddBall(0,
-        1.0e20f,
-        0.0f,
-        0.0f,
-        false,
-        false,
-        true,
-        false,
-        false,
-        owner->mNewPos.x,
-        owner->mNewPos.y,
-        owner->mNewPos.z,
-        0.0,0.0,0.0,
-        1.0f,
-        1.0f
-        );
+	if( g_useDynamicalOrientation )
+	{
+		mushroom = AddDynamicallyOrientedBall(
+			0,
+			1.0e20f,
+			0.0f,
+			0.0f,
+			0.0f,
+			false,
+			false,
+			true,
+			false,
+			false,
+			owner->mNewPos.x,
+			owner->mNewPos.y,
+			owner->mNewPos.z,
+			0.0, 0.0, 0.0,
+			0.0f, 0.0f, 0.0f, 1.0f,
+			0.0f, 0.0f, 0.0f,
+			1.0f,
+			1.0f,
+			1.0f );
+	}
+	else
+	{
+		mushroom = AddOldStyleOrientedBall(
+			0,
+			1.0e20f,
+			0.0f,
+			0.0f,
+			false,
+			false,
+			true,
+			false,
+			false,
+			owner->mNewPos.x,
+			owner->mNewPos.y,
+			owner->mNewPos.z,
+			0.0, 0.0, 0.0,
+			1.0f,
+			1.0f );
+	}
 
     mushroom->mFollowRange = range;
     mushroom->mGoto[0] = time;
@@ -3243,6 +4393,10 @@ void Ballpark::EntityWarpIn(const ID& srcId, double x, double y, double z, int w
     // Fake us already having aligned (don't care about rotation/ypr)
     Vector3d dst(x,y,z);
     ball->mNewVel = dst.Normalize() * AU ; // start at ~1AU velocity
+	if( g_useDynamicalOrientation )
+	{
+		ball->SnapOrientation();
+	}
     ball->mEffectStamp = std::max(mCurrentTime-5, 0l); // fake that we started warping some ticks ago
     dst = ball->mNewPos - ball->mGoto; // reusing dst
     ball->mLastCollision = dst.Length();  // mLastCollision repurposed for the total warp length (you're not collidable whilst in warp)
@@ -3568,6 +4722,19 @@ void Ballpark::SetMaxSpeed(
     InsertBallInBoxes(ball);
 }
 
+void Ballpark::SetMaxAngularSpeed( const ID& srcId, float maxAngVel )
+{
+	if( maxAngVel < 0.0f )
+		return;
+
+	Ball* ball = mBalls[srcId];
+
+	if( !ball )
+		return;
+
+	ball->mMaxAngVel = maxAngVel;
+}
+
 //---------------------------------------------------------------------------------------
 // SetBallPosition sets the position of the given ball
 //---------------------------------------------------------------------------------------
@@ -3626,7 +4793,60 @@ void Ballpark::SetBallVelocity(
     ball->mOldVel.z = vz;
 
     // Snap the rotation to the new speed
-    ball->CalculateYawPitchRoll(true);
+	if( g_useDynamicalOrientation )
+	{
+		ball->SnapOrientation();
+	}
+	else
+	{
+		ball->CalculateYawPitchRoll( true );
+	}
+}
+
+void Ballpark::SetBallAngularVelocity( const ID& srcId, double wx, double wy, double wz )
+{
+	Ball* ball = mBalls[srcId];
+
+	if( !ball )
+		return;
+
+	ball->mNewAngVel.x = float( wx );
+	ball->mNewAngVel.y = float( wy );
+	ball->mNewAngVel.z = float( wz );
+
+	//Set old value as well to avoid warping in interpolation
+	ball->mOldAngVel.x = float( wx );
+	ball->mOldAngVel.y = float( wy );
+	ball->mOldAngVel.z = float( wz );
+}
+
+void Ballpark::SetBallRotation( const ID& srcId, double rx, double ry, double rz, double rw )
+{
+	Ball* ball = mBalls[srcId];
+
+	if( !ball )
+		return;
+
+	// Make sure we have a valid rotation
+	Quaternion rotation = Quaternion( static_cast<float>( rx ), static_cast<float>( ry ), static_cast<float>( rz ), static_cast<float>( rw ) );
+
+	// Normalize to make sure this is rotation
+	const auto length = Length( rotation );
+	if( length > 1e-20 )
+	{
+		rotation /= length;
+		ball->mNewRot = rotation;
+
+		// Set the old rotation as well to avoid bad interpolation
+		ball->mOldRot = rotation;
+
+		// Stop the rotation as well
+		ball->mNewAngVel.x = 0.0f;
+		ball->mNewAngVel.y = 0.0f;
+		ball->mNewAngVel.z = 0.0f;
+
+		ball->mOldAngVel = ball->mNewAngVel;
+	}
 }
 
 //---------------------------------------------------------------------------------------
@@ -3739,6 +4959,15 @@ void Ballpark::SetBallAgility(
     SetBallTimeFactor(ball);
 }
 
+void Ballpark::SetBallAngularAgility( const ID& srcId, float rotAgility )
+{
+	Ball* ball = mBalls[srcId];
+
+	if( !ball || rotAgility <= 0.0 )
+		return;
+
+	ball->mRotAgility = rotAgility;
+}
 
 void Ballpark::SetBallTimeFactor(
     Ball* ball
@@ -4328,7 +5557,7 @@ void Ballpark::RemoveBall(
     //remove from moribund balls. For safety, it should have been already removed.
     moribundBalls.erase(ball);
 
-	if( s_useIterativeCollision )
+	if( g_useIterativeCollision )
 	{
 		//Remove from collision calculations
 		mCollisionLocations.erase(ball->mId);
@@ -4661,7 +5890,7 @@ void Ballpark::ClearAll(
     mBalls.Clear();
     mGlobals.Clear();
 
-	if( s_useIterativeCollision )
+	if( g_useIterativeCollision )
 	{
 		mCollisionLocations.clear();
 		mPotentialCollisionBalls.clear();

@@ -375,7 +375,7 @@ void Capsule::CollideWithBall(Ball* ball)
 	// Get the destination point for the ball
 	mPark->Integrate(p1, vp1, ball->mLastG, m1, mPark->mFriction, ball->mTimeFactor, mPark->dt);
 
-	if( s_useIterativeCollision )
+	if( g_useIterativeCollision )
 	{
 		// Calculate the normal
 		Vector3d normal;

@@ -4,9 +4,10 @@
 
 CollisionBallProperties::CollisionBallProperties() :
 	m_fuzzyDelta( 1e-4 ),
-	m_ball( nullptr )
+	m_ball( nullptr ),
+	m_tau( -1.0 )
 {
-	m_locations.reserve( s_collisionMaxIterations + 2 );
+	m_locations.reserve( g_collisionMaxIterations + 2 );
 }
 
 void CollisionBallProperties::Initialize( Ball* _ball, double tEnd )
@@ -15,6 +16,11 @@ void CollisionBallProperties::Initialize( Ball* _ball, double tEnd )
 	m_maxTime = tEnd;
 	m_tStart = 0.0;
 	m_tEnd = tEnd;
+
+	if( g_useDynamicalOrientation )
+	{
+		m_tau = ( float( m_ball->mMass ) * m_ball->mAgility * m_ball->mRotAgility ) / float( m_ball->mPark->mFriction );
+	}
 
 	// This function invalidates WITHOUT CHECKS any previous collisions
 	m_locations.resize( 2 );
@@ -32,6 +38,16 @@ void CollisionBallProperties::Initialize( Ball* _ball, double tEnd )
 	m_locations[1].v = m_locations[0].v;
 
 	m_ball->mPark->Integrate( m_locations[1].p, m_locations[1].v, m_ball->mLastG + m_ball->mLastC, m_ball->mMass * m_ball->mAgility, m_ball->mPark->mFriction, m_ball->mTimeFactor, tEnd );
+
+	if( g_useDynamicalOrientation )
+	{
+		m_locations[0].rot = m_ball->mNewRot;
+		m_locations[0].omega = m_ball->mNewAngVel;
+		m_locations[1].rot = m_locations[0].rot;
+		m_locations[1].omega = m_locations[0].omega;
+
+		m_ball->mPark->ApplyTorque( m_locations[1].rot, m_locations[1].omega, m_ball->mTorque, m_ball->mRoll, m_tau, static_cast<float>( m_tEnd ) );
+	}
 }
 
 std::vector<std::pair<double, ID>> CollisionBallProperties::AddImpact( const CollisionImpact& impact )
@@ -65,6 +81,12 @@ std::vector<std::pair<double, ID>> CollisionBallProperties::AddImpact( const Col
 	{
 		m_locations[0].p = m_ball->mNewPos;
 		m_locations[0].v = m_ball->mNewVel + impact.velocityChange;
+
+		if( g_useDynamicalOrientation )
+		{
+			m_locations[0].rot = m_ball->mNewRot;
+			m_locations[0].omega = m_ball->mNewAngVel + impact.angularVelocityChange;
+		}
 	}
 	else
 	{
@@ -77,6 +99,14 @@ std::vector<std::pair<double, ID>> CollisionBallProperties::AddImpact( const Col
 
 		m_ball->mPark->Integrate( currLoc.p, currLoc.v, m_ball->mLastG + m_ball->mLastC, m_ball->mMass * m_ball->mAgility, m_ball->mPark->mFriction, m_ball->mTimeFactor, currLoc.time - prevLoc.time );
 		currLoc.v += impact.velocityChange;
+		if( g_useDynamicalOrientation )
+		{
+			currLoc.rot = prevLoc.rot;
+			currLoc.omega = prevLoc.omega;
+
+			m_ball->mPark->ApplyTorque( currLoc.rot, currLoc.omega, m_ball->mTorque, m_ball->mRoll, m_tau, static_cast<float>( currLoc.time - prevLoc.time ) );
+			currLoc.omega += impact.angularVelocityChange;
+		}
 	}
 
 	// Only the end time is updated to match the added collision
@@ -113,6 +143,10 @@ std::vector<std::pair<double, ID>> CollisionBallProperties::RemoveImpact( double
 		// The positions and rotation are correct.
 		m_locations[0].collider = -1;
 		m_locations[0].v = m_ball->mNewVel;
+		if( g_useDynamicalOrientation )
+		{
+			m_locations[0].omega = m_ball->mNewAngVel;
+		}
 	}
 
 	// Invalidate any later collisions
@@ -144,6 +178,14 @@ void CollisionBallProperties::CalculateEnd()
 		currLoc.v = prevLoc.v;
 
 		m_ball->mPark->Integrate( currLoc.p, currLoc.v, m_ball->mLastG + m_ball->mLastC, m_ball->mMass * m_ball->mAgility, m_ball->mPark->mFriction, m_ball->mTimeFactor, m_maxTime - prevLoc.time );
+
+		if( g_useDynamicalOrientation )
+		{
+			currLoc.rot = prevLoc.rot;
+			currLoc.omega = prevLoc.omega;
+
+			m_ball->mPark->ApplyTorque( currLoc.rot, currLoc.omega, m_ball->mTorque, m_ball->mRoll, m_tau, static_cast<float>( m_maxTime - prevLoc.time ) );
+		}
 
 		// Update the new search times.
 		m_tEnd = m_maxTime;
@@ -196,5 +238,21 @@ void CollisionBallProperties::CalculatePosition( Vector3d& position, Vector3d& v
 	{
 		// Need to integrate to get position
 		m_ball->mPark->Integrate( position, velocity, m_ball->mLastG + m_ball->mLastC, m_ball->mMass * m_ball->mAgility, m_ball->mPark->mFriction, m_ball->mTimeFactor, ( time - m_locations[i].time ) );
+	}
+}
+
+void CollisionBallProperties::CalculateRotation( Quaternion& rotation, Vector3& omega, double time )
+{
+	// Find the index
+	size_t i = FindLocationsIndex( time );
+
+	rotation = m_locations[i].rot;
+	omega = m_locations[i].omega;
+
+	// We can only be equal in time to the location at index.
+	if( std::fabs( m_locations[i].time - time ) > m_fuzzyDelta )
+	{
+		// Need to integrate to get position
+		m_ball->mPark->ApplyTorque( rotation, omega, m_ball->mTorque, m_ball->mRoll, m_tau, static_cast<float>( time - m_locations[i].time ) );
 	}
 }

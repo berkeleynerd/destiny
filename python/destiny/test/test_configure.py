@@ -27,3 +27,27 @@ class TestConfigure(unittest.TestCase):
         applied_config = destiny.settings.Get()
         default_config = destiny.settings.GetDefault()
         self.assertEqual(default_config.collisionMaxIterations, applied_config.collisionMaxIterations)
+
+    def test_enable_dynamical_orientation(self):
+        config = destiny.settings.GetDefault()
+        self.assertEqual(False, config.useDynamicalOrientation)
+        config.useDynamicalOrientation = True
+        destiny.settings.Apply(config)
+        applied_config = destiny.settings.Get()
+        self.assertEqual(True, applied_config.useDynamicalOrientation)
+
+    def test_disable_dynamical_orientation_for_missiles(self):
+        config = destiny.settings.GetDefault()
+        self.assertEqual(False, config.disableDynamicalOrientationForMissiles)
+        config.disableDynamicalOrientationForMissiles = True
+        destiny.settings.Apply(config)
+        applied_config = destiny.settings.Get()
+        self.assertEqual(True, applied_config.disableDynamicalOrientationForMissiles)
+
+    def test_enable_new_orbit(self):
+        config = destiny.settings.GetDefault()
+        self.assertEqual(False, config.useNewOrbit)
+        config.useNewOrbit = True
+        destiny.settings.Apply(config)
+        applied_config = destiny.settings.Get()
+        self.assertEqual(True, applied_config.useNewOrbit)

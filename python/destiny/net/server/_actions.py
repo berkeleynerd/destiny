@@ -4,6 +4,8 @@ import logging
 import blue
 import bluepy
 
+from destiny._util import is_dynamical_orientation_enabled
+
 logger = logging.getLogger(__name__)
 
 
@@ -162,6 +164,71 @@ class Actions(object):
             vx, vy, vz
         )
 
+    def set_ball_angular_velocity(self, src_id, wx, wy, wz):
+        """
+        Set the angular velocity of the ball. (rad/s)
+
+        :param src_id: The ball whose angular velocity we are changing.
+        :type src_id: int
+        :param wx: The x part of the angular velocity vector.
+        :type wx: float
+        :param wy: The y part of the angular velocity vector.
+        :type wy: float
+        :param wz: The z part of the angular velocity vector.
+        :type wz: float
+        """
+        if not is_dynamical_orientation_enabled():
+            raise RuntimeError("Attempted to set ball angular velocity, but Dynamical Orientation is disabled.")
+        self._add_to_system_history(
+            src_id,
+            'SetBallAngularVelocity',
+            wx, wy, wz
+        )
+
+    def set_max_angular_velocity(self, src_id, wx, wy, wz):
+        """
+        Set the maximum angular velocity of the ball. (rad/s)
+
+        :param src_id: The ball whose maximum angular velocity we are changing.
+        :type src_id: int
+        :param wx: The x part of the max-angular-velocity vector.
+        :type wx: float
+        :param wy: The y part of the max-angular-velocity vector.
+        :type wy: float
+        :param wz: The z part of the max-angular-velocity vector.
+        :type wz: float
+        """
+        if not is_dynamical_orientation_enabled():
+            raise RuntimeError("Attempted to set max angular velocity, but Dynamical Orientation is disabled.")
+        self._add_to_system_history(
+            src_id,
+            'SetMaxAngularVelocity',
+            wx, wy, wz
+        )
+
+    def set_ball_rotation(self, src_id, rx, ry, rz, rw):
+        """
+        Set the rotation quaternion of the ball. (rad/s)
+
+        :param src_id: The ball whose rotation we are changing.
+        :type src_id: int
+        :param rx: The x part of the rotation quaternion.
+        :type rx: float
+        :param ry: The y part of the rotation quaternion.
+        :type ry: float
+        :param rz: The z part of the rotation quaternion.
+        :type rz: float
+        :param rw: The w part of the rotation quaternion.
+        :type rw: float
+        """
+        if not is_dynamical_orientation_enabled():
+            raise RuntimeError("Attempted to set ball rotation, but Dynamical Orientation is disabled.")
+        self._add_to_system_history(
+            src_id,
+            'SetBallRotation',
+            rx, ry, rz, rw
+        )
+
     def set_ball_massive(self, src_id, is_massive):
         """
         Set the ball as massive or not massive.
@@ -219,6 +286,24 @@ class Actions(object):
             src_id,
             'SetBallAgility',
             agility
+        )
+
+    def set_ball_angular_agility(self, src_id, angular_agility):
+        """
+        Set the balls angular agility, which influences its rotational
+        maneuverability. Smaller numbers give more agility.
+
+        :param src_id: The ball whose angular agility we want to change.
+        :type src_id: int
+        :param angular_agility: The rotational maneuverability of the ball.
+        :type angular_agility: float
+        """
+        if not is_dynamical_orientation_enabled():
+            raise RuntimeError("Attempting to set angular agility, but Dynamical Orientation is disabled.")
+        self._add_to_system_history(
+            src_id,
+            'SetBallAngularAgility',
+            angular_agility
         )
 
     def add_ball_to_client_parks(self, src_id):
@@ -492,6 +577,22 @@ class Actions(object):
             src_id,
             'SetMaxSpeed',
             max_meters_per_second
+        )
+
+    def set_max_angular_speed(self, src_id, max_radians_per_second):
+        """
+        Sets the maximum angular speed that a ball can reach.
+        :param src_id: The ball whose max angular speed we want to change.
+        :type src_id: int
+        :param max_radians_per_second: The maximum angular speed for the ball
+        :type max_radians_per_second: float
+        """
+        if not is_dynamical_orientation_enabled():
+            raise RuntimeError("Attempting to set angular speed, but Dynamical Orientation is disabled.")
+        self._add_to_system_history(
+            src_id,
+            'SetMaxAngularSpeed',
+            max_radians_per_second
         )
 
     def cloak_ball(self, src_id, cloak_mode, uncloak_range_meters):

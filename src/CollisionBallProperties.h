@@ -28,6 +28,9 @@ public:
 	// Keep track of times to check for new collisions
 	double m_tStart, m_tEnd;
 
+	// Pre-calculate for convenience
+	float m_tau;
+
 	// Default initialization of the variables
 	CollisionBallProperties();
 
@@ -64,6 +67,9 @@ public:
 
 	// Calculate a position for any time.
 	void CalculatePosition( Vector3d& position, Vector3d& velocity, double time );
+
+	// Get rotations for any time
+	void CalculateRotation( Quaternion& rotation, Vector3& omega, double time );
 };
 
 #define COLLISION_BALL_PROPERTIES_H

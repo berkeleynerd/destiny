@@ -4,20 +4,29 @@
 #include "stdafx.h"
 
 
-constexpr size_t s_collisionMaxIterationsDefault = 20;
-constexpr bool s_useIterativeCollisionDefault = false;
+constexpr size_t g_collisionMaxIterationsDefault = 20;
+constexpr bool g_useIterativeCollisionDefault = false;
+constexpr bool g_useDynamicalOrientationDefault = false;
+constexpr bool g_disableDynamicalOrientationForMissilesDefault = false;
+constexpr bool g_useNewOrbitDefault = false;
 
 // Only do this many iterations in the search for collision before stopping.
-extern size_t s_collisionMaxIterations;
-extern bool s_useIterativeCollision;
+extern size_t g_collisionMaxIterations;
+extern bool g_useIterativeCollision;
+extern bool g_useDynamicalOrientation;
+extern bool g_disableDynamicalOrientationForMissiles;
+extern bool g_useNewOrbit;
 
 
 BLUE_CLASS( SettingsConfiguration ) : public IRoot
 {
 public:
 	EXPOSE_TO_BLUE();
-	size_t m_collisionMaxIterations = s_collisionMaxIterationsDefault;
-	bool m_useIterativeCollision = s_useIterativeCollisionDefault;
+	size_t m_collisionMaxIterations = g_collisionMaxIterationsDefault;
+	bool m_useIterativeCollision = g_useIterativeCollisionDefault;
+	bool m_useDynamicalOrientation = g_useDynamicalOrientationDefault;
+	bool m_disableDynamicalOrientationForMissiles = g_disableDynamicalOrientationForMissilesDefault;
+	bool m_useNewOrbit = g_useNewOrbitDefault;
 };
 TYPEDEF_BLUECLASS( SettingsConfiguration );
 

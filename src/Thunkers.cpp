@@ -2,6 +2,7 @@
 #include "Ballpark.h"
 #include "Ball.h"
 #include "Box.h"
+#include "Settings.h"
 #include "Triangle.h"
 #define ABS(X) ((X)<0.0?-(X):(X))
 constexpr double PI = 3.141592654;
@@ -43,11 +44,72 @@ PyObject* Ballpark::Py__init__(
 }
 
 //---------------------------------------------------------------------------------------
-// Ballpark::PyAddBall
+// Ballpark::PyAddDynamicallyOrientedBall
 //---------------------------------------------------------------------------------------
-PyObject* Ballpark::PyAddBall(
-	PyObject* args
-	)
+PyObject* Ballpark::PyAddDynamicallyOrientedBall(
+	PyObject* args )
+{
+	ID srcId;
+	double mass;
+	float radius;
+	float maxVel;
+	float maxAngularSpeed;
+	int isFree;
+	int isGlobal;
+	int isMassive;
+	int isInteractive;
+	int isSpaceJunk;
+	double x;
+	double y;
+	double z;
+	double vx;
+	double vy;
+	double vz;
+	float agility;
+	float angularAgility;
+	float speedFraction;
+
+	if( !PyArg_ParseTuple( args, "Ldffiiiiiddddddffff", &srcId, &mass, &radius, &maxVel, &isFree, &isGlobal, &isMassive, &isInteractive, &isSpaceJunk, &x, &y, &z, &vx, &vy, &vz, &agility, &speedFraction, &maxAngularSpeed, &angularAgility ) )
+		return NULL;
+
+	if( inEvolve )
+	{
+		PyErr_SetString( PyExc_RuntimeError, "Can not add ball during Evolve()." );
+		return nullptr;
+	}
+
+	Ball* b = AddDynamicallyOrientedBall(
+		srcId,
+		mass,
+		radius,
+		maxVel,
+		maxAngularSpeed,
+		isFree != 0,
+		isGlobal != 0,
+		isMassive != 0,
+		isInteractive != 0,
+		isSpaceJunk != 0,
+		x, y, z,
+		vx, vy, vz,
+		0.0f, 0.0f, 0.0f, 1.0f,
+		0.0f, 0.0f, 0.0f,
+		agility,
+		angularAgility,
+		speedFraction );
+
+	// The python add ball currently knows nothing about orientation or
+	// rotational velocity.  Snap the rotation to the velocity vector
+	b->SnapOrientation();
+
+	return BlueWrapObjectForPython( (IBall*)b );
+}
+
+
+//---------------------------------------------------------------------------------------
+// Ballpark::PyAddOldStyleOrientedBall
+//---------------------------------------------------------------------------------------
+PyObject* Ballpark::PyAddOldStyleOrientedBall(
+	PyObject* args )
 {
 	ID srcId;
 	double mass;
@@ -67,42 +129,32 @@ PyObject* Ballpark::PyAddBall(
 	float agility;
 	float speedFraction;
 
-	if (!PyArg_ParseTuple(args, "Ldffiiiiiddddddff",
-		&srcId,
-		&mass,
-		&radius,
-		&maxVel,
-		&isFree,
-		&isGlobal,
-		&isMassive,
-		&isInteractive,
-		&isSpaceJunk,
-		&x,
-		&y,
-		&z,
-		&vx,
-		&vy,
-		&vz,
-		&agility,
-		&speedFraction
-		))
-		return NULL;
+	if( !PyArg_ParseTuple( args, "Ldffiiiiiddddddff", &srcId, &mass, &radius, &maxVel, &isFree, &isGlobal, &isMassive, &isInteractive, &isSpaceJunk, &x, &y, &z, &vx, &vy, &vz, &agility, &speedFraction ) )
+		return nullptr;
 
-	if (inEvolve)
+	if( inEvolve )
 	{
-		PyErr_SetString(PyExc_RuntimeError, "Can not add ball during Evolve().");
+		PyErr_SetString( PyExc_RuntimeError, "Can not add ball during Evolve()." );
 		return nullptr;
 	}
 
-	Ball *b = AddBall(srcId, mass, radius, maxVel,
-				isFree!=0, isGlobal!=0, isMassive!=0, isInteractive!=0, isSpaceJunk!=0,
-				x, y, z,
-				vx, vy, vz,
-				agility,
-				speedFraction
-				);
+	Ball* b = AddOldStyleOrientedBall( srcId, mass, radius, maxVel, isFree != 0, isGlobal != 0, isMassive != 0, isInteractive != 0, isSpaceJunk != 0, x, y, z, vx, vy, vz, agility, speedFraction );
+	return BlueWrapObjectForPython( (IBall*)b );
+}
 
-	return BlueWrapObjectForPython((IBall *)b);
+//---------------------------------------------------------------------------------------
+// Ballpark::PyAddBall
+//---------------------------------------------------------------------------------------
+PyObject* Ballpark::PyAddBall(
+	PyObject* args
+	)
+{
+	Ball* b = nullptr;
+	if( g_useDynamicalOrientation )
+	{
+		return PyAddDynamicallyOrientedBall(args);
+	}
+	return PyAddOldStyleOrientedBall(args);
 }
 
 PyObject* Ballpark::PyAddCapsule(
@@ -743,11 +795,62 @@ PyObject* Ballpark::PySetBallVelocity(
 	return Py_None;
 }
 
+PyObject* Ballpark::PySetMaxAngularSpeed( PyObject* args )
+{
+	ID srcId;
+	float speed;
+
+	if( !PyArg_ParseTuple( args, "Lf", &srcId, &speed ) )
+		return nullptr;
+
+	SetMaxAngularSpeed( srcId, speed );
+
+	Py_RETURN_NONE;
+}
+
+PyObject* Ballpark::PySetBallAngularVelocity( PyObject* args )
+{
+	ID srcId;
+	double wx, wy, wz;
+
+	if( !PyArg_ParseTuple( args, "Lddd", &srcId, &wx, &wy, &wz ) )
+		return nullptr;
+
+	SetBallAngularVelocity( srcId, wx, wy, wz );
+
+	Py_RETURN_NONE;
+}
+
+PyObject* Ballpark::PySetBallRotation( PyObject* args )
+{
+	ID srcId;
+	double rx, ry, rz, rw;
+
+	if( !PyArg_ParseTuple( args, "Ldddd", &srcId, &rx, &ry, &rz, &rw ) )
+		return nullptr;
+
+	SetBallRotation( srcId, rx, ry, rz, rw );
+
+	Py_RETURN_NONE;
+}
+PyObject* Ballpark::PySetBallAngularAgility( PyObject* args )
+{
+	ID objectId;
+	float agility;
+
+	if( !PyArg_ParseTuple( args, "Lf", &objectId, &agility ) )
+		return nullptr;
+
+	SetBallAngularAgility( objectId, agility );
+
+	Py_RETURN_NONE;
+}
+
 #pragma warning (push)
 #pragma warning (disable: 4533)
 
 //---------------------------------------------------------------------------------------
-// Ballpark::PySetBallVelocity
+// Ballpark::PyLaunchMissile
 //---------------------------------------------------------------------------------------
 PyObject* Ballpark::PyLaunchMissile(
 	PyObject* args
@@ -1781,6 +1884,15 @@ PyObject* Ballpark::PyUncloakBall(
 
 //---------------------------------------------------------------------------------------
 // Ballpark::PySetBallFormation
+//
+// WARNING:
+// The formation code is old abandoned code that needs to get removed or seriously worked on,
+// because it relies on orientation which is not guaranteed to be equal between server and client
+// because ball orientation gets "snapped" when a new ball is added to the park, which can result
+// in inconsistencies between client/server when it comes to rotation for that tick,
+// at least when using the old collision method. This formation code is not used for the formation
+// flight which is currently available in Eve Online,
+// that formation flight behavior was put together in Python
 //---------------------------------------------------------------------------------------
 PyObject* Ballpark::PySetBallFormation(
 	PyObject* args
@@ -2790,6 +2902,10 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 		int64_t harmonic = -1;
 		int32_t corporationID = -1;
 		int32_t allianceID = -1;
+		Quaternion rot( 0.f, 0.f, 0.f, 1.f );
+		Vector3 angVel( 0.f, 0.f, 0.f );
+		float rotAgility( 1.0f );
+		float maxAngVel( 0.0f );
 
 		byteCount += tmpCnt;
 
@@ -2813,21 +2929,48 @@ Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 			byteCount += s->Read(&vel.x,sizeof(Vector3d));
 			byteCount += s->Read(&agility,sizeof(agility));
 			byteCount += s->Read(&speedFraction,sizeof(speedFraction));
+			if( g_useDynamicalOrientation )
+			{
+				byteCount += s->Read( &rot.x, sizeof( Quaternion ) );
+				byteCount += s->Read( &maxAngVel, sizeof( maxAngVel ) );
+				byteCount += s->Read( &angVel.x, sizeof( Vector3 ) );
+				byteCount += s->Read( &rotAgility, sizeof( rotAgility ) );
+			}
 		}
 
-		ball = AddBall(
-						ID(id), mass, radius, maxVel,
-						bool(flags & DSTBALL_ISFREE),
-						!!(flags & DSTBALL_ISGLOBAL),
-						!!(flags & DSTBALL_ISMASSIVE),
-						!!(flags & DSTBALL_ISINTERACTIVE),
-						!!(flags & DSTBALL_ISSPACEJUNK),
-						pos.x, pos.y, pos.z,
-						vel.x, vel.y, vel.z,
-						agility,
-						speedFraction
-						);
-
+		if( g_useDynamicalOrientation )
+		{
+			ball = AddDynamicallyOrientedBall(
+				ID( id ), mass, radius, maxVel,
+				maxAngVel,
+				bool( flags & DSTBALL_ISFREE ),
+				!!( flags & DSTBALL_ISGLOBAL ),
+				!!( flags & DSTBALL_ISMASSIVE ),
+				!!( flags & DSTBALL_ISINTERACTIVE ),
+				!!( flags & DSTBALL_ISSPACEJUNK ),
+				pos.x, pos.y, pos.z,
+				vel.x, vel.y, vel.z,
+				rot.x, rot.y, rot.z, rot.w,
+				angVel.x, angVel.y, angVel.z,
+				agility,
+				rotAgility,
+				speedFraction
+			);
+		}
+		else
+		{
+			ball = AddOldStyleOrientedBall(
+				ID(id), mass, radius, maxVel,
+				bool(flags & DSTBALL_ISFREE),
+				!!(flags & DSTBALL_ISGLOBAL),
+				!!(flags & DSTBALL_ISMASSIVE),
+				!!(flags & DSTBALL_ISINTERACTIVE),
+				!!(flags & DSTBALL_ISSPACEJUNK),
+				pos.x, pos.y, pos.z,
+				vel.x, vel.y, vel.z,
+				agility,
+				speedFraction);
+		}
 		int8_t formationID;
 		byteCount += s->Read(&formationID, sizeof(formationID));
 		ball->mFormationID = formationID;
@@ -3055,6 +3198,10 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 	Vector3d vel = b->mNewVel;
 	float agility = b->mAgility;
 	float speedFraction = b->mSpeedFraction;
+	Quaternion rot = b->mNewRot;
+	Vector3 angVel = b->mNewAngVel;
+	float rotAgility = b->mRotAgility;
+	float maxAngVel = b->mMaxAngVel;
 
 	byteCount += s->Write(&id       , sizeof(id));
 	byteCount += s->Write(&mode     , sizeof(mode));
@@ -3079,6 +3226,13 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 		byteCount += s->Write(&vel.x,sizeof(Vector3d));
 		byteCount += s->Write(&agility,sizeof(agility));
 		byteCount += s->Write(&speedFraction,sizeof(speedFraction));
+		if( g_useDynamicalOrientation )
+		{
+			byteCount += s->Write( &rot.x, sizeof( Quaternion ) );
+			byteCount += s->Write( &maxAngVel, sizeof( maxAngVel ) );
+			byteCount += s->Write( &angVel.x, sizeof( Vector3 ) );
+			byteCount += s->Write( &rotAgility, sizeof( rotAgility ) );
+		}
 	}
 
 	int8_t formationID = int8_t( b->mFormationID );

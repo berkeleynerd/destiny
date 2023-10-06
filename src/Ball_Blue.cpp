@@ -53,6 +53,14 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 		)
 
 		/////////////////////////////////////////////////////////////////////////////
+		//               maxAngularVelocity
+		MAP_ATTRIBUTE(
+			"maxAngularVelocity",
+			mMaxAngVel,
+			"Maximum angular velocity of ball (rad/s)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
+		/////////////////////////////////////////////////////////////////////////////
 		//               isFree
 		MAP_ATTRIBUTE
 		(
@@ -207,6 +215,62 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 		)
 
 		/////////////////////////////////////////////////////////////////////////////
+		//              wx of ball
+		MAP_ATTRIBUTE(
+			"wx",
+			mNewAngVel.x,
+			"x angular velocity of ball (rad/s)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              wy of ball
+		MAP_ATTRIBUTE(
+			"wy",
+			mNewAngVel.y,
+			"y angular velocity of ball (rad/s)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              wz of ball
+		MAP_ATTRIBUTE(
+			"wz",
+			mNewAngVel.z,
+			"z angular velocity of ball (rad/s)",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              rx of ball
+		MAP_ATTRIBUTE(
+			"rx",
+			mNewRot.x,
+			"x component of rotation quaternion",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              ry of ball
+		MAP_ATTRIBUTE(
+			"ry",
+			mNewRot.y,
+			"y component of rotation quaternion",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              rz of ball
+		MAP_ATTRIBUTE(
+			"rz",
+			mNewRot.z,
+			"z component of rotation quaternion",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
+		/////////////////////////////////////////////////////////////////////////////
+		//              rw of ball
+		MAP_ATTRIBUTE(
+			"rw",
+			mNewRot.w,
+			"w component of rotation quaternion",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
+		/////////////////////////////////////////////////////////////////////////////
 		//              yaw of ball
 		MAP_ATTRIBUTE
 		(
@@ -246,6 +310,16 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 			"Agility modifier of ship",
 			Be::READWRITE | Be::NOTIFY | Be::PERSIST
 		)
+
+		/////////////////////////////////////////////////////////////////////////////
+		//               Rotational agility
+
+		MAP_ATTRIBUTE(
+			"RotationalAgility",
+			mRotAgility,
+			"Rotational agility modifier of ship",
+			Be::READWRITE | Be::NOTIFY | Be::PERSIST )
+
 		/////////////////////////////////////////////////////////////////////////////
 		//               speedFraction
 		MAP_ATTRIBUTE

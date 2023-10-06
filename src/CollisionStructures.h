@@ -11,6 +11,7 @@ struct CollisionImpact
 	double timeOfImpact;
 	ID collider;
 	Vector3d velocityChange;
+	Vector3 angularVelocityChange;
 };
 
 // To save CPU cycles, only calculate the impact that happens first for each
@@ -35,6 +36,8 @@ struct BallLocation
 	double time; // The time of the calculation
 	ID collider; // Set to -1 if there is no collision, applies to start and end only
 	Vector3d p, v; // Position at impact, velocity after impact
+	Vector3 omega; // rotational velocity after impact
+	Quaternion rot; // Rotation at impact
 	// Need to set time and collider to default values
 	BallLocation();
 };

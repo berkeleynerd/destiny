@@ -22,8 +22,42 @@ const Be::ClassInfo* SettingsConfiguration::ExposeToBlue()
 	EXPOSURE_BEGIN( SettingsConfiguration, "Pass an instance of this to destiny.settings.Configure() to apply a settings configuration" )
 		MAP_INTERFACE( IRoot )
 		MAP_INTERFACE( SettingsConfiguration )
-		MAP_ATTRIBUTE( "collisionMaxIterations", m_collisionMaxIterations, "The maximum number of collision iterations (assuming iterative collision is enabled). Recommended value >= 10, at 5 agile ships are known to fly through thin boxes.", Be::READWRITE )
-		MAP_ATTRIBUTE( "useIterativeCollision", m_useIterativeCollision, "Boolean flag to enable/disable iterative collision", Be::READWRITE )
+		MAP_ATTRIBUTE
+		(
+			"collisionMaxIterations",
+			m_collisionMaxIterations,
+			"The maximum number of collision iterations (assuming iterative collision is enabled). "
+			"Recommended value >= 10, at 5 agile ships are known to fly through thin boxes.",
+			 Be::READWRITE
+		)
+		MAP_ATTRIBUTE
+		(
+			"useIterativeCollision",
+			m_useIterativeCollision,
+			"Boolean flag to enable/disable iterative collision",
+			Be::READWRITE
+		)
+		MAP_ATTRIBUTE
+		(
+			"useDynamicalOrientation",
+			m_useDynamicalOrientation,
+			"Boolean flag to enable/disable dynamical orientation",
+			Be::READWRITE
+		)
+		MAP_ATTRIBUTE
+		(
+			"disableDynamicalOrientationForMissiles",
+			m_disableDynamicalOrientationForMissiles,
+			"Boolean flag to disable dynamical orientation for missiles (if dynamical orientation is enabled).",
+			Be::READWRITE
+		)
+		MAP_ATTRIBUTE
+		(
+			"useNewOrbit",
+			m_useNewOrbit,
+			"Use the new orbit behavior",
+			Be::READWRITE
+		)
 	EXPOSURE_END()
 }
 

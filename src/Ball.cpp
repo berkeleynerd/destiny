@@ -2,6 +2,7 @@
 #include "Ball.h"
 #include "Ballpark.h"
 #include "Partition.h"
+#include "Settings.h"
 #include "Box.h"
 
 #define ABS(X) ((X)<0.0?-(X):(X))
@@ -49,7 +50,7 @@ ClientBall::ClientBall(IRoot *lockobj) :
 {
     //CCP_LOG_CH( s_ch,"New Ball:%d. Total is: %d\n",int(this),++ballCount);
     mBoxList = PyList_New(27);
-    mLastRot = Quaternion(0.0f,0.0f,0.0f,-1.0f);
+    mLastRot = Quaternion(0.0f,0.0f,0.0f,1.0f);
 	mImpactRotation = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 	mImpactVelocity = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 	mImpactVelocityGoal = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
@@ -71,6 +72,13 @@ Ball::Ball(IRoot* lockobj) :
     mMaxVel(0.0),
     mSpeedFraction(1.0),
     mAgility(1.0),
+	mMaxAngVel( 1.0f ),
+	mRoll( 0.0f ),
+	mRotAgility( 0.9f ),
+	mNewRot( 0.f, 0.f, 0.f, 1.f ),
+	mOldRot( 0.f, 0.f, 0.f, 1.f ),
+	mNewAngVel( 0.f, 0.f, 0.f ),
+	mOldAngVel( 0.f, 0.f, 0.f ),
     mNewYaw(0.0),
     mOldYaw(0.0),
     mNewPitch(0.0),
@@ -145,6 +153,73 @@ void Ball::RegisterBallNotInPark()
 }
 
 //---------------------------------------------------------------------------------------
+// Calculates relative velocity of other ball
+//---------------------------------------------------------------------------------------
+
+void Ball::CalculateRelativeVelocities( Ball* target, bool calcRelative, bool calcRadial, bool calcTransversal, bool calcAngular, Vector3d& relVel, double& radVel, double& shortDist, double& transVel, double& angVel )
+{
+	// Return if there is not target
+	if( !target )
+		return;
+
+	// Set the inheritance of the booleans
+	if( calcAngular )
+		calcTransversal = true;
+
+	if( calcTransversal )
+		calcRadial = true;
+
+	if( calcRadial )
+		calcRelative = true;
+
+	if( calcRelative )
+	{
+		//The relative velocity
+		relVel = target->mNewVel - mNewVel;
+
+		if( calcRadial )
+		{
+			// Find the short dist
+			Vector3d radial = target->mNewPos - mNewPos;
+			double dist = radial.Length();
+			// This should never happen, but has to be here because we normalize radial
+			if( dist == 0.0 )
+				return;
+
+			shortDist = ( dist - target->mRadius ) - mRadius;
+			if( shortDist < 0.0 )
+				shortDist = 0.0;
+
+			radial /= dist;
+
+			radVel = relVel * radial;
+
+			if( calcTransversal )
+			{
+				Vector3d transVelVec = ( relVel - radVel * radial );
+				// This is just the length of the transversal velocity
+				transVel = transVelVec.Length();
+
+				if( calcAngular )
+				{
+					if(g_useDynamicalOrientation)
+					{
+						Vector3d omega = mNewAngVel;
+						omega.Cross( radial );
+						transVelVec -= omega * dist;
+						angVel = transVelVec.Length() / dist;
+					}
+					else
+					{
+						angVel = transVel / dist;
+					}
+				}
+			}
+		}
+	}
+}
+
+//---------------------------------------------------------------------------------------
 // ClearBoxes Deletes links to all boxes
 //---------------------------------------------------------------------------------------
 
@@ -210,6 +285,51 @@ void Ball::RemoveProximitySensor()
     UpdateProximityStatus();
 }
 
+void Ball::SnapOrientation()
+{
+	// Set the orientation in the direction of the velocity vector or
+	// last goto.  Stop any rotation of the ship.
+	const auto vel2 = mNewVel.LengthSq();
+
+	Vector3 direction;
+	if( vel2 > 1e-12 )
+	{
+		direction = mNewVel.AsVector3();
+	}
+	else
+	{
+		// There is no velocity vector to snap to, simply ignore
+		return;
+	}
+
+	const auto lenDir = Length( direction );
+	if( lenDir < 1e-12 )
+	{
+		mNewRot = IdentityQuaternion();
+	}
+	else
+	{
+		const auto vec = Cross( Vector3( 0., 0., 1. ), direction );
+		const auto angle = std::acos( std::max( -1.0f, std::min( 1.0f, direction.z / lenDir ) ) );
+		mNewRot = RotationQuaternion( vec, angle );
+
+		// Need to fix the roll to point up
+		// This matrix transforms from world frame to ship frame
+		const auto invMat = RotationMatrix( Conjugate( mNewRot ) );
+		const auto up = TransformCoord( Vector3( 0.0f, 1.0f, 0.0f ), invMat );
+		const auto upRoll = std::fabs( up.z < 0.99f ) ? std::atan2( -up.x, up.y ) : 0.0f;
+
+		// Rotate around the new heading
+		const auto mat = RotationMatrix( mNewRot );
+		const auto heading = TransformCoord( Vector3( 0.0f, 0.0f, 1.0f ), mat );
+		mNewRot *= RotationQuaternion( heading, upRoll );
+	}
+
+	//To avoid interpolation
+	mOldRot = mNewRot;
+	mNewAngVel = mOldAngVel = Vector3( 0., 0., 0. );
+}
+
 void Ball::CalculateYawPitchRoll(bool snap)
 {
 	if( !mPark )
@@ -252,7 +372,7 @@ void Ball::CalculateYawPitchRoll(bool snap)
     if(vel2 == 0.0)
     {
         // Indeterminate direction...use last goto
-        direction = mGoto;
+        direction = mGoto - mNewPos;
     }
     else
     {
@@ -768,6 +888,11 @@ void ClientBall::InforceContinuity()
             // This is first
             mLastPos = mOldPos;
             mLastVel = mOldVel;
+			if( g_useDynamicalOrientation )
+			{
+				mLastRot = mOldRot;
+				mLastSpeed = 0.5 * mLastRot * Quaternion( mOldAngVel.x, mOldAngVel.y, mOldAngVel.z, 0.f );
+			}
         }
         mIntAcc = mLastC+mLastG;
         mLastTick = mPark->mCurrentTime;
@@ -812,11 +937,13 @@ void Ball::SetMode(DSTBALLMODE mode)
 
 //---------------------------------------------------------------------------------------
 // ITriQuaternionFunction
+// If Dynamical Orientation is enabled, return the rotation quaternion
+// based on the dynamical state of the ship.  Uses internally the rotation integrator
+// of the park to get a smooth interpolation between steps.
 //
-// This function basically returns a quaternion for the ball that is
+// When Dynamical Orientation is disabled, this function returns a quaternion
 // based on the current velocity direction of the ball.
-// The result quaternion is actually dampened such that discontinous changes
-// are hidden.
+// The result quaternion is dampened such that discontinous changes are hidden.
 //---------------------------------------------------------------------------------------
 
 Quaternion* ClientBall::Update(
@@ -892,45 +1019,66 @@ Quaternion* ClientBall::GetValueAt(
 
         Be::Time deltaTime = shiftedTime-mRotUpdateTime;
 
-        double fraction = double(shiftedTime-mOldTime)/double(mNewTime - mOldTime);
+        double timeStepFraction = static_cast<double>( shiftedTime - mOldTime ) / static_cast<double>( mNewTime - mOldTime );
 
-        double aYaw   = mOldYaw   + fraction*mYawDelta;
-        double aPitch = mOldPitch + fraction*(mNewPitch - mOldPitch);
-        double aRoll  = mOldRoll  + fraction*(mNewRoll  - mOldRoll);
-
-        double friction;
-
-        if(mMode==DSTBALL_MISSILE)
-        {
-            friction = 10.0;
-        }
-        else
-        {
-            friction = 0.9;
-        }
-
-        double dT = TimeAsDouble(deltaTime);
-
-        Modulo2pi(mLastYaw,aYaw);
-        Modulo2pi(mLastPitch,aPitch);
-
-        mYawSpeed = mLastYaw;
-        mPitchSpeed = mLastPitch;
-				
-        double tmp = 1.0/(1.0 + friction*dT);
-        mLastYaw = (mLastYaw + friction*dT*aYaw)*tmp;
-        mLastPitch = (mLastPitch + 1.3*friction*dT*aPitch)/(1.0 + 1.3*friction*dT);
-        mLastRoll = (mLastRoll + friction*dT*aRoll)*tmp;
-
-        tmp = 1.0/dT;
-        mYawSpeed = (mLastYaw-mYawSpeed)*tmp;
-        mPitchSpeed = (mLastPitch-mPitchSpeed)*tmp;
-
-		mLastRot = RotationQuaternion( float(mLastYaw), float(mLastPitch), float(mLastRoll) );
-
-		if( mProcessingImpact )
+		if( g_useDynamicalOrientation )
 		{
-			ProcessImpact((float) dT);
+			mLastAngVel = mOldAngVel;
+			mLastRot = mOldRot;
+
+			if( g_useIterativeCollision )
+			{
+				mPark->CalculateBallRotationVelocity( this, timeStepFraction, mLastRot, mLastAngVel );
+			}
+			else
+			{
+				const float tau = ( float( mMass ) * mAgility * mRotAgility ) / float( mPark->mFriction );
+				mPark->ApplyTorque( mLastRot, mLastAngVel, mTorque, mRoll, tau, static_cast<float>( timeStepFraction ) );
+			}
+
+			//The current derivative is \dot{q} = Omega * q / 2, where omega is the angular velocity in world frame
+			mLastSpeed = 0.5 * mLastRot * Quaternion( mLastAngVel.x, mLastAngVel.y, mLastAngVel.z, 0.f );
+		}
+		else
+		{
+			double aYaw   = mOldYaw   + timeStepFraction*mYawDelta;
+			double aPitch = mOldPitch + timeStepFraction*(mNewPitch - mOldPitch);
+			double aRoll  = mOldRoll  + timeStepFraction*(mNewRoll  - mOldRoll);
+
+			double friction;
+
+			if(mMode==DSTBALL_MISSILE)
+			{
+				friction = 10.0;
+			}
+			else
+			{
+				friction = 0.9;
+			}
+
+			double dT = TimeAsDouble(deltaTime);
+
+			Modulo2pi(mLastYaw,aYaw);
+			Modulo2pi(mLastPitch,aPitch);
+
+			mYawSpeed = mLastYaw;
+			mPitchSpeed = mLastPitch;
+				
+			double tmp = 1.0/(1.0 + friction*dT);
+			mLastYaw = (mLastYaw + friction*dT*aYaw)*tmp;
+			mLastPitch = (mLastPitch + 1.3*friction*dT*aPitch)/(1.0 + 1.3*friction*dT);
+			mLastRoll = (mLastRoll + friction*dT*aRoll)*tmp;
+
+			tmp = 1.0/dT;
+			mYawSpeed = (mLastYaw-mYawSpeed)*tmp;
+			mPitchSpeed = (mLastPitch-mPitchSpeed)*tmp;
+
+			mLastRot = RotationQuaternion( float(mLastYaw), float(mLastPitch), float(mLastRoll) );
+
+			if( mProcessingImpact )
+			{
+				ProcessImpact((float)dT);
+			}
 		}
 
         *in = mLastRot;
@@ -954,9 +1102,7 @@ Quaternion* ClientBall::GetValueDotAt(
     Be::Time time
     )
 {
-    in->x = float(mYawSpeed);
-    in->y = float(mPitchSpeed);
-    return in;
+	return in;
 }
 
 Quaternion* ClientBall::GetValueDotAt(
@@ -965,6 +1111,81 @@ Quaternion* ClientBall::GetValueDotAt(
     )
 {
     return in;
+}
+
+void ClientBall::CalculateRelativeVelocities( ClientBall* target, bool calcRelative, bool calcRadial, bool calcTransversal, bool calcAngular, Vector3d& relVel, double& radVel, double& shortDist, double& transVel, double& angVel )
+{
+	// Return if there is not target
+	if( !target )
+		return;
+
+	// Set the inheritance of the booleans
+	if( calcAngular )
+		calcTransversal = true;
+
+	if( calcTransversal )
+		calcRadial = true;
+
+	if( calcRadial )
+		calcRelative = true;
+
+	if( calcRelative )
+	{
+		// Update the interpolation, using the largest of the src and target interpolation values, accounting for the shifted time functionality
+		const auto currentTime = std::max( { mOldTime, mPosUpdateTime, mRotUpdateTime, target->mPosUpdateTime } ) + 2 * mPark->mTickInterval * 10000;
+
+		// The relative velocity
+		Vector3 srcVel, targetVel;
+		GetValueDotAt( &srcVel, currentTime );
+		target->GetValueDotAt( &targetVel, currentTime );
+
+		relVel = targetVel - srcVel;
+
+		if( calcRadial )
+		{
+			// Find the short dist
+			// The velocity call above updated the position
+			Vector3d radial = target->mLastPos - mLastPos;
+
+			const double dist = radial.Length();
+			// This should never happen, but has to be here because we normalize radial
+			if( dist == 0.0 )
+				return;
+
+			shortDist = ( dist - target->mRadius ) - mRadius;
+			if( shortDist < 0.0 )
+				shortDist = 0.0;
+
+			radial /= dist;
+
+			radVel = relVel * radial;
+
+			if( calcTransversal )
+			{
+				Vector3d transVelVec = ( relVel - radVel * radial );
+				// This is just the length of the transversal velocity
+				transVel = transVelVec.Length();
+
+				if( calcAngular )
+				{
+					if(g_useDynamicalOrientation)
+					{
+						// Need to update the rotation to make sure everything is consistent
+						Quaternion tmp;
+						GetValueAt( &tmp, currentTime );
+						Vector3d omega = mLastAngVel;
+						omega.Cross( radial );
+						transVelVec -= omega * dist;
+						angVel = transVelVec.Length() / dist;
+					}
+					else
+					{
+						angVel = transVel / dist;
+					}
+				}
+			}
+		}
+	}
 }
 
 
@@ -1035,8 +1256,8 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
     if(mElapsed==0.0 || mCenterDist < 0.0)
         shouldUpdateDist = true;
 
-    // fraction tells us how far we are in the interpolation segment. Should usually be between 0 and 1.
-    double fraction = TimeAsDouble(shiftedTime-mOldTime);
+    // timeStepFraction tells us how far we are in the interpolation segment. Should usually be between 0 and 1.
+    double timeStepFraction = TimeAsDouble(shiftedTime-mOldTime);
     
     if(mPosUpdateTime==0)
         mPosUpdateTime = shiftedTime;
@@ -1052,7 +1273,7 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
     // Calculate the new position
     if( IsWarping() )
     {
-        double t = ((mPark->mCurrentTime - mEffectStamp) - 1 + fraction)*mPark->dt;
+        double t = ((mPark->mCurrentTime - mEffectStamp) - 1 + timeStepFraction)*mPark->dt;
         mPark->WarpDistance(
             this,
             mLastPos,
@@ -1065,7 +1286,7 @@ void ClientBall::GetDelta(Vector3 *in, Be::Time time)
     {
         mLastPos = mOldPos;
         mLastVel = mOldVel;
-        mPark->CalculateBallPositionVelocity(this, fraction, mLastPos, mLastVel);
+		mPark->CalculateBallPositionVelocity(this, timeStepFraction, mLastPos, mLastVel);
     }
 
     // Calculate the delta with last position and keep it
@@ -1324,6 +1545,42 @@ bool Ball::OnModified(
     {
         mPark->SetBallVelocity(mId,mNewVel.x,mNewVel.y,mNewVel.z);
     }
+	else if( (Be::Var*)&mNewRot.x == value )
+	{
+		mPark->SetBallRotation( mId, mNewRot.x, mNewRot.y, mNewRot.z, mNewRot.w );
+	}
+	else if( (Be::Var*)&mNewRot.y == value )
+	{
+		mPark->SetBallRotation( mId, mNewRot.x, mNewRot.y, mNewRot.z, mNewRot.w );
+	}
+	else if( (Be::Var*)&mNewRot.z == value )
+	{
+		mPark->SetBallRotation( mId, mNewRot.x, mNewRot.y, mNewRot.z, mNewRot.w );
+	}
+	else if( (Be::Var*)&mNewRot.w == value )
+	{
+		mPark->SetBallRotation( mId, mNewRot.x, mNewRot.y, mNewRot.z, mNewRot.w );
+	}
+	else if( (Be::Var*)&mNewAngVel.x == value )
+	{
+		mPark->SetBallAngularVelocity( mId, mNewAngVel.x, mNewAngVel.y, mNewAngVel.z );
+	}
+	else if( (Be::Var*)&mNewAngVel.y == value )
+	{
+		mPark->SetBallAngularVelocity( mId, mNewAngVel.x, mNewAngVel.y, mNewAngVel.z );
+	}
+	else if( (Be::Var*)&mNewAngVel.z == value )
+	{
+		mPark->SetBallAngularVelocity( mId, mNewAngVel.x, mNewAngVel.y, mNewAngVel.z );
+	}
+	else if( (Be::Var*)&mMaxAngVel == value )
+	{
+		mPark->SetMaxAngularSpeed( mId, mMaxAngVel );
+	}
+	else if( (Be::Var*)&mRotAgility == value )
+	{
+		mPark->SetBallAngularAgility( mId, mRotAgility );
+	}
     else if((Be::Var*)&mRadius == value)
     {
         mPark->SetBallRadius(mId,mRadius);
@@ -1925,8 +2182,16 @@ PyObject* Ball::PyAddMiniBox(PyObject* args)
 
 void Ball::GetRotatedVector(Vector3& vec)
 {
-	Matrix mat = RotationMatrix( RotationQuaternion( float( mNewYaw ), float( mNewPitch ), float( mNewRoll ) ) );
-	vec = TransformCoord( vec, mat );
+	if( g_useDynamicalOrientation )
+	{
+		const auto mat = RotationMatrix( mNewRot );
+		vec = TransformCoord( vec, mat );
+	}
+	else
+	{
+		const auto mat = RotationMatrix( RotationQuaternion( float( mNewYaw ), float( mNewPitch ), float( mNewRoll ) ) );
+		vec = TransformCoord( vec, mat );
+	}
 }
 
 //---------------------------------------------------------------------------------------

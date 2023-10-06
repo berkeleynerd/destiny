@@ -147,6 +147,11 @@ public:
 	float mRadius; // radius of ball (meters)
 	float mMaxVel; // the maximum velocity this ball can move (meters/second)
     float mAgility; // the maneuverability of the ball
+
+	float mMaxAngVel; // the maximum angular velocity of this ball (rad/s)
+	float mRoll; // Work variable for rolling
+	float mRotAgility; // the rotational maneuverability of the ball.  Smaller numbers give more agility
+
 	float mSpeedFraction; // Current cruise velocity as a fraction of 'mMaxVel'
     float mFollowRange; // the range at which to follow ball
 
@@ -170,10 +175,17 @@ public:
 	Vector3d mNewVel; // current velocity of ball
 	Vector3d mOldVel; // velocity of ball one tick interval ago
     Vector3d mGoto; // current goto destination of ball for a DSTBALL_GOTO mode
+
+	Vector3 mNewAngVel; // current angular velocity of ball (rad/s)
+	Vector3 mOldAngVel; // angular velocity of ball one tick interval ago
+	Vector3 mTorque; // work variable for heading changes
+
     // work variables used in integration
 	Vector3d mLastG;
 	Vector3d mLastC;
 
+	Quaternion mNewRot; // current rotation of ball (transfers from ball frame to world frame)
+	Quaternion mOldRot; // rotation of ball one tick interval ago
 
 	DSTBALLMODE mMode; // the current dynamical state of the ball	
 
@@ -276,6 +288,15 @@ public:
 	//////////////////////////////////////////////////////////////////////////////
 	void SetBoxActive(int boxId, bool isActive) override;
 
+
+	//////////////////////////////////////////////////////////////////////////////
+	// SnapOrientation()
+	// pre: none
+	// post: Set the orientation in the direction of the velocity vector or
+	// last goto.  Stop any rotation of the ship.
+	//////////////////////////////////////////////////////////////////////////////
+	void SnapOrientation();
+
 	//////////////////////////////////////////////////////////////////////////////
 	// CalculateYawPitchRoll()
 	// pre: none
@@ -355,6 +376,26 @@ public:
 		Be::Var* vBall
 		) override;
 
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates relative velocity of target as seen by me.  Angular velocity
+	//     takes ship rotation into account if DYNAMICAL_ORIENTATION is enabled.
+	//     Outputs that are not calculated are not changed.
+	//
+	// Arguments:
+	//     target - The target ball
+	//     calcRelative - True to calculate relative velocity (target.vel - src.vel)
+	//     calcRadial - True to calculate radial relative velocity and surface distance.  Implies calcRelative
+	//     calcTransversal - True to calculate transversal relative velocity.  Implies calcRadial
+	//     calcAngular - True to calculate angular relative velocity.  Implies calcTransversal
+	//     relVel - The relative velocity vector
+	//     shortDist - The surface distance between the ships
+	//     radVel - The radial component of velocity vector
+	//     transVel - The transversal component of velocity vector
+	//     angVel - The angular velocity
+	// -------------------------------------------------------------
+	void CalculateRelativeVelocities( Ball* target, bool calcRelative, bool calcRadial, bool calcTransversal, bool calcAngular, Vector3d& relVel, double& radVel, double& shortDist, double& transVel, double& angVel );
+
 public:
 	/////////////////////////////////////////
 	// Blue class info
@@ -388,7 +429,10 @@ public:
 	~ClientBall();
 
 	using IBall::Unlock;
-	
+
+	Quaternion mLastSpeed;
+	Vector3 mLastAngVel;
+
 	double mLastYaw;
 	double mLastPitch;
 	double mLastRoll;
@@ -437,6 +481,26 @@ public:
 	// post: Updates the current yaw, pitch and roll of ball
 	//////////////////////////////////////////////////////////////////////////////
 	void CalculateYawPitchRoll(bool snap=false) override;
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates relative velocity of target as seen by me.  Angular velocity
+	//     takes ship rotation into account if DYNAMICAL_ORIENTATION is enabled.
+	//     Outputs that are not calculated are not changed.
+	//
+	// Arguments:
+	//     target - The target ball
+	//     calcRelative - True to calculate relative velocity (target.vel - src.vel)
+	//     calcRadial - True to calculate radial relative velocity and surface distance.  Implies calcRelative
+	//     calcTransversal - True to calculate transversal relative velocity.  Implies calcRadial
+	//     calcAngular - True to calculate angular relative velocity.  Implies calcTransversal
+	//     relVel - The relative velocity vector
+	//     shortDist - The surface distance between the ships
+	//     radVel - The radial component of velocity vector
+	//     transVel - The transversal component of velocity vector
+	//     angVel - The angular velocity
+	// -------------------------------------------------------------
+	void CalculateRelativeVelocities( ClientBall* target, bool calcRelative, bool calcRadial, bool calcTransversal, bool calcAngular, Vector3d& relVel, double& radVel, double& shortDist, double& transVel, double& angVel );
 
 	//////////////////////////////////////////////////////////////////////////////
 	// GetDelta(delta,time)
