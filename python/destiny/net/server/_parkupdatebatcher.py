@@ -5,7 +5,7 @@ from collections import defaultdict
 import blue
 import bluepy
 
-from .const import ClientUpdateCountThisTick
+from ..const import ClientUpdateCountThisTick
 
 logger = logging.getLogger(__name__)
 

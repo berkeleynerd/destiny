@@ -1,7 +1,7 @@
 import blue
 import destiny
 from destiny.net.server import ParkUpdateBatcher, BubbleUpdater
-from destiny.net.server.const import ClientUpdateCountThisTick
+from destiny.net.const import ClientUpdateCountThisTick
 from destiny.test.net.server.helpers import (
     add_ball_to_park,
     DestinyTestCase,
