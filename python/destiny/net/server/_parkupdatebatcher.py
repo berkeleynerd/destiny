@@ -39,7 +39,7 @@ class ParkUpdateBatcher(object):
         :rtype: list
         """
         client_ids = []
-        for char_id, state in self._character_history.iteritems():
+        for char_id, state in self._character_history.items():
             client_id = self._character_interests.get_client_id_for_character(char_id)
             if client_id is None:
                 continue
