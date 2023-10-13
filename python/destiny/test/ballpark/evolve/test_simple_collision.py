@@ -1,10 +1,10 @@
 from destiny.test import helpers
 
 
-class TestCollision(helpers.BallparkTestCase):
+class TestSimpleCollision(helpers.BallparkTestCase):
     def setUp(self):
         self.maxDiff = None
-        super(TestCollision, self).setUp()
+        super(TestSimpleCollision, self).setUp()
 
     def test_stopped_balls_with_same_location(self):
         ball_a = helpers.create_space_ball(self.park)
@@ -172,9 +172,9 @@ class TestCollision(helpers.BallparkTestCase):
         self.assertEqual(ball_b.z, 0.0)
 
 
-class TestCapsuleCollision(helpers.BallparkTestCase):
+class TestSimpleCapsuleCollision(helpers.BallparkTestCase):
     def setUp(self):
-        super(TestCapsuleCollision, self).setUp()
+        super(TestSimpleCapsuleCollision, self).setUp()
         parentBall = helpers.add_ball_to_park(self.park, x=0.0, y=0.0, z=0.0, radius=500.0)
         self.capsule = parentBall.AddMiniCapsule(
             100.0, 100.0, 0.0,
@@ -294,9 +294,9 @@ class TestCapsuleCollision(helpers.BallparkTestCase):
         self.assertListOfPointsAlmostEqual(coordinates, expected_coordinates)
 
 
-class TestBoxCollision(helpers.BallparkTestCase):
+class TestSimpleBoxCollision(helpers.BallparkTestCase):
     def setUp(self):
-        super(TestBoxCollision, self).setUp()
+        super(TestSimpleBoxCollision, self).setUp()
         parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0, radius=500.0)
         self.box = parentBall.AddMiniBox(
             0.0, 0.0, 0.0,
@@ -323,13 +323,13 @@ class TestBoxCollision(helpers.BallparkTestCase):
             (-2.3169360278041253, 50.0, 50.0),
             (-2.86705381202771, 50.0, 50.0),
             (-2.5938720325746143, 50.0, 50.0),
-            (-1.5648348920047535, 50.0, 50.0),
-            (-1.3935072086840552, 50.0, 50.0),
-            (-2.6050363405261883, 50.0, 50.0),
-            (-3.560127186016334, 50.0, 50.0),
-            (-3.6587433194629124, 50.0, 50.0),
-            (-2.971046631525194, 50.0, 50.0),
-            (-2.855583596916122, 50.0, 50.0)
+            (-2.46888358211965, 50.0, 50.0),
+            (-2.4545569738496824, 50.0, 50.0),
+            (-2.3691238030650834, 50.0, 50.0),
+            (-2.1985812857514397, 50.0, 50.0),
+            (-1.847589525055808, 50.0, 50.0),
+            (-2.2264577298771377, 50.0, 50.0),
+            (-2.6823664830129617, 50.0, 50.0)
         ]
         self.assertListOfPointsAlmostEqual(coordinates, expected_coordinates)
 
@@ -449,7 +449,7 @@ class TestBoxCollision(helpers.BallparkTestCase):
         ball = helpers.create_space_ball(self.park, x=50.0, y=50, z=-10)
         self.park.GotoPoint(ball.id, 50.0, 50.0, 50.0)
         coordinates = self.evolve_ball_and_get_coordinates(ball, 20)
-        expected_coordinates =  [
+        expected_coordinates = [
             (50.0, 50.0, -9.605340571962731),
             (50.0, 50.0, -8.46477715834572),
             (50.0, 50.0, -6.639413762737928),
@@ -463,12 +463,12 @@ class TestBoxCollision(helpers.BallparkTestCase):
             (50.0, 50.0, -2.3169360278041253),
             (50.0, 50.0, -2.86705381202771),
             (50.0, 50.0, -2.5938720325746143),
-            (50.0, 50.0, -1.5648348920047535),
-            (50.0, 50.0, -1.3935072086840552),
-            (50.0, 50.0, -2.6050363405261883),
-            (50.0, 50.0, -3.560127186016334),
-            (50.0, 50.0, -3.6587433194629124),
-            (50.0, 50.0, -2.971046631525194),
-            (50.0, 50.0, -2.855583596916122)
+            (50.0, 50.0, -2.46888358211965),
+            (50.0, 50.0, -2.4545569738496824),
+            (50.0, 50.0, -2.3691238030650834),
+            (50.0, 50.0, -2.1985812857514397),
+            (50.0, 50.0, -1.847589525055808),
+            (50.0, 50.0, -2.2264577298771377),
+            (50.0, 50.0, -2.6823664830129617)
         ]
         self.assertListOfPointsAlmostEqual(coordinates, expected_coordinates)

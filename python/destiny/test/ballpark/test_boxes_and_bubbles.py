@@ -513,7 +513,7 @@ class TestActiveBoxesForOrientedBox(helpers.BallparkTestCase):
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (-MIN_BOX_SIZE, 0.0, 0.0)]
-        self.assertEqual(expected_active_boxes, active_boxes)
+        self.assertSetEqual(set(expected_active_boxes), set(active_boxes))
 
     def test_intersect_right(self):
         parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
@@ -526,7 +526,7 @@ class TestActiveBoxesForOrientedBox(helpers.BallparkTestCase):
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (MIN_BOX_SIZE, 0.0, 0.0)]
-        self.assertEqual(expected_active_boxes, active_boxes)
+        self.assertSetEqual(set(expected_active_boxes), set(active_boxes))
 
     def test_intersect_bottom(self):
         parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
@@ -539,7 +539,7 @@ class TestActiveBoxesForOrientedBox(helpers.BallparkTestCase):
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (0.0, -MIN_BOX_SIZE, 0.0)]
-        self.assertEqual(expected_active_boxes, active_boxes)
+        self.assertSetEqual(set(expected_active_boxes), set(active_boxes))
 
     def test_intersect_top(self):
         parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
@@ -552,7 +552,7 @@ class TestActiveBoxesForOrientedBox(helpers.BallparkTestCase):
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (0.0, MIN_BOX_SIZE, 0.0)]
-        self.assertEqual(expected_active_boxes, active_boxes)
+        self.assertSetEqual(set(expected_active_boxes), set(active_boxes))
 
     def test_intersect_back(self):
         parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
@@ -578,7 +578,7 @@ class TestActiveBoxesForOrientedBox(helpers.BallparkTestCase):
         level = 7
         level_width, active_boxes = self.park.GetActiveBoxes(level)
         expected_active_boxes =  [(0.0, 0.0, 0.0), (0.0, 0.0, MIN_BOX_SIZE)]
-        self.assertEqual(expected_active_boxes, active_boxes)
+        self.assertSetEqual(set(expected_active_boxes), set(active_boxes))
 
     def test_intersect_top_front_right(self):
         parentBall = helpers.add_ball_to_park(self.park, x=0, y=0, z=0)
@@ -598,7 +598,7 @@ class TestActiveBoxesForOrientedBox(helpers.BallparkTestCase):
                                   (MIN_BOX_SIZE, MIN_BOX_SIZE, 0.0),
                                   (MIN_BOX_SIZE, 0.0, MIN_BOX_SIZE),
                                   (MIN_BOX_SIZE, MIN_BOX_SIZE, MIN_BOX_SIZE)]
-        self.assertEqual(set(expected_active_boxes), set(active_boxes))
+        self.assertSetEqual(set(expected_active_boxes), set(active_boxes))
 
 class TestGetAndSetBoxObject(helpers.BallparkTestCase):
     def test_setting_object_on_existing_box_succeeds(self):

@@ -23,6 +23,7 @@ public:
 	float GetBoundingRadius() override;
 	Vector3d GetCenter() override;
 	void CollideWithBall(Ball* ball) override;
+	bool CheckCollision(const Vector3d& p0, const Vector3d& p1, float radius, Vector3d& normal, double& timeOfImpact) override;
 	void InsertInBoxes(Box* box1, Box* top, long newBubbleId) override;
 
 private:

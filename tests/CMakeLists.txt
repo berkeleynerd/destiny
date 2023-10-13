@@ -32,19 +32,11 @@ add_custom_command(TARGET DestinyTest POST_BUILD
     $<TARGET_FILE_DIR:DestinyTest>
 )
 
-if(WIN32)
-    add_custom_command(TARGET DestinyTest POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${Blue_DIR}/bin/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/$<IF:$<CONFIG:Release>,blue.pyd,blue_$<LOWER_CASE:$<CONFIG>>.pyd>"
-        $<TARGET_FILE_DIR:DestinyTest>
-    )
-elseif(APPLE)
-    add_custom_command(TARGET DestinyTest POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${Blue_DIR}/lib/${CCP_PLATFORM}/${CCP_ARCHITECTURE}/${CCP_TOOLSET}/$<IF:$<CONFIG:Release>,blue.so,blue_$<LOWER_CASE:$<CONFIG>>.so>"
-        $<TARGET_FILE_DIR:DestinyTest>
-    )
-endif()
+add_custom_command(TARGET DestinyTest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:Blue>
+    $<TARGET_FILE_DIR:DestinyTest>
+)
 
 set_target_properties(DestinyTest PROPERTIES FOLDER "Tests")
 gtest_discover_tests(DestinyTest myListOfTests)
@@ -52,12 +44,13 @@ gtest_discover_tests(DestinyTest myListOfTests)
 if(WIN32)
     # Discover and run Python tests as a single CTest test.
     set(PYTHON_INTERPRETER_PATH "${BRANCH_ROOT_DIR}/eve/client/pythonInterpreter.bat")
-    set(PYTHON_TEST PythonTests)
-    add_test(NAME ${PYTHON_TEST}
-        COMMAND ${PYTHON_INTERPRETER_PATH} -m unittest discover -v
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../python
-        COMMAND_EXPAND_LISTS
-    )
-    set_tests_properties(${PYTHON_TEST} PROPERTIES ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:destiny>;BUILDFLAVOR=$<LOWER_CASE:$<CONFIG>>")
+elseif(APPLE)
+    set(PYTHON_INTERPRETER_PATH "${BRANCH_ROOT_DIR}/eve/client/pythonInterpreter.sh")
 endif()
-
+set(PYTHON_TEST PythonTests)
+add_test(NAME ${PYTHON_TEST}
+    COMMAND ${PYTHON_INTERPRETER_PATH} -m unittest discover -v
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../python
+    COMMAND_EXPAND_LISTS
+)
+set_tests_properties(${PYTHON_TEST} PROPERTIES ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:destiny>;BUILDFLAVOR=$<LOWER_CASE:$<CONFIG>>")

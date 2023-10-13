@@ -59,6 +59,7 @@ static Be::VarChooser DstConstants[] =
 	},
 	{0}
 };
+BLUE_REGISTER_ENUM( "DstConstants", DSTCONSTANTS, DstConstants );
 
 static Be::VarChooser DstBallMode[] =
 {
@@ -129,7 +130,7 @@ static Be::VarChooser DstBallMode[] =
 	},
 	{0}
 };
-
+BLUE_REGISTER_ENUM( "DstBallMode", DSTBALLMODE, DstBallMode );
 
 static Be::VarChooser DstEventTypeChooser[] =
 {
@@ -146,6 +147,6 @@ static Be::VarChooser DstEventTypeChooser[] =
 	KV(DST_WARPEXIT,"OnExitWarp"),
 	{0}
 };
-
+BLUE_REGISTER_ENUM( "DstEventType", DSTMESSAGE, DstEventTypeChooser );
 
 #endif

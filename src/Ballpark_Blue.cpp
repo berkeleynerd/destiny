@@ -435,6 +435,30 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 		)
 		MAP_METHOD_AS_METHOD
 		(
+			"SetMaxAngularSpeed",
+			PySetMaxAngularSpeed,
+			"Set the maxAngularVelocity attribute of a ball"
+		)
+		MAP_METHOD_AS_METHOD
+		(
+			"SetBallAngularVelocity",
+			PySetBallAngularVelocity,
+			"Set the wx, wy, wz attributes of a ball"
+		)
+		MAP_METHOD_AS_METHOD
+		(
+			"SetBallRotation",
+			PySetBallRotation,
+			"The quaternion will be normalized to 1 to enforce rotation only"
+		)
+		MAP_METHOD_AS_METHOD
+		(
+			"SetBallAngularAgility",
+			PySetBallAngularAgility,
+			"Set the RotationalAgility attribute of a ball"
+		)
+		MAP_METHOD_AS_METHOD
+		(
 			"SetSpeedFraction",
 			PySetSpeedFraction,
 			"no comment"

@@ -12,11 +12,11 @@ void OrientedBox::Initialize(
 	mId = theID;
 	mParentBallId = parentObjectId;
 	Vector3d corner(c0, c1, c2);
-	Vector3d local_x(x0, x1, x2);
-	Vector3d local_y(y0, y1, y2);
-	Vector3d local_z(z0, z1, z2);
+	Vector3d localX(x0, x1, x2);
+	Vector3d localY(y0, y1, y2);
+	Vector3d localZ(z0, z1, z2);
 
-	m_boxShape = BoxShape(corner, local_x, local_y, local_z);
+	m_boxShape = BoxShape(corner, localX, localY, localZ);
 	mBoundingRadius = (float) m_boxShape.GetBoundingRadius();
 	mOldPos = mNewPos = GetCenter();
 
@@ -59,15 +59,15 @@ void OrientedBox::CollideWithBall(Ball* ball)
 		return;
 	}
 
-	Vector3d collision_point;
-	double collision_time;
+	Vector3d collisionPoint;
+	double collisionTime;
 	Vector3d normal;
-	bool collision_exists = m_boxShape.CollideWithSphere(p0, ball->mRadius, p1 - p0, collision_point, collision_time, normal);
-	if( collision_exists )
+	bool collisionExists = m_boxShape.CollideWithSphere(p0, ball->mRadius, p1 - p0, collisionPoint, collisionTime, normal);
+	if( collisionExists )
 	{
 		// We have impact. Now react.
 		vp1 = ball->mNewVel;
-		ReactToCollision(ball, p0, vp1, m1, normal, collision_time);
+		ReactToCollision(ball, p0, vp1, m1, normal, collisionTime);
 	}
 }
 
@@ -289,4 +289,32 @@ void OrientedBox::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
 			SetBoxActive(13+mod[0]+3*mod[1]+9*mod[2], true);
 		}
 	}
+}
+
+bool OrientedBox::CheckCollision(const Vector3d& p0, const Vector3d& p1, float radius, Vector3d& normal, double& timeOfImpact)
+{
+
+	if (mAABB.CanExcludeCollision(p0, p1, radius))
+	{
+		return false;
+	}
+
+	Vector3d collisionPoint;
+	const bool collision = m_boxShape.CollideWithSphere(p0, radius, p1 - p0, collisionPoint, timeOfImpact, normal);
+
+	if (collision)
+	{
+		const auto length = normal.Length();
+		if (length > 1e-10)
+		{
+			normal /= length;
+		}
+		else
+		{
+			// Arbitrary direction if normal is very short.
+			normal = Vector3d(0.0, 0.0, 1.0);
+		}
+	}
+
+	return collision;
 }

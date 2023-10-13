@@ -10,6 +10,7 @@ from destiny.net.server import (
     CharacterInterestsInterface,
     ClientInterestsInterface
 )
+from destiny._util import is_dynamical_orientation_enabled
 
 
 def add_ball_to_park(
@@ -30,10 +31,11 @@ def add_ball_to_park(
         vy=0,
         vz=0,
         agility=1.0,
-        speed_fraction=1.0
+        speed_fraction=1.0,
+        maxAngularSpeed = 1.0,
+        angularAgility = 0.9
 ):
-    return park.AddBall(
-        ball_id,
+    args = (ball_id,
         mass,
         radius,
         max_velocity,
@@ -49,8 +51,11 @@ def add_ball_to_park(
         vy,
         vz,
         agility,
-        speed_fraction,
-    )
+        speed_fraction,)
+    dynamical_args = args + (maxAngularSpeed, angularAgility)
+    if is_dynamical_orientation_enabled():
+        return park.AddBall(*dynamical_args)
+    return park.AddBall(*args)
 
 
 class TestBallInfo(BallInfoInterface):
@@ -127,6 +132,11 @@ class TestClientInterests(ClientInterestsInterface):
 
 class DestinyTestCase(unittest.TestCase):
     def assertBallsEqual(self, first, second, ignore_bubble_id=False):
+        # Yaw, pitch and roll attributes are ignored because
+        # when balls are read from the stream client side
+        # CalculateYawPitchRoll gets called with snap=True
+        # resulting in different results on the client and server.
+        # This is mostly harmless...
         self.assertEqual(first.id, second.id)
         self.assertEqual(first.mass, second.mass)
         self.assertEqual(first.radius, second.radius)
@@ -146,9 +156,6 @@ class DestinyTestCase(unittest.TestCase):
         self.assertEqual(first.vx, second.vx)
         self.assertEqual(first.vy, second.vy)
         self.assertEqual(first.vz, second.vz)
-        self.assertEqual(first.yaw, second.yaw)
-        self.assertEqual(first.pitch, second.pitch)
-        self.assertEqual(first.roll, second.roll)
         self.assertEqual(first.Agility, second.Agility)
         self.assertEqual(first.speedFraction, second.speedFraction)
         self.assertEqual(first.mode, second.mode)

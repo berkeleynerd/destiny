@@ -48,8 +48,11 @@ set(_SOURCES
     src/Capsule_Blue.cpp
     src/Collision.cpp
     src/Collision.h
+    src/CollisionStructures.cpp
+    src/CollisionStructures.h
+    src/CollisionBallProperties.cpp
+    src/CollisionBallProperties.h
     src/destiny.cpp
-    src/DstConstants.cpp
     src/DstConstants.h
     src/MapOfBalls.h
     src/MapOfLongLongs.h
@@ -67,6 +70,7 @@ set(_SOURCES
     src/OrientedBox_Blue.cpp
     src/Partition.cpp
     src/Partition.h
+    src/Partition_Blue.cpp
     src/Partitionable.cpp
     src/Partitionable.h
     src/Plane.cpp
@@ -74,6 +78,9 @@ set(_SOURCES
     src/Random.cpp
     src/Random.h
     src/resource.h
+    src/Settings.h
+    src/Settings.cpp
+    src/Settings_Blue.cpp
     src/SortedSets.h
     src/StaticCollidable.cpp
     src/StaticCollidable.h

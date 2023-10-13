@@ -1,9 +1,11 @@
-import unittest
-
 import destiny
-
 from destiny.test.net.server.helpers import add_ball_to_park, DestinyTestCase
 from destiny.net.server import Actions
+from destiny._util import (
+    enable_dynamical_orientation,
+    disable_dynamical_orientation,
+    reset_settings_to_default
+)
 
 BALL_ID_1 = 1000000000001
 BALL_ID_2 = 1000000000002
@@ -25,6 +27,7 @@ class TestActions(DestinyTestCase):
         self._park.ClearAll()
         del self._park
         del self._actions
+        reset_settings_to_default()
 
     def assertHistoryEmpty(self):
         history = self._actions.flush_history()
@@ -143,6 +146,42 @@ class TestActions(DestinyTestCase):
         expected_action = ("SetBallVelocity", (BALL_ID_1, vx, vy, vz))
         self.assertSingleActionHistory(BALL_ID_1, expected_action)
 
+    def test_set_ball_angular_velocity(self):
+        enable_dynamical_orientation()
+        wx, wy, wz = 1.0, 2.0, 3.0
+        self._actions.set_ball_angular_velocity(BALL_ID_1, wx, wy, wz)
+        expected_action = ("SetBallAngularVelocity", (BALL_ID_1, wx, wy, wz))
+        self.assertSingleActionHistory(BALL_ID_1, expected_action)
+
+    def test_set_ball_angular_velocity_raises_when_dynamical_orientation_disabled(self):
+        disable_dynamical_orientation()
+        wx, wy, wz = 1.0, 2.0, 3.0
+        self.assertRaises(RuntimeError, self._actions.set_ball_angular_velocity, BALL_ID_1, wx, wy, wz)
+
+    def test_set_max_angular_velocity(self):
+        enable_dynamical_orientation()
+        wx, wy, wz = 1.0, 2.0, 3.0
+        self._actions.set_max_angular_velocity(BALL_ID_1, wx, wy, wz)
+        expected_action = ("SetMaxAngularVelocity", (BALL_ID_1, wx, wy, wz))
+        self.assertSingleActionHistory(BALL_ID_1, expected_action)
+
+    def test_set_max_angular_velocity_raises_when_dynamical_orientation_disabled(self):
+        disable_dynamical_orientation()
+        wx, wy, wz = 1.0, 2.0, 3.0
+        self.assertRaises(RuntimeError, self._actions.set_max_angular_velocity, BALL_ID_1, wx, wy, wz)
+
+    def test_set_ball_rotation(self):
+        enable_dynamical_orientation()
+        rx, ry, rz, rw = 0.0, 0.1, 0.2, 0.3
+        self._actions.set_ball_rotation(BALL_ID_1, rx, ry, rz, rw)
+        expected_action = ("SetBallRotation", (BALL_ID_1, rx, ry, rz, rw))
+        self.assertSingleActionHistory(BALL_ID_1, expected_action)
+
+    def test_set_ball_rotation_raises_when_dynamical_orientation_disabled(self):
+        disable_dynamical_orientation()
+        rx, ry, rz, rw = 0.0, 0.1, 0.2, 0.3
+        self.assertRaises(RuntimeError, self._actions.set_ball_rotation, BALL_ID_1, rx, ry, rz, rw)
+
     def test_set_ball_massive(self):
         self._actions.set_ball_massive(BALL_ID_1, False)
         expected_action = ("SetBallMassive", (BALL_ID_1, False))
@@ -164,6 +203,18 @@ class TestActions(DestinyTestCase):
         self._actions.set_ball_agility(BALL_ID_1, agility)
         expected_action = ("SetBallAgility", (BALL_ID_1, agility))
         self.assertSingleActionHistory(BALL_ID_1, expected_action)
+
+    def test_set_ball_angular_agility(self):
+        enable_dynamical_orientation()
+        angular_agility = 0.3
+        self._actions.set_ball_angular_agility(BALL_ID_1, angular_agility)
+        expected_action = ("SetBallAngularAgility", (BALL_ID_1, angular_agility))
+        self.assertSingleActionHistory(BALL_ID_1, expected_action)
+
+    def test_set_ball_angular_agility_raises_when_dynamical_orientation_disabled(self):
+        disable_dynamical_orientation()
+        angular_agility = 0.3
+        self.assertRaises(RuntimeError, self._actions.set_ball_angular_agility, BALL_ID_1, angular_agility)
 
     def test_add_ball_to_client_parks(self):
         ball = add_ball_to_park(self._park)
@@ -331,6 +382,18 @@ class TestActions(DestinyTestCase):
         self._actions.set_max_speed(BALL_ID_1, max_meters_per_second)
         expected_action = ("SetMaxSpeed", (BALL_ID_1, max_meters_per_second))
         self.assertSingleActionHistory(BALL_ID_1, expected_action)
+
+    def test_set_max_angular_speed(self):
+        enable_dynamical_orientation()
+        max_angular_speed = 6.0
+        self._actions.set_max_angular_speed(BALL_ID_1, max_angular_speed)
+        expected_action = ("SetMaxAngularSpeed", (BALL_ID_1, max_angular_speed,))
+        self.assertSingleActionHistory(BALL_ID_1, expected_action)
+
+    def test_set_ball_angular_speed_raises_when_dynamical_orientation_disabled(self):
+        disable_dynamical_orientation()
+        wx, wy, wz = 1.0, 2.0, 3.0
+        self.assertRaises(RuntimeError, self._actions.set_ball_angular_velocity, BALL_ID_1, wx, wy, wz)
 
     def test_cloak_nonexistent_ball_should_fail(self):
         uncloak_range_meters = 1000.0

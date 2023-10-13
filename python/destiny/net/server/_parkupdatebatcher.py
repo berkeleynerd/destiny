@@ -2,9 +2,10 @@ from signals import Signal
 import logging
 from copy import copy
 from collections import defaultdict
-
 import blue
 import bluepy
+
+from ..const import ClientUpdateCountThisTick
 
 logger = logging.getLogger(__name__)
 
@@ -29,13 +30,41 @@ class ParkUpdateBatcher(object):
         self.on_add_to_character_history = Signal(signalName="on_add_to_character_history")
         self.on_add_to_bubble_history = Signal(signalName="on_add_to_bubble_history")
 
+    def get_clients_with_character_history(self):
+        """
+        Returns the client IDs of all characters
+        who have a pending Destiny update to be sent
+        to them specifically.
+
+        :rtype: list
+        """
+        client_ids = []
+        for char_id, state in self._character_history.iteritems():
+            client_id = self._character_interests.get_client_id_for_character(char_id)
+            if client_id is None:
+                continue
+            if state:
+                client_ids.append(client_id)
+        return client_ids
+
     def send_batch(self):
         """
         Performs narrowcasts and singlecasts.
         Should be called in the ballparks DoPostTick method.
         """
         clients_waiting_for_bubble = set()
-        narrowcasts = []
+        clients_with_character_history = self.get_clients_with_character_history()
+        # We send the total number of DoDestinyUpdate batches that
+        # each client should expect per tick, because the client
+        # needs a way to figure out when it has received all the Destiny
+        # updates for that tick, so that it knows when it can start applying
+        # gameplay updates from the ballpark, which may depend on the Destiny
+        # update already having been applied. (Updates are not guaranteed to
+        # arrive in the order in which we send them.)
+        # The gameplay updates include a flag which specifies that Destiny updates
+        # were sent by the server so that we know when to bother waiting for them.
+        single_batch_narrowcasts = []  # For characters who only get DoDestinyUpdate for the bubble
+        dual_batch_narrowcasts = []    # For characters who get DoDestinyUpdate for the bubble as well as for their character specifically.
         singlecasts = []
 
         for bubble_id, state in self._bubble_history.items():
@@ -44,7 +73,36 @@ class ParkUpdateBatcher(object):
                 for ball_id in self._park.bubbleInteractives[bubble_id]:
                     client_ids.update(self._client_interests.get_interested_client_ids_for_ball(ball_id))
                 self._check_state_timestamp(state)
-                narrowcasts.append((list(client_ids), 'DoDestinyUpdate', state, False))
+                dual_update_narrowcast_clients = [
+                    client_id
+                    for client_id in client_ids
+                    if client_id in clients_with_character_history
+                ]
+                single_update_narrowcast_clients = [
+                    client_id
+                    for client_id in client_ids
+                    if client_id not in dual_update_narrowcast_clients
+                ]
+                if single_update_narrowcast_clients:
+                    single_batch_narrowcasts.append(
+                        (
+                            list(single_update_narrowcast_clients),
+                            'DoDestinyUpdate',
+                            state,
+                            False,
+                            ClientUpdateCountThisTick.ONE
+                        )
+                    )
+                if dual_update_narrowcast_clients:
+                    dual_batch_narrowcasts.append(
+                        (
+                            list(dual_update_narrowcast_clients),
+                            'DoDestinyUpdate',
+                            state,
+                            False,
+                            ClientUpdateCountThisTick.TWO
+                        )
+                    )
                 clients_waiting_for_bubble.update(client_ids)
         self._bubble_history = {}
 
@@ -54,12 +112,17 @@ class ParkUpdateBatcher(object):
                 continue
             if state:
                 wait_for_bubble = client_id in clients_waiting_for_bubble
+                if wait_for_bubble:
+                    update_count = ClientUpdateCountThisTick.TWO
+                else:
+                    update_count = ClientUpdateCountThisTick.ONE
                 self._check_state_timestamp(state)
-                singlecasts.append((client_id, 'DoDestinyUpdate', state, wait_for_bubble))
+                singlecasts.append((client_id, 'DoDestinyUpdate', state, wait_for_bubble, update_count))
 
         self._character_history.clear()
         self._network_interface.singlecast(singlecasts)
-        self._network_interface.narrowcast(narrowcasts)
+        self._network_interface.narrowcast(single_batch_narrowcasts)
+        self._network_interface.narrowcast(dual_batch_narrowcasts)
 
     def _check_state_timestamp(self, state):
         """
@@ -268,6 +331,18 @@ class ParkUpdateBatcher(object):
         """
         return copy(self._bubble_history.get(bubble_id, []))
 
+    def bubble_has_history(self, bubble_id):
+        """
+        Does the bubble have a history?
+        :param bubble_id: The bubble whose history we want to check for.
+        :type bubble_id: int
+        :rtype: bool
+        """
+        return bool(
+            bubble_id in self._bubble_history and
+            self._bubble_history[bubble_id]
+        )
+
     def get_character_history(self, char_id):
         """
         Get a copy of the history for the character.
@@ -276,3 +351,16 @@ class ParkUpdateBatcher(object):
         :type char_id: int
         """
         return copy(self._character_history.get(char_id, []))
+
+    def character_has_history(self, char_id):
+        """
+        Does the character have a history?
+
+        :param char_id: The character whose history we want to check for.
+        :type char_id: int
+        :rtype: bool
+        """
+        return bool(
+            char_id in self._character_history and
+            self._character_history[char_id]
+        )

@@ -46,6 +46,8 @@ TYPEDEF_BLUECLASS(ClientBall);
 
 #include "MapOfBalls.h"
 #include "Capsule.h"
+#include "CollisionBallProperties.h"
+#include "CollisionStructures.h"
 #include "OrientedBox.h"
 
 const double AU = .1495978707e12;
@@ -89,9 +91,6 @@ typedef std::vector<Vector3d> VectorOfVectors;
 typedef std::unordered_set<Capsule *> SetOfCapsules;
 typedef std::unordered_set<OrientedBox *> SetOfOrientedBoxes;
 
-bool Quadratic(double& v1, double& v2, double a, double b, double c);
-double CollideTwoSpheres(const Vector3d& p0, const Vector3d& p1, const Vector3d& q0, const Vector3d& q1, const double collRadius);
-
 class Ballpark :
 	public IEveBallpark,
 	public IBlueEvents
@@ -100,6 +99,7 @@ class Ballpark :
 friend class Ball;
 friend class ClientBall;
 friend class Capsule;
+friend class CollisionBallProperties;
 friend class OrientedBox;
 public://Exposed
 
@@ -171,6 +171,25 @@ private://MEMBERS
 
 	long mBubbleId;
 
+	Ball* AddBall(
+		const ID& objectId,
+		double mass,
+		float radius,
+		float maxVel,
+		bool isFree,
+		bool isGlobal,
+		bool isMassive,
+		bool isInteractive,
+		bool isSpaceJunk,
+		double x,
+		double y,
+		double z,
+		double vx,
+		double vy,
+		double vz,
+		float agility,
+		float speedFraction );
+
 public://FUNCTIONS
 	EXPOSE_TO_BLUE();
 
@@ -192,11 +211,10 @@ public://FUNCTIONS
 	//
 	//////////////////////////////////////////////////////////////////////////////
 
-	Ball * AddBall(
-		Ball *ball
-		);
+	Ball* AddBall(
+		Ball* ball );
 
-	Ball * AddBall(
+	Ball* AddOldStyleOrientedBall(
 		const ID& objectId,
 		double mass,
 		float radius,
@@ -213,8 +231,35 @@ public://FUNCTIONS
 		double vy,
 		double vz,
 		float agility,
-		float speedFraction
-		);
+		float speedFraction );
+
+	Ball* AddDynamicallyOrientedBall(
+		const ID& objectId,
+		double mass,
+		float radius,
+		float maxVel,
+		float maxAngVel,
+		bool isFree,
+		bool isGlobal,
+		bool isMassive,
+		bool isInteractive,
+		bool isSpaceJunk,
+		double x,
+		double y,
+		double z,
+		double vx,
+		double vy,
+		double vz,
+		float rx,
+		float ry,
+		float rz,
+		float rw,
+		float wx,
+		float wy,
+		float wz,
+		float agility,
+		float rotAgility,
+		float speedFraction);
 
 	Ball * AddMiniball(
 		const ID& parentObjectId,
@@ -478,6 +523,17 @@ public://FUNCTIONS
 		);
 
 	//////////////////////////////////////////////////////////////////////////////
+	// SetMaxAngularSpeed sets the maximum angular speed of ball 'srcId' from the Ballpark.
+	//
+	// pre:  'srcId' exists and maxAngVel >= 0.
+	// post: The ball's maximum angular speed has been updated.
+	//
+	//////////////////////////////////////////////////////////////////////////////
+	void SetMaxAngularSpeed(
+		const ID& srcId,
+		float maxAngVel );
+
+	//////////////////////////////////////////////////////////////////////////////
 	// SetBallPosition sets the position of ball 'srcId' from the Ballpark.
 	//
 	// pre:  'srcId' exists
@@ -504,6 +560,33 @@ public://FUNCTIONS
 		double vy,
 		double vz
 		);
+
+	//////////////////////////////////////////////////////////////////////////////
+	// SetBallAngularVelocity sets the angular velocity of ball 'srcId' from the Ballpark.
+	//
+	// pre:  'srcId' exists
+	// post: The ball's angular velocity has been updated.
+	//
+	//////////////////////////////////////////////////////////////////////////////
+	void SetBallAngularVelocity(
+		const ID& srcId,
+		double wx,
+		double wy,
+		double wz );
+
+	//////////////////////////////////////////////////////////////////////////////
+	// SetBallRotation sets the rotation quaternion of ball 'srcId' from the Ballpark.
+	//
+	// pre:  'srcId' exists
+	// post: The ball's rotation quaternion has been updated.
+	//
+	//////////////////////////////////////////////////////////////////////////////
+	void SetBallRotation(
+		const ID& srcId,
+		double rx,
+		double ry,
+		double rz,
+		double rw );
 
 	//////////////////////////////////////////////////////////////////////////////
 	// SetBallFree sets the position 'isFree' status
@@ -565,6 +648,16 @@ public://FUNCTIONS
 		float agility
 		);
 
+	//////////////////////////////////////////////////////////////////////////////
+	// SetBallAngularAgility sets the rotational agility modifier for this ball
+	//
+	// pre:  'srcId' exists
+	// post: The ball's agility modifier has been set
+	//
+	//////////////////////////////////////////////////////////////////////////////
+	void SetBallAngularAgility(
+		const ID& srcId,
+		float rotAgility );
 
 	//////////////////////////////////////////////////////////////////////////////
 	// AddMushroom add an expanding ball, pushing all other ball except owner
@@ -756,6 +849,8 @@ public://FUNCTIONS
     Vector3d EvolveFormation(Ball* ball);
     Vector3d EvolveFollow(Ball* ball);
     Vector3d EvolveOrbit(Ball* ball, long currentTime);
+	Vector3d EvolveOldStyleOrbit( Ball* ball, long currentTime );
+	Vector3d EvolveNewStyleOrbit( Ball* ball, long currentTime );
     void EvolveStop(Ball* ball);    // This one operates directly on the velocity, no need for return value
 
 	//////////////////////////////////////////////////////////////////////////////
@@ -864,14 +959,198 @@ private:
 	PyObject* GetBallIdsInRangeOfTriangle(PyObject* args);
 	PyObject* GetBallIdsInCone(PyObject* args);
 	PyObject* GetBallIdsInCapsule(PyObject* args);
-	// Calculates the avoidance contribution to the dynamical state
-	void Gradient(Ball *b);
-	void Potential(Ball *me,Ball *other, int recurionsDepth=0);
-	//void CalculateBoidPotential(Ball *, ListOfBalls &);
+
+	void Gradient(Ball* b);
+	void Potential(Ball *me, Ball *other, int recurionsDepth = 0);
+	void CalculateIterativeCollisionResponses();
+
+	// Store the information in a map for fast lookup
+	std::unordered_map<ID, CollisionBallProperties> mCollisionLocations;
+
+	// Cache the potential colliders as these don't change during the iterations
+	std::unordered_map<ID, VectorOfBalls> mPotentialCollisionBalls;
+	std::unordered_map<ID, VectorOfStaticCollidables> mPotentialCollidables;
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Returns in collisionItem the collision that occur with
+	//     static collideables in the next step.
+	// Arguments:
+	//     ballProp - The ball properties, will be updated if needed
+	//     collisionItem - Contains, on output, the collision with static objects in the park
+	//     balls - The ball collision candidates
+	//     collidables - The collidable collision candidates
+	// -------------------------------------------------------------
+	void GetNextCollisionStatic(CollisionBallProperties& ballProp, CollisionItem& collisionItem, VectorOfBalls& balls, VectorOfStaticCollidables& collidables);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the collision and their responses with free balls.
+	//     Should be called after GetNextCollisionStatic with same collisionItem.
+	//     Separated, because it requires a more complicated logic.
+	// Arguments:
+	//     ballProp - The ball propertis, will be updated if needed
+	//     collisionItem - in: output from static collisions, out: the collision with free balls checked as well
+	//     balls - The ball collision candidates
+	// -------------------------------------------------------------
+	void GetNextCollisionFree(CollisionBallProperties& ballProp, CollisionItem& collisionItem, VectorOfBalls& balls, size_t collision_iteration);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Using elliptical approximation, calculates the vector from
+	//     the CM to the point of impact for ball.
+	//     Uses the miniball position if given in the collision.
+	//     NOTE: ballLoc has to be fully calculated before entry
+	// Arguments:
+	//     ballLoc - The location of the ball at time of collision
+	//     collision - The properties of the collision
+	// Return Value:
+	//     The point of impact
+	// -------------------------------------------------------------
+	Vector3d ApproximateEllipsePointOfImpact(Ball* ball, BallLocation& ballLoc, const CollisionItem& collision);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the actual impact on the ball from the collision.
+	//     Only works for static colliders.
+	//     Uses https://en.wikipedia.org/wiki/Collision_response
+	// Arguments:
+	//     ballProp - The pre-calculated properties of the ball
+	//     collision - The collision in question, on return the impact is correct
+	// -------------------------------------------------------------
+	void CalculateCollisionImpactStatic(CollisionBallProperties& ballProp, CollisionItem& collision);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the actual impact on the ball from the collision.
+	//     Only works for free ball collisions.
+	//     Uses https://en.wikipedia.org/wiki/Collision_response
+	// Arguments:
+	//     ballProp - The pre-calculated properties of the first ball
+	//     otherProp - The pre-calculated properties of the other ball
+	//     collision - Information on the collision. On return the impact is for the first ball
+	// Return Value:
+	//      The collision item for the other ball, with calculated impact
+	// -------------------------------------------------------------
+	CollisionItem CalculateCollisionImpactFree(CollisionBallProperties& ballProp, CollisionBallProperties& otherProp, CollisionItem& collision);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Takes the current impact and adds it to the ball.
+	//     Removes any impacts that have a later timeOfImpact
+	//     and makes sure ones with a free ball are properly
+	//     taken care of.
+	// Arguments:
+	//     impact - The impact to add
+	//     collIter - The current collision iteration
+	//     ball - The ball to add the impact to
+	// -------------------------------------------------------------
+	void AddImpact(CollisionImpact& impact, size_t collIter, Ball* ball);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Removes impact from ball with the given collider and time of impact.
+	//     Does nothing in rare cases with simultaneous collisions with two balls.
+	//     Goes recursively through all possible free-free removals.
+	// Arguments:
+	//     time - The time of impact
+	//     collider - The ID of the collider
+	//     ball - The ball to remove the impact from.</param>
+	// -------------------------------------------------------------
+	void RemoveImpactFromFree(double time, ID collider, Ball* ball);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Define this in one place only to avoid mistakes when changing things.
+	// Arguments:
+	//     ball - The ball colliding
+	//     neighbor - The ball it collides with
+	// Return Value:
+	//     True if no collision should happen
+	// -------------------------------------------------------------
+	static inline bool CollisionBallNeighborIgnore(Ball* ball, Ball* neighbor);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the collision responses for ball in current iteration.
+	//     Updates the mCollisionLocations structure.
+	// Arguments:
+	//     ball - The ball to calculate responses for
+	//     collisionIteration - Counter for the iterations
+	// Return Value:
+	//     True if a collision was added to the ball
+	// -------------------------------------------------------------
+	bool CalculateCollisionResponse(Ball* ball, size_t collisionIteration);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculates the velocity and position of the ball after a
+	//     time dt has passed from current time.  Assumes the
+	//     acceleration for the current timestep has already been
+	//     calculated and takes the current collision responses into account.
+	// Arguments:
+	//     ball - The ball for which to calculate
+	//     t - The time passed since initial position (Generally between 0 and park::dt, but is not checked for validity)
+	//     position - The position, should be the initial value at t=0 on input, final value on output
+	//     velocity - The velocity, should be the initial value at t=0 on input, final value on output
+	// -------------------------------------------------------------
+	void CalculateBallPositionVelocity(Ball* ball, double t, Vector3d& position, Vector3d& velocity);
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Returns the unit vector normal to the orbital plane, if the movemode of the ball is ORBIT.
+	//     Returns the 0 vector in case of an error.
+	// Arguments:
+	//     ball - A pointer to the ball that is orbiting
+	//     toVector - On output it is the unit vector pointing to the center of orbit
+	//     dist - On output is the distance to the center of orbit
+	// Return Value:
+	//     The unit orbital vector normal to the orbit
+	Vector3d GetOrbitalNormal( Ball* ball, Vector3d& toVector, double& dist );
+	Vector3d DefaultOrbitalNormal( Ball* ball );
 
 	// Actual infinitesimal integration
 	void Integrate(Vector3d& p, Vector3d& v, const Vector3d& a, double mass, double k, double timefactor, double step);
+
+	// The thrust required to go to the point, letting friction stop you.
+	// If missile is true, simply accelerate in the direction of the point.
 	Vector3d GotoThrust(const Ball *b,const Vector3d& target,bool missile = false);
+
+	// Calculate required thrust for orbiting balls.
+	Vector3d OrbitThrust( const Ball* b, const Vector3d& target );
+
+	// The thrust required to go to a point, ignoring any velocity requirements
+	// This is suitable for follow like operations
+	// Adjusts for required targetVelocity, weighting the two accelerations by
+	// weight
+	Vector3d GotoThrustFollow( const Ball* b, const Vector3d& target, const Vector3d& targetVelocity, double weight );
+
+	//Calculate the torque required to rotate towards direction.
+	Vector3 GotoTorque( const Ball* b, const Vector3& direction );
+	//Calculate the torque required to rotate towards direction.
+	//This version puts on the breaks after accelerating
+	Vector3 GotoTorqueBreaks( const Ball* b, const Vector3& direction );
+	//Calculate the roll of the ship.  This is independent of the torque required for heading
+	//Banks the ship into turns, or tries to stay "upright"
+	float GotoRoll( const Ball* b, const Vector3& heading_torque );
+	float GotoRollBreaks( const Ball* b, const Vector3& heading_torque );
+	//Apply the rotation.  The integration is available in fractional steps for interpolation purposes only
+	//The integration is approximate and integrationg from 0 to 0.5 and then from 0.5 to 1.0 is not guaranteed
+	//to give same results as integrating from 0 to 1.0
+	void ApplyTorque( Quaternion& rotation, Vector3& angvel, const Vector3& torque, const float roll, const float tau, const float fraction );
+
+	// -------------------------------------------------------------
+	// Description:
+	//     Calculate the rotation at time t, taking collision responses into account.
+	// Arguments:
+	//     ball - The ball for which to calculate
+	//     t - The time passed since initial position.  Generally between 0 and park::dt, but is not checked for validity
+	//     rotation - The rotation, should be the initial value at t=0 on input, final value on output
+	//     omega - The angular velocity, should be the initial value at t=0 on input, final value on output
+	// -------------------------------------------------------------
+	void CalculateBallRotationVelocity( Ball* ball, double t, Quaternion& rotation, Vector3& omega );
+
+
 	bool ReadFullStateFromStream(IBlueStreamPtr, int);
 	Ball* ReadBallFromStream(IBlueStreamPtr, int);
 	void WriteBallToStream(Ball*, IBlueStreamPtr);
@@ -888,6 +1167,8 @@ public:
 
 	PyObject* Py__init__ ( PyObject* args );
 	PyObject* PyAddBall ( PyObject* args );
+	PyObject* PyAddDynamicallyOrientedBall( PyObject* args );
+	PyObject* PyAddOldStyleOrientedBall( PyObject* args );
 	PyObject* PyAddCapsule( PyObject* args);
 	PyObject* PyAddOrientedBox( PyObject* args);
 	PyObject* PyFollowBall ( PyObject* args );
@@ -903,6 +1184,10 @@ public:
 	PyObject* PySetMaxSpeed ( PyObject* args );
 	PyObject* PySetBallPosition ( PyObject* args );
 	PyObject* PySetBallVelocity ( PyObject* args );
+	PyObject* PySetMaxAngularSpeed( PyObject* args );
+	PyObject* PySetBallAngularVelocity( PyObject* args );
+	PyObject* PySetBallRotation( PyObject* args );
+	PyObject* PySetBallAngularAgility( PyObject* args );
 	PyObject* PySetSpeedFraction ( PyObject* args );
 	PyObject* PySetNotificationRange ( PyObject* args );
     PyObject* PySetTargetTracking ( PyObject* args );
@@ -956,6 +1241,7 @@ public:
 	PyObject* PyGetBallBoxKeys(PyObject* args);
 	PyObject* PyGetBoxChildren(PyObject* args);
     PyObject* PyGetBoxKey(PyObject* args);    
+	PyObject* PyEnableIterativeCollision( PyObject* args );
 };
 
 TYPEDEF_BLUECLASS(Ballpark);
