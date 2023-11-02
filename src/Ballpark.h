@@ -190,6 +190,8 @@ private://MEMBERS
 		float agility,
 		float speedFraction );
 
+	void ClearBubbles(); // Release the bubble dict, if it exists
+
 public://FUNCTIONS
 	EXPOSE_TO_BLUE();
 

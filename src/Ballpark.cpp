@@ -5871,6 +5871,18 @@ void Ballpark::HandleProximities()
 }
 
 //---------------------------------------------------------------------------------------
+// ClearBubbles releases the bubbles dict
+//---------------------------------------------------------------------------------------
+void Ballpark::ClearBubbles()
+{
+	if( bubbles )
+	{
+		Py_DECREF( bubbles );
+		bubbles = nullptr;
+	}
+}
+
+//---------------------------------------------------------------------------------------
 // ClearAll clears the ballpark of all balls and collidables
 //---------------------------------------------------------------------------------------
 
@@ -5911,11 +5923,7 @@ void Ballpark::ClearAll(
 	mCapsules.clear();
 	mOrientedBoxes.clear();
 
-    if(bubbles)
-    {
-        Py_DECREF(bubbles);
-        bubbles = 0;
-    }
+    ClearBubbles();
 
     if(!mBubbleConflicts.empty())
     {
@@ -6566,9 +6574,8 @@ void Ballpark::InitializeBubbles()
 
     mBubbleId = 0;
 
-    // Clear the bubble dicts, if they exist
-    if(bubbles)
-        Py_DECREF(bubbles);
+	// Release the bubble dict, if it exists
+	ClearBubbles();
 
     if(bubbleInteractives)
         PyDict_Clear(bubbleInteractives);
