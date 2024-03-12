@@ -2657,6 +2657,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 		PyObject *key;
 		PyObject *val = PyList_GET_ITEM(userShips, i);
 		ID userID = PyLong_AsLongLong(val);
+
 		if(userID == -1 && PyErr_Occurred())
 		{
 			// Something wrong with val
@@ -2697,12 +2698,13 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 		// First, if old and new bubble haven't changed, then the updates are
 		// straightforward
 
-		if( uBall->mNewBubble==uBall->mOldBubble && uBall->mNewBubble != -1 && bubble)
+		bool isBubbleTheSame = uBall->mNewBubble == uBall->mOldBubble && uBall->mNewBubble != -1 && bubble;
+		if(isBubbleTheSame)
 		{
 			// Use the list of per-bubbles adds/deletes that we calculated earlier
 
 			PyObject *bubbleId;
-			
+
 			bubbleId = PyInt_FromLong(uBall->mNewBubble);
 
 			if (PyDict_Contains(additionsPerBubble, bubbleId) && PyDict_Contains(deletionsPerBubble, bubbleId))
@@ -2756,7 +2758,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					// Something wrong with key
 					PyObject *e, *v, *t;
 					PyErr_Fetch(&e, &v, &t);
-					PyObject *repr = PyObject_Repr(key);			
+					PyObject *repr = PyObject_Repr(key);
 					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not __int64: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
 					Py_XDECREF(repr);
 					PyErr_Restore(e, v, t);
@@ -2817,7 +2819,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					// Something wrong with key
 					PyObject *e, *v, *t;
 					PyErr_Fetch(&e, &v, &t);
-					PyObject *repr = PyObject_Repr(key);			
+					PyObject *repr = PyObject_Repr(key);
 					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not int: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
 					Py_XDECREF(repr);
 					PyErr_Restore(e, v, t);
@@ -2872,8 +2874,17 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 
 			} // End of cycling over old bubble
 
+			if(uBall->mMode != DSTBALL_TROLL)
+			{
+				if (!PyOS->SendEvent(
+						(IEveBallpark*)this, "Destiny::DoBubbleTransition",
+						"DoBubbleTransition", NULL, "(iiL)", uBall->mNewBubble, uBall->mOldBubble, uBall->mId
+						))
+				{
+					PyOS->PyError();
+				}
+			}
 		}
-
 		uBall->mOldBubble = uBall->mNewBubble;
 
 	} // End of cycling over interactives
