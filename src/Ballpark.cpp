@@ -5565,6 +5565,26 @@ void Ballpark::RemoveBall(
 		mPotentialCollisionBalls.erase(ball->mId);
 	}
 
+	if(ball->isInteractive && ball->mMode != DSTBALL_TROLL)
+	{
+		// Notify of bubble transition for relevant ship balls (interactive and not in troll mode)
+		PyObject *transitions = PyList_New(0);
+
+		PyObject *transition = Py_BuildValue(
+			"Lii",
+			ball->mId,
+			ball->mNewBubble,
+			-1
+		);
+
+		PyList_Append(transitions, transition);
+
+		NotifyOfBubbleTransitions(transitions);
+
+		Py_DECREF(transition);
+		Py_DECREF(transitions);
+	}
+
     // Get the ball out of all boxes
     ball->DeleteFromBoxes();
 
@@ -5990,6 +6010,21 @@ void Ballpark::UpdateBallBubble(
         CCP_LOGWARN_CH( s_chPark,"Ballpark::UpdateBallBubble couldn't find a bubble. Setting it to %d.\n",hiID+1);
         ball->mNewBubble = hiID+1;
     }
+}
+
+//---------------------------------------------------------------------------------------
+// NotifyOfBubbleTransitions emits event communicating that balls have changed bubbles
+//---------------------------------------------------------------------------------------
+
+void Ballpark::NotifyOfBubbleTransitions(const PyObject* transitions)
+{
+	if (!PyOS->SendEvent(
+			(IEveBallpark*)this, "Destiny::DoBubbleTransitions",
+			"DoBubbleTransitions", NULL, "(O)", transitions
+			))
+	{
+		PyOS->PyError();
+	}
 }
 
 //---------------------------------------------------------------------------------------

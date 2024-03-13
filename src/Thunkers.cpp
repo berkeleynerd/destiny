@@ -2587,6 +2587,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 	PyObject *additionsPerPlayer = NULL, *deletionsPerPlayer = NULL; 
 	PyObject *additionsPerBubble = NULL, *deletionsPerBubble = NULL;
 	PyObject *userShips = NULL;
+	PyObject *shipBubbleTransitions = PyList_New(0);
 
 	if (!PyArg_ParseTuple(args, "O!O!O!O!O!",
 		&PyDict_Type, &additionsPerPlayer,
@@ -2874,20 +2875,26 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 
 			} // End of cycling over old bubble
 
-			if(uBall->mMode != DSTBALL_TROLL)
+			// Let's not register Bubble Transitions for balls in troll mode (not relevant ships)
+			bool isShipBall = uBall->mMode != DSTBALL_TROLL;
+			if(isShipBall)
 			{
-				if (!PyOS->SendEvent(
-						(IEveBallpark*)this, "Destiny::DoBubbleTransition",
-						"DoBubbleTransition", NULL, "(iiL)", uBall->mNewBubble, uBall->mOldBubble, uBall->mId
-						))
-				{
-					PyOS->PyError();
-				}
+				PyObject *transition = Py_BuildValue(
+					"Lii",
+					uBall->mId,
+					uBall->mOldBubble,
+					uBall->mNewBubble
+					);
+				PyList_Append(shipBubbleTransitions, transition);
+				Py_DECREF(transition);
 			}
 		}
 		uBall->mOldBubble = uBall->mNewBubble;
 
 	} // End of cycling over interactives
+
+	NotifyOfBubbleTransitions(shipBubbleTransitions);
+	Py_XDECREF(shipBubbleTransitions);
 
 	Py_INCREF(Py_None);
 	return Py_None;
