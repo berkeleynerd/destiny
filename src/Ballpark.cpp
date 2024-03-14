@@ -5993,14 +5993,47 @@ void Ballpark::UpdateBallBubble(
 }
 
 //---------------------------------------------------------------------------------------
+// AddTransitionToList creates a python object for the bubble transition of this ball,
+// and appends it to the provided list
+//---------------------------------------------------------------------------------------
+
+void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
+{
+	bool isShipBall = ball->mMode != DSTBALL_TROLL;
+	if( !isShipBall )
+	{
+		// Let's not register Bubble Transitions for balls in troll mode (not relevant ships)
+		return;
+	}
+
+	PyObject* transition = Py_BuildValue(
+		"Lii",
+		ball->mId,
+		ball->mOldBubble,
+		ball->mNewBubble );
+	if( !transition )
+	{
+		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to create bubble transition for ball %I64d", mCurrentTime, ball->mId );
+		return;
+	}
+
+	if( !PyList_Append( transitions, transition ) )
+	{
+		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to append bubble transition for ball %I64d", mCurrentTime, ball->mId );
+	}
+
+	Py_XDECREF( transition );
+}
+
+//---------------------------------------------------------------------------------------
 // NotifyOfBubbleTransitions emits event communicating that balls have changed bubbles
 //---------------------------------------------------------------------------------------
 
 void Ballpark::NotifyOfBubbleTransitions(const PyObject* transitions)
 {
-	if (!PyOS->PostEvent(
-			(IEveBallpark*)this, "Destiny::OnBubbleTransitions",
-			"OnBubbleTransitions", "(O)", transitions
+	if (!PyOS->SendEvent(
+			(IEveBallpark*)this, "Destiny::DoBubbleTransitions",
+			"DoBubbleTransitions", NULL,"(O)", transitions
 			))
 	{
 		PyOS->PyError();
@@ -6508,6 +6541,7 @@ void Ballpark::AddToBubble(Partitionable *p)
 	Py_DECREF(oldBubbleId);
 	Py_DECREF(ballId);
 }
+
 //---------------------------------------------------------------------------------------
 // InitializeBubbles recacalculates causal domains and assigns new bubble Ids
 //---------------------------------------------------------------------------------------

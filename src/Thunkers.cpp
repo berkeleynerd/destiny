@@ -2875,19 +2875,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 
 			} // End of cycling over old bubble
 
-			// Let's not register Bubble Transitions for balls in troll mode (not relevant ships)
-			bool isShipBall = uBall->mMode != DSTBALL_TROLL;
-			if(isShipBall)
-			{
-				PyObject *transition = Py_BuildValue(
-					"Lii",
-					uBall->mId,
-					uBall->mOldBubble,
-					uBall->mNewBubble
-					);
-				PyList_Append(shipBubbleTransitions, transition);
-				Py_DECREF(transition);
-			}
+			AddTransitionToList(uBall, shipBubbleTransitions);
 		}
 		uBall->mOldBubble = uBall->mNewBubble;
 
