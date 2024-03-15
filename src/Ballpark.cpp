@@ -6011,17 +6011,16 @@ void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
 		ball->mId,
 		ball->mOldBubble,
 		ball->mNewBubble );
-	ON_BLOCK_EXIT([&transition]() { Py_XDECREF(transition); });
-
-	if( !transition && PyErr_Occurred() )
+	if( !transition )
 	{
 		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to create bubble transition for ball %I64d", mCurrentTime, ball->mId );
 		PyErr_Clear();
 		return;
 	}
+	ON_BLOCK_EXIT([&transition]() { Py_XDECREF(transition); });
 
 	bool canAppendTransition = PyList_Append( transitions, transition ) == 0; // according to PyList_Append, 0 means success
-	if( !canAppendTransition && PyErr_Occurred() )
+	if( !canAppendTransition )
 	{
 		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to append bubble transition for ball %I64d", mCurrentTime, ball->mId );
 		PyErr_Clear();

@@ -2651,7 +2651,15 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 	size_t i;
 	size_t bounds = PyList_Size(userShips);
 	PyObject *shipBubbleTransitions = PyList_New(0);
-	ON_BLOCK_EXIT([&shipBubbleTransitions]() { Py_XDECREF(shipBubbleTransitions); });
+	if( shipBubbleTransitions )
+	{
+		ON_BLOCK_EXIT([&shipBubbleTransitions]() { Py_XDECREF(shipBubbleTransitions); });
+	}
+	else
+	{
+		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to create new list for bubble transitions", mCurrentTime );
+		PyErr_Clear();
+	}
 
 	for(i=0; i < bounds ; i++)
 	{
