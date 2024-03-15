@@ -2651,11 +2651,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 	size_t i;
 	size_t bounds = PyList_Size(userShips);
 	PyObject *shipBubbleTransitions = PyList_New(0);
-	if( shipBubbleTransitions )
-	{
-		ON_BLOCK_EXIT([&shipBubbleTransitions]() { Py_XDECREF(shipBubbleTransitions); });
-	}
-	else
+	if( !shipBubbleTransitions )
 	{
 		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to create new list for bubble transitions", mCurrentTime );
 		PyErr_Clear();
@@ -2676,6 +2672,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 			PyObject *repr = PyObject_Repr(val);
 			CCP_LOGERR_CH( s_chPark,"%s, %d: Value is not __int64: type=%s value=%s", __FILE__, __LINE__, val->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
 			Py_XDECREF(repr);
+			Py_XDECREF(shipBubbleTransitions);
 			PyErr_Restore(e, v, t);
 			return 0;
 		}
@@ -2771,6 +2768,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					PyObject *repr = PyObject_Repr(key);
 					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not __int64: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
 					Py_XDECREF(repr);
+					Py_XDECREF(shipBubbleTransitions);
 					PyErr_Restore(e, v, t);
 					return 0;
 				}
@@ -2832,6 +2830,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					PyObject *repr = PyObject_Repr(key);
 					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not int: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
 					Py_XDECREF(repr);
+					Py_XDECREF(shipBubbleTransitions);
 					PyErr_Restore(e, v, t);
 					return 0;
 				}
@@ -2891,7 +2890,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 	} // End of cycling over interactives
 
 	NotifyOfBubbleTransitions(shipBubbleTransitions);
-
+	Py_XDECREF(shipBubbleTransitions);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
