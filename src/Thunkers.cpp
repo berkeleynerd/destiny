@@ -2587,7 +2587,6 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 	PyObject *additionsPerPlayer = NULL, *deletionsPerPlayer = NULL; 
 	PyObject *additionsPerBubble = NULL, *deletionsPerBubble = NULL;
 	PyObject *userShips = NULL;
-	PyObject *shipBubbleTransitions = PyList_New(0);
 
 	if (!PyArg_ParseTuple(args, "O!O!O!O!O!",
 		&PyDict_Type, &additionsPerPlayer,
@@ -2651,6 +2650,8 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 
 	size_t i;
 	size_t bounds = PyList_Size(userShips);
+	PyObject *shipBubbleTransitions = PyList_New(0);
+	ON_BLOCK_EXIT([&shipBubbleTransitions]() { Py_XDECREF(shipBubbleTransitions); });
 
 	for(i=0; i < bounds ; i++)
 	{
@@ -2882,7 +2883,6 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 	} // End of cycling over interactives
 
 	NotifyOfBubbleTransitions(shipBubbleTransitions);
-	Py_XDECREF(shipBubbleTransitions);
 
 	Py_INCREF(Py_None);
 	return Py_None;

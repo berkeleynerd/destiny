@@ -1,0 +1,903 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "tests/Debug/DestinyTest_debug.exe"
+		},
+		{
+			"path" : "tests/Debug/DestinyTest_debug.pdb"
+		}
+	],
+	"backtrace" : 2,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"_add_executable",
+			"ccp_add_executable",
+			"add_link_options",
+			"include",
+			"target_link_libraries",
+			"set_target_properties",
+			"find_package",
+			"find_dependency",
+			"add_compile_options",
+			"target_compile_definitions",
+			"set_build_flavor",
+			"add_compile_definitions",
+			"add_definitions",
+			"target_include_directories",
+			"target_precompile_headers",
+			"target_sources"
+		],
+		"files" : 
+		[
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/cmake/CcpTargetConfigurations.cmake",
+			"tests/CMakeLists.txt",
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/cmake/CcpBuildConfigurations.cmake",
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/cmake/CcpGlobalSettings.cmake",
+			"CMakeLists.txt",
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-blue/v2.4.0-0-g64f317c/BlueConfig.cmake",
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/python/2.7.1+ccp-stackless/PythonConfig.cmake",
+			"C:/Users/julia/AppData/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.14475.31/bin/cmake/win/x64/share/cmake-3.27/Modules/CMakeFindDependencyMacro.cmake",
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-blueexposure/v1.1.0-0-g1b7cb0c/BlueExposureConfig.cmake",
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/Telemetry/3.5.0.63/RadGameToolsTelemetryConfig.cmake",
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-core/v1.1.0-0-gfb5639e/CcpCoreConfig.cmake",
+			"D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/GoogleTest/1.10.0/GTestConfig.cmake",
+			"C:/Users/julia/AppData/Local/JetBrains/Toolbox/apps/CLion/ch-0/233.14475.31/bin/cmake/win/x64/share/cmake-3.27/Modules/FindGTest.cmake"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 1
+			},
+			{
+				"command" : 1,
+				"file" : 1,
+				"line" : 1,
+				"parent" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 75,
+				"parent" : 1
+			},
+			{
+				"file" : 4
+			},
+			{
+				"command" : 3,
+				"file" : 4,
+				"line" : 18,
+				"parent" : 3
+			},
+			{
+				"file" : 3,
+				"parent" : 4
+			},
+			{
+				"command" : 3,
+				"file" : 3,
+				"line" : 43,
+				"parent" : 5
+			},
+			{
+				"file" : 2,
+				"parent" : 6
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 88,
+				"parent" : 7
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 90,
+				"parent" : 7
+			},
+			{
+				"command" : 2,
+				"file" : 2,
+				"line" : 101,
+				"parent" : 7
+			},
+			{
+				"command" : 4,
+				"file" : 1,
+				"line" : 4,
+				"parent" : 0
+			},
+			{
+				"command" : 4,
+				"file" : 4,
+				"line" : 112,
+				"parent" : 3
+			},
+			{
+				"command" : 6,
+				"file" : 4,
+				"line" : 20,
+				"parent" : 3
+			},
+			{
+				"file" : 5,
+				"parent" : 13
+			},
+			{
+				"command" : 5,
+				"file" : 5,
+				"line" : 22,
+				"parent" : 14
+			},
+			{
+				"command" : 7,
+				"file" : 5,
+				"line" : 3,
+				"parent" : 14
+			},
+			{
+				"command" : 6,
+				"file" : 7,
+				"line" : 76,
+				"parent" : 16
+			},
+			{
+				"file" : 8,
+				"parent" : 17
+			},
+			{
+				"command" : 7,
+				"file" : 8,
+				"line" : 4,
+				"parent" : 18
+			},
+			{
+				"command" : 6,
+				"file" : 7,
+				"line" : 76,
+				"parent" : 19
+			},
+			{
+				"file" : 6,
+				"parent" : 20
+			},
+			{
+				"command" : 5,
+				"file" : 6,
+				"line" : 24,
+				"parent" : 21
+			},
+			{
+				"command" : 7,
+				"file" : 8,
+				"line" : 3,
+				"parent" : 18
+			},
+			{
+				"command" : 6,
+				"file" : 7,
+				"line" : 76,
+				"parent" : 23
+			},
+			{
+				"file" : 10,
+				"parent" : 24
+			},
+			{
+				"command" : 7,
+				"file" : 10,
+				"line" : 3,
+				"parent" : 25
+			},
+			{
+				"command" : 6,
+				"file" : 7,
+				"line" : 76,
+				"parent" : 26
+			},
+			{
+				"file" : 9,
+				"parent" : 27
+			},
+			{
+				"command" : 5,
+				"file" : 9,
+				"line" : 5,
+				"parent" : 28
+			},
+			{
+				"command" : 6,
+				"file" : 1,
+				"line" : 2,
+				"parent" : 0
+			},
+			{
+				"file" : 12,
+				"parent" : 30
+			},
+			{
+				"command" : 6,
+				"file" : 12,
+				"line" : 194,
+				"parent" : 31
+			},
+			{
+				"file" : 11,
+				"parent" : 32
+			},
+			{
+				"command" : 5,
+				"file" : 11,
+				"line" : 15,
+				"parent" : 33
+			},
+			{
+				"command" : 5,
+				"file" : 11,
+				"line" : 20,
+				"parent" : 33
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 83,
+				"parent" : 7
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 85,
+				"parent" : 7
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 86,
+				"parent" : 7
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 110,
+				"parent" : 7
+			},
+			{
+				"command" : 8,
+				"file" : 2,
+				"line" : 111,
+				"parent" : 7
+			},
+			{
+				"command" : 10,
+				"file" : 0,
+				"line" : 77,
+				"parent" : 1
+			},
+			{
+				"command" : 9,
+				"file" : 0,
+				"line" : 26,
+				"parent" : 41
+			},
+			{
+				"command" : 11,
+				"file" : 3,
+				"line" : 17,
+				"parent" : 5
+			},
+			{
+				"command" : 11,
+				"file" : 3,
+				"line" : 14,
+				"parent" : 5
+			},
+			{
+				"command" : 12,
+				"file" : 2,
+				"line" : 96,
+				"parent" : 7
+			},
+			{
+				"command" : 11,
+				"file" : 3,
+				"line" : 16,
+				"parent" : 5
+			},
+			{
+				"command" : 11,
+				"file" : 3,
+				"line" : 15,
+				"parent" : 5
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 18,
+				"parent" : 0
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 19,
+				"parent" : 0
+			},
+			{
+				"command" : 13,
+				"file" : 1,
+				"line" : 20,
+				"parent" : 0
+			},
+			{
+				"command" : 14,
+				"file" : 1,
+				"line" : 17,
+				"parent" : 0
+			},
+			{
+				"command" : 15,
+				"file" : 1,
+				"line" : 6,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc -std:c++17 -MD"
+				},
+				{
+					"backtrace" : 36,
+					"fragment" : "/MP"
+				},
+				{
+					"backtrace" : 37,
+					"fragment" : "/W3"
+				},
+				{
+					"backtrace" : 38,
+					"fragment" : "/permissive-"
+				},
+				{
+					"backtrace" : 39,
+					"fragment" : "/ZI"
+				},
+				{
+					"backtrace" : 40,
+					"fragment" : "/Od"
+				},
+				{
+					"fragment" : "/YcD:/github/carbon-destiny/cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/Debug/cmake_pch.hxx /FpD:/github/carbon-destiny/cmake-build-trinitydev/tests/DestinyTest.dir/Debug/cmake_pch.pch /FID:/github/carbon-destiny/cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/Debug/cmake_pch.hxx"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 11,
+					"define" : "BLUE_WITH_PYTHON"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CCP_ASSERT_ENABLED=1"
+				},
+				{
+					"backtrace" : 42,
+					"define" : "CCP_BUILD_FLAVOR=_debug"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CCP_MEMORY_DEBUG=1"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CCP_STACKLESS"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CCP_TELEMETRY_ENABLED=1"
+				},
+				{
+					"backtrace" : 43,
+					"define" : "NTDDI_VERSION=0x0A000000"
+				},
+				{
+					"backtrace" : 44,
+					"define" : "WINVER=0x0A00"
+				},
+				{
+					"backtrace" : 45,
+					"define" : "_SBCS"
+				},
+				{
+					"backtrace" : 46,
+					"define" : "_WIN32_WINDOWS=0x0A00"
+				},
+				{
+					"backtrace" : 47,
+					"define" : "_WIN32_WINNT=0x0A00"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 48,
+					"path" : "D:/github/carbon-destiny/tests"
+				},
+				{
+					"backtrace" : 49,
+					"path" : "D:/github/carbon-destiny/tests/../src"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/carbon/src/trinity/Include"
+				},
+				{
+					"backtrace" : 11,
+					"path" : "D:/github/carbon-destiny/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-blue/v2.4.0-0-g64f317c/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-blueexposure/v1.1.0-0-g1b7cb0c/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-core/v1.1.0-0-gfb5639e/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/Telemetry/3.5.0.63/include/Windows"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/python/2.7.1+ccp-stackless/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/python/2.7.1+ccp-stackless/include/Windows"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-math/v1.1.0-0-g97b1368/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/DirectXMath/aug2020/Inc"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/GoogleTest/1.10.0/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2
+				],
+				"standard" : "17"
+			},
+			"precompileHeaders" : 
+			[
+				{
+					"backtrace" : 51,
+					"header" : "D:/github/carbon-destiny/tests/StdAfx.h"
+				}
+			],
+			"sourceIndexes" : 
+			[
+				0
+			]
+		},
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc -std:c++17 -MD"
+				},
+				{
+					"backtrace" : 36,
+					"fragment" : "/MP"
+				},
+				{
+					"backtrace" : 37,
+					"fragment" : "/W3"
+				},
+				{
+					"backtrace" : 38,
+					"fragment" : "/permissive-"
+				},
+				{
+					"backtrace" : 39,
+					"fragment" : "/ZI"
+				},
+				{
+					"backtrace" : 40,
+					"fragment" : "/Od"
+				},
+				{
+					"fragment" : "/YuD:/github/carbon-destiny/cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/Debug/cmake_pch.hxx /FpD:/github/carbon-destiny/cmake-build-trinitydev/tests/DestinyTest.dir/Debug/cmake_pch.pch /FID:/github/carbon-destiny/cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/Debug/cmake_pch.hxx"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 11,
+					"define" : "BLUE_WITH_PYTHON"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CCP_ASSERT_ENABLED=1"
+				},
+				{
+					"backtrace" : 42,
+					"define" : "CCP_BUILD_FLAVOR=_debug"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CCP_MEMORY_DEBUG=1"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CCP_STACKLESS"
+				},
+				{
+					"backtrace" : 11,
+					"define" : "CCP_TELEMETRY_ENABLED=1"
+				},
+				{
+					"backtrace" : 43,
+					"define" : "NTDDI_VERSION=0x0A000000"
+				},
+				{
+					"backtrace" : 44,
+					"define" : "WINVER=0x0A00"
+				},
+				{
+					"backtrace" : 45,
+					"define" : "_SBCS"
+				},
+				{
+					"backtrace" : 46,
+					"define" : "_WIN32_WINDOWS=0x0A00"
+				},
+				{
+					"backtrace" : 47,
+					"define" : "_WIN32_WINNT=0x0A00"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 48,
+					"path" : "D:/github/carbon-destiny/tests"
+				},
+				{
+					"backtrace" : 49,
+					"path" : "D:/github/carbon-destiny/tests/../src"
+				},
+				{
+					"backtrace" : 50,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/carbon/src/trinity/Include"
+				},
+				{
+					"backtrace" : 11,
+					"path" : "D:/github/carbon-destiny/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-blue/v2.4.0-0-g64f317c/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-blueexposure/v1.1.0-0-g1b7cb0c/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-core/v1.1.0-0-gfb5639e/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/Telemetry/3.5.0.63/include/Windows"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/python/2.7.1+ccp-stackless/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/python/2.7.1+ccp-stackless/include/Windows"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/github.com/ccpgames/carbon-math/v1.1.0-0-g97b1368/include"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/DirectXMath/aug2020/Inc"
+				},
+				{
+					"backtrace" : 11,
+					"isSystem" : true,
+					"path" : "D:/perforce/eve/branches/sandbox/2024-SKIN-STATE-PROPAGATION/vendor/GoogleTest/1.10.0/include"
+				}
+			],
+			"language" : "CXX",
+			"languageStandard" : 
+			{
+				"backtraces" : 
+				[
+					2
+				],
+				"standard" : "17"
+			},
+			"precompileHeaders" : 
+			[
+				{
+					"backtrace" : 51,
+					"header" : "D:/github/carbon-destiny/tests/StdAfx.h"
+				}
+			],
+			"sourceIndexes" : 
+			[
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8
+			]
+		}
+	],
+	"dependencies" : 
+	[
+		{
+			"backtrace" : 11,
+			"id" : "destinyStatic::@6890427a1f51a3e7e1df"
+		},
+		{
+			"id" : "ZERO_CHECK::@6890427a1f51a3e7e1df"
+		}
+	],
+	"folder" : 
+	{
+		"name" : "Tests"
+	},
+	"id" : "DestinyTest::@a44f0ac069e85531cdee",
+	"link" : 
+	{
+		"commandFragments" : 
+		[
+			{
+				"fragment" : "/DWIN32 /D_WINDOWS /GR /EHsc -MD",
+				"role" : "flags"
+			},
+			{
+				"fragment" : "/machine:x64 /debug /INCREMENTAL /subsystem:console",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 8,
+				"fragment" : "/IGNORE:4099",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 9,
+				"fragment" : "/NODEFAULTLIB:libcmt.lib",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 10,
+				"fragment" : "/DEBUG:FASTLINK",
+				"role" : "flags"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "-LIBPATH:D:\\perforce\\eve\\branches\\sandbox\\2024-SKIN-STATE-PROPAGATION\\vendor\\Telemetry\\3.5.0.63\\lib\\Windows\\x64\\v141",
+				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "-LIBPATH:D:\\perforce\\eve\\branches\\sandbox\\2024-SKIN-STATE-PROPAGATION\\vendor\\python\\2.7.1+ccp-stackless\\lib\\Windows\\x64\\v141",
+				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "-LIBPATH:D:\\perforce\\eve\\branches\\sandbox\\2024-SKIN-STATE-PROPAGATION\\vendor\\GoogleTest\\1.10.0\\lib\\Windows\\x64\\v141",
+				"role" : "libraryPath"
+			},
+			{
+				"backtrace" : 11,
+				"fragment" : "..\\Debug\\destinyStatic_debug.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "D:\\perforce\\eve\\branches\\sandbox\\2024-SKIN-STATE-PROPAGATION\\vendor\\github.com\\ccpgames\\carbon-blue\\v2.4.0-0-g64f317c\\lib\\Windows\\x64\\v141\\\\blue_debug.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 15,
+				"fragment" : "D:\\perforce\\eve\\branches\\sandbox\\2024-SKIN-STATE-PROPAGATION\\vendor\\github.com\\ccpgames\\carbon-blueexposure\\v1.1.0-0-g1b7cb0c\\lib\\Windows\\x64\\v141\\\\BlueExposure_debug.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 22,
+				"fragment" : "python27.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "D:\\perforce\\eve\\branches\\sandbox\\2024-SKIN-STATE-PROPAGATION\\vendor\\github.com\\ccpgames\\carbon-core\\v1.1.0-0-gfb5639e\\lib\\Windows\\x64\\v141\\\\CcpCore_debug.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 29,
+				"fragment" : "rad_tm_win64.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 12,
+				"fragment" : "D:\\perforce\\eve\\branches\\sandbox\\2024-SKIN-STATE-PROPAGATION\\vendor\\github.com\\ccpgames\\carbon-math\\v1.1.0-0-g97b1368\\lib\\Windows\\x64\\v141\\\\CcpMath_debug.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 34,
+				"fragment" : "gtest.lib",
+				"role" : "libraries"
+			},
+			{
+				"backtrace" : 35,
+				"fragment" : "gtest_main.lib",
+				"role" : "libraries"
+			},
+			{
+				"fragment" : "kernel32.lib user32.lib gdi32.lib winspool.lib shell32.lib ole32.lib oleaut32.lib uuid.lib comdlg32.lib advapi32.lib",
+				"role" : "libraries"
+			}
+		],
+		"language" : "CXX"
+	},
+	"name" : "DestinyTest",
+	"nameOnDisk" : "DestinyTest_debug.exe",
+	"paths" : 
+	{
+		"build" : "tests",
+		"source" : "tests"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8
+			]
+		},
+		{
+			"name" : "Precompile Header File",
+			"sourceIndexes" : 
+			[
+				9,
+				10,
+				11,
+				12
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 0,
+			"compileGroupIndex" : 0,
+			"path" : "cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/cmake_pch.cxx",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 52,
+			"compileGroupIndex" : 1,
+			"path" : "tests/destinyTest.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 52,
+			"compileGroupIndex" : 1,
+			"path" : "tests/StdAfx.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 52,
+			"compileGroupIndex" : 1,
+			"path" : "tests/TestAABB.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 52,
+			"compileGroupIndex" : 1,
+			"path" : "tests/TestBoxShape.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 52,
+			"compileGroupIndex" : 1,
+			"path" : "tests/TestCollision.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 52,
+			"compileGroupIndex" : 1,
+			"path" : "tests/TestPlane.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 52,
+			"compileGroupIndex" : 1,
+			"path" : "tests/TestTriangle.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 52,
+			"compileGroupIndex" : 1,
+			"path" : "tests/TestVector3d.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 0,
+			"path" : "cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/Debug/cmake_pch.hxx",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"path" : "cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/TrinityDev/cmake_pch.hxx",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"path" : "cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/Internal/cmake_pch.hxx",
+			"sourceGroupIndex" : 1
+		},
+		{
+			"backtrace" : 0,
+			"path" : "cmake-build-trinitydev/tests/CMakeFiles/DestinyTest.dir/Release/cmake_pch.hxx",
+			"sourceGroupIndex" : 1
+		}
+	],
+	"type" : "EXECUTABLE"
+}
