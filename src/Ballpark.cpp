@@ -6017,7 +6017,8 @@ void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
 		return;
 	}
 
-	if( !PyList_Append( transitions, transition ) )
+	bool canAppendTransition = PyList_Append( transitions, transition ) == 0; // according to PyList_Append, 0 means success
+	if( !canAppendTransition )
 	{
 		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to append bubble transition for ball %I64d", mCurrentTime, ball->mId );
 	}
@@ -6031,7 +6032,7 @@ void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
 
 void Ballpark::NotifyOfBubbleTransitions(const PyObject* transitions)
 {
-	if (!PyOS->SendEvent(
+	if (transitions && !PyOS->SendEvent(
 			(IEveBallpark*)this, "Destiny::DoBubbleTransitions",
 			"DoBubbleTransitions", NULL,"(O)", transitions
 			))
