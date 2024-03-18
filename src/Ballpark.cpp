@@ -5999,6 +5999,11 @@ void Ballpark::UpdateBallBubble(
 
 void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
 {
+	if (transitions == nullptr)
+	{
+		CCP_LOGWARN_CH( s_chPark,"Ballpark::AddTransitionToList failed, provided transitions list is invalid");
+		return;
+	}
 	bool isShipBall = ball->mMode != DSTBALL_TROLL;
 	if( !isShipBall )
 	{
