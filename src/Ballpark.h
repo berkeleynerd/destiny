@@ -866,6 +866,9 @@ public://FUNCTIONS
 	void UpdateBallBubble(const ID& srcID);
 	size_t GetInteractiveCnt(Ball *ball);
 
+	void AddTransitionToList(const Ball *ball, PyObject *transitions);
+	void NotifyOfBubbleTransitions(const PyObject* transitions);
+
 	void Pause();
 	void Start();
 	bool InDeadBubble(Ball *ball);

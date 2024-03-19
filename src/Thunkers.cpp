@@ -2650,6 +2650,12 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 
 	size_t i;
 	size_t bounds = PyList_Size(userShips);
+	PyObject *shipBubbleTransitions = PyList_New(0);
+	if( !shipBubbleTransitions )
+	{
+		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to create new list for bubble transitions", mCurrentTime );
+		PyErr_Clear();
+	}
 
 	for(i=0; i < bounds ; i++)
 	{
@@ -2657,6 +2663,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 		PyObject *key;
 		PyObject *val = PyList_GET_ITEM(userShips, i);
 		ID userID = PyLong_AsLongLong(val);
+
 		if(userID == -1 && PyErr_Occurred())
 		{
 			// Something wrong with val
@@ -2665,6 +2672,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 			PyObject *repr = PyObject_Repr(val);
 			CCP_LOGERR_CH( s_chPark,"%s, %d: Value is not __int64: type=%s value=%s", __FILE__, __LINE__, val->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
 			Py_XDECREF(repr);
+			Py_XDECREF(shipBubbleTransitions);
 			PyErr_Restore(e, v, t);
 			return 0;
 		}
@@ -2697,12 +2705,13 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 		// First, if old and new bubble haven't changed, then the updates are
 		// straightforward
 
-		if( uBall->mNewBubble==uBall->mOldBubble && uBall->mNewBubble != -1 && bubble)
+		bool isBubbleTheSame = uBall->mNewBubble == uBall->mOldBubble && uBall->mNewBubble != -1 && bubble;
+		if(isBubbleTheSame)
 		{
 			// Use the list of per-bubbles adds/deletes that we calculated earlier
 
 			PyObject *bubbleId;
-			
+
 			bubbleId = PyInt_FromLong(uBall->mNewBubble);
 
 			if (PyDict_Contains(additionsPerBubble, bubbleId) && PyDict_Contains(deletionsPerBubble, bubbleId))
@@ -2756,9 +2765,10 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					// Something wrong with key
 					PyObject *e, *v, *t;
 					PyErr_Fetch(&e, &v, &t);
-					PyObject *repr = PyObject_Repr(key);			
+					PyObject *repr = PyObject_Repr(key);
 					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not __int64: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
 					Py_XDECREF(repr);
+					Py_XDECREF(shipBubbleTransitions);
 					PyErr_Restore(e, v, t);
 					return 0;
 				}
@@ -2817,9 +2827,10 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					// Something wrong with key
 					PyObject *e, *v, *t;
 					PyErr_Fetch(&e, &v, &t);
-					PyObject *repr = PyObject_Repr(key);			
+					PyObject *repr = PyObject_Repr(key);
 					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not int: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
 					Py_XDECREF(repr);
+					Py_XDECREF(shipBubbleTransitions);
 					PyErr_Restore(e, v, t);
 					return 0;
 				}
@@ -2872,12 +2883,14 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 
 			} // End of cycling over old bubble
 
+			AddTransitionToList(uBall, shipBubbleTransitions);
 		}
-
 		uBall->mOldBubble = uBall->mNewBubble;
 
 	} // End of cycling over interactives
 
+	NotifyOfBubbleTransitions(shipBubbleTransitions);
+	Py_XDECREF(shipBubbleTransitions);
 	Py_INCREF(Py_None);
 	return Py_None;
 }
