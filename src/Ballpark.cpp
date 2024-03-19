@@ -6004,10 +6004,10 @@ void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
 		CCP_LOGWARN_CH( s_chPark,"Ballpark::AddTransitionToList failed, provided transitions list is invalid");
 		return;
 	}
-	bool isShipBall = ball->mMode != DSTBALL_TROLL;
-	if( !isShipBall )
+	if( ball->mMode == DSTBALL_TROLL )
 	{
-		// Let's not register Bubble Transitions for balls in troll mode (not relevant ships)
+		// Safeguard to make sure we do not register Bubble Transitions for balls in troll mode, as
+		// those should not be player ships
 		return;
 	}
 
