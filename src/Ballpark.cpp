@@ -5871,14 +5871,25 @@ void Ballpark::HandleProximities()
 }
 
 //---------------------------------------------------------------------------------------
-// ClearBubbles releases the bubbles dict
+// ClearBubbles clears bubble related Python dicts and sets.
 //---------------------------------------------------------------------------------------
 void Ballpark::ClearBubbles()
 {
 	if( bubbles )
 	{
-		Py_DECREF( bubbles );
-		bubbles = nullptr;
+		PyDict_Clear( bubbles );
+	}
+	if( bubbleInteractives )
+	{
+		PyDict_Clear( bubbleInteractives );
+	}
+	if( bubbleKeepAlives )
+	{
+		PyDict_Clear( bubbleKeepAlives );
+	}
+	if( bubbleKeepAliveBalls )
+	{
+		PySet_Clear( bubbleKeepAliveBalls );
 	}
 }
 
@@ -5938,12 +5949,6 @@ void Ballpark::ClearAll(
 
     mFreeBalls.clear();
     mProximityBalls.clear();
-    if(bubbleInteractives)
-        PyDict_Clear(bubbleInteractives);
-    if(bubbleKeepAlives)
-        PyDict_Clear(bubbleKeepAlives);
-    if(bubbleKeepAliveBalls)
-        PySet_Clear(bubbleKeepAliveBalls);
     mLocalCnt = -1;
     mLocalHiCnt = DSTLOCALBALLS;
 
@@ -6574,21 +6579,8 @@ void Ballpark::InitializeBubbles()
 
     mBubbleId = 0;
 
-	// Release the bubble dict, if it exists
+	// Clear bubble tracking python members
 	ClearBubbles();
-
-    if(bubbleInteractives)
-        PyDict_Clear(bubbleInteractives);
-
-	if(bubbleKeepAlives)
-        PyDict_Clear(bubbleKeepAlives);
-
-	if(bubbleKeepAliveBalls)
-        PySet_Clear(bubbleKeepAliveBalls);
-
-    //BeTimer timer = BeTimer();
-    //timer.Reset();
-
 
     // Now cycle over all balls
     while((ball = it++))

@@ -2599,15 +2599,10 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 		return NULL;
 	}
 
-	if(!additionsPerPlayer || !deletionsPerPlayer || !additionsPerBubble || !deletionsPerBubble || !userShips)
+	if( !bubbles )
 	{
-		CCP_LOGWARN_CH( s_chPThunk,"Missing parameters. Cancelled.");
-		return NULL;
-	}
-
-	if(!bubbles)
-	{
-		return NULL;
+		PyErr_SetString( PyExc_RuntimeError, "PyAdditionsAndDeletions: Bubbles not initialized yet" );
+		return nullptr;
 	}
 
 	// Clear whatever is here
