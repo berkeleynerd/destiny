@@ -1,5 +1,6 @@
 ccp_add_executable(DestinyTest)
 find_package(GTest REQUIRED)
+find_package(Tracy REQUIRED NO_CMAKE_PATH)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 target_link_libraries(DestinyTest PRIVATE destinyStatic GTest::GTest GTest::Main)
 
@@ -36,6 +37,12 @@ add_custom_command(TARGET DestinyTest POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:Blue>
     $<TARGET_FILE_DIR:DestinyTest>
+)
+
+add_custom_command(TARGET DestinyTest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:Tracy::TracyClient>
+        $<TARGET_FILE_DIR:DestinyTest>
 )
 
 set_target_properties(DestinyTest PROPERTIES FOLDER "Tests")
