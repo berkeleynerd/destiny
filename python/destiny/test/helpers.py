@@ -1,3 +1,4 @@
+import decometaclass
 import struct
 import unittest
 import destiny
@@ -261,3 +262,25 @@ class BallEventSpy(destiny.Ball):
 
     def DoCollision(self, id, x, y, z):
         self.collision_callback_args.append((id, x, y, z))
+
+
+class BallparkWrapped(decometaclass.WrapBlueClass("destiny.Ballpark")):
+
+    def __init__(self):
+        self.transitions = []
+
+    def DoBubbleTransitions(self, transitions):
+        self.transitions = transitions
+
+    def GetTransitions(self):
+        return self.transitions
+
+
+class BallparkWrappedTestCase(BallparkTestCase):
+
+    def setUp(self):
+        self.park = BallparkWrapped()
+
+    def check_transitions(self, expected_transitions):
+        actual_transitions = self.park.GetTransitions()
+        self.assertEqual(expected_transitions, actual_transitions)

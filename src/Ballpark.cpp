@@ -5871,6 +5871,29 @@ void Ballpark::HandleProximities()
 }
 
 //---------------------------------------------------------------------------------------
+// ClearBubbles clears bubble related Python dicts and sets.
+//---------------------------------------------------------------------------------------
+void Ballpark::ClearBubbles()
+{
+	if( bubbles )
+	{
+		PyDict_Clear( bubbles );
+	}
+	if( bubbleInteractives )
+	{
+		PyDict_Clear( bubbleInteractives );
+	}
+	if( bubbleKeepAlives )
+	{
+		PyDict_Clear( bubbleKeepAlives );
+	}
+	if( bubbleKeepAliveBalls )
+	{
+		PySet_Clear( bubbleKeepAliveBalls );
+	}
+}
+
+//---------------------------------------------------------------------------------------
 // ClearAll clears the ballpark of all balls and collidables
 //---------------------------------------------------------------------------------------
 
@@ -5911,11 +5934,7 @@ void Ballpark::ClearAll(
 	mCapsules.clear();
 	mOrientedBoxes.clear();
 
-    if(bubbles)
-    {
-        Py_DECREF(bubbles);
-        bubbles = 0;
-    }
+    ClearBubbles();
 
     if(!mBubbleConflicts.empty())
     {
@@ -5930,12 +5949,6 @@ void Ballpark::ClearAll(
 
     mFreeBalls.clear();
     mProximityBalls.clear();
-    if(bubbleInteractives)
-        PyDict_Clear(bubbleInteractives);
-    if(bubbleKeepAlives)
-        PyDict_Clear(bubbleKeepAlives);
-    if(bubbleKeepAliveBalls)
-        PySet_Clear(bubbleKeepAliveBalls);
     mLocalCnt = -1;
     mLocalHiCnt = DSTLOCALBALLS;
 
@@ -5990,6 +6003,61 @@ void Ballpark::UpdateBallBubble(
         CCP_LOGWARN_CH( s_chPark,"Ballpark::UpdateBallBubble couldn't find a bubble. Setting it to %d.\n",hiID+1);
         ball->mNewBubble = hiID+1;
     }
+}
+
+//---------------------------------------------------------------------------------------
+// AddTransitionToList creates a python object for the bubble transition of this ball,
+// and appends it to the provided list
+//---------------------------------------------------------------------------------------
+
+void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
+{
+	if (transitions == nullptr)
+	{
+		CCP_LOGWARN_CH( s_chPark,"Ballpark::AddTransitionToList failed, provided transitions list is invalid");
+		return;
+	}
+	if( ball->mMode == DSTBALL_TROLL )
+	{
+		// Safeguard to make sure we do not register Bubble Transitions for balls in troll mode, as
+		// those should not be player ships
+		return;
+	}
+
+	PyObject* transition = Py_BuildValue(
+		"Lii",
+		ball->mId,
+		ball->mOldBubble,
+		ball->mNewBubble );
+	if( !transition )
+	{
+		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to create bubble transition for ball %I64d", mCurrentTime, ball->mId );
+		PyErr_Clear();
+		return;
+	}
+
+	bool canAppendTransition = PyList_Append( transitions, transition ) == 0; // according to PyList_Append, 0 means success
+	if( !canAppendTransition )
+	{
+		CCP_LOGWARN_CH( s_chPark, "[%d] Failed to append bubble transition for ball %I64d", mCurrentTime, ball->mId );
+		PyErr_Clear();
+	}
+	Py_XDECREF(transition);
+}
+
+//---------------------------------------------------------------------------------------
+// NotifyOfBubbleTransitions emits event communicating that balls have changed bubbles
+//---------------------------------------------------------------------------------------
+
+void Ballpark::NotifyOfBubbleTransitions(const PyObject* transitions)
+{
+	if (transitions && !PyOS->SendEvent(
+			(IEveBallpark*)this, "Destiny::DoBubbleTransitions",
+			"DoBubbleTransitions", NULL,"(O)", transitions
+			))
+	{
+		PyOS->PyError();
+	}
 }
 
 //---------------------------------------------------------------------------------------
@@ -6493,6 +6561,7 @@ void Ballpark::AddToBubble(Partitionable *p)
 	Py_DECREF(oldBubbleId);
 	Py_DECREF(ballId);
 }
+
 //---------------------------------------------------------------------------------------
 // InitializeBubbles recacalculates causal domains and assigns new bubble Ids
 //---------------------------------------------------------------------------------------
@@ -6510,25 +6579,9 @@ void Ballpark::InitializeBubbles()
 
     mBubbleId = 0;
 
-    // Clear the bubble dicts, if they exist
-    if (bubbles)
-    {
-        Py_DECREF(bubbles);
-        bubbles = nullptr;
-    }
 
-    if(bubbleInteractives)
-        PyDict_Clear(bubbleInteractives);
-
-	if(bubbleKeepAlives)
-        PyDict_Clear(bubbleKeepAlives);
-
-	if(bubbleKeepAliveBalls)
-        PySet_Clear(bubbleKeepAliveBalls);
-
-    //BeTimer timer = BeTimer();
-    //timer.Reset();
-
+	// Clear bubble tracking python members
+	ClearBubbles();
 
     // Now cycle over all balls
     while((ball = it++))

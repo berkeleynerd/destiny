@@ -69,7 +69,7 @@ class TestAdditionsAndDeletions(helpers.BallparkTestCase):
         user_ships = [ball.id]
         self.park.InitializeBubbles()
         self.park.AdditionsAndDeletions(additions_per_player, deletions_per_player, additions_per_bubble, deletions_per_bubble, user_ships)
-        self.assertEqual(additions_per_player, { ball.id: [ball.id] }) 
+        self.assertEqual(additions_per_player, { ball.id: [ball.id] })
         self.assertEqual(deletions_per_player, { ball.id: [] })
         self.assertEqual(additions_per_bubble, { ball.newBubbleId: [ball.id] })
         self.assertEqual(deletions_per_bubble, { ball.newBubbleId: [] })
@@ -110,6 +110,76 @@ class TestAdditionsAndDeletions(helpers.BallparkTestCase):
         self.assertEqual(deletions_per_player, {})
         self.assertEqual(additions_per_bubble, {})
         self.assertEqual(deletions_per_bubble, {})
+
+
+class TestBubbleTransitions(helpers.BallparkWrappedTestCase):
+
+    def test_empty_bubble_transitions_list_is_sent_as_empty(self):
+        additions_per_player = {}
+        deletions_per_player = {}
+        additions_per_bubble = {}
+        deletions_per_bubble = {}
+        user_ships = []
+        self.park.InitializeBubbles()
+        self.park.AdditionsAndDeletions(
+            additions_per_player, deletions_per_player, additions_per_bubble, deletions_per_bubble, user_ships,
+        )
+
+        expected_transitions = []
+        self.check_transitions(expected_transitions)
+
+    def test_adding_ball_transitions_it_to_bubble(self):
+        ball, = self.add_balls(1)
+        ball.isInteractive = True
+
+        ball_id = ball.id
+        old_bubble_id = ball.newBubbleId
+
+        additions_per_player = {}
+        deletions_per_player = {}
+        additions_per_bubble = {}
+        deletions_per_bubble = {}
+        user_ships = [ball_id]
+        self.park.InitializeBubbles()
+        self.park.AdditionsAndDeletions(
+            additions_per_player, deletions_per_player, additions_per_bubble, deletions_per_bubble, user_ships,
+        )
+        new_bubble_id = ball.newBubbleId
+
+        self.assertNotEquals(old_bubble_id, new_bubble_id)
+
+        expected_transitions = [(ball_id, old_bubble_id, new_bubble_id)]
+        self.check_transitions(expected_transitions)
+
+    def test_adding_two_balls_transition_them_to_bubble(self):
+        ball_1, ball_2 = self.add_balls(2)
+        ball_1.isInteractive = True
+        ball_2.isInteractive = True
+
+        old_bubble_id_1 = ball_1.newBubbleId
+        old_bubble_id_2 = ball_2.newBubbleId
+
+        additions_per_player = {}
+        deletions_per_player = {}
+        additions_per_bubble = {}
+        deletions_per_bubble = {}
+        user_ships = [ball_1.id, ball_2.id]
+        self.park.InitializeBubbles()
+        self.park.AdditionsAndDeletions(
+            additions_per_player, deletions_per_player, additions_per_bubble, deletions_per_bubble, user_ships,
+        )
+
+        new_bubble_id_1 = ball_1.newBubbleId
+        new_bubble_id_2 = ball_2.newBubbleId
+
+        self.assertNotEquals(old_bubble_id_1, new_bubble_id_1)
+        self.assertNotEquals(old_bubble_id_2, new_bubble_id_2)
+
+        expected_transitions = [
+            (ball_1.id, old_bubble_id_1, new_bubble_id_1),
+            (ball_2.id, old_bubble_id_2, new_bubble_id_2),
+        ]
+        self.check_transitions(expected_transitions)
 
 
 class TestAddMushroom(helpers.BallparkTestCase):
