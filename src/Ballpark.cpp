@@ -232,11 +232,8 @@ void Ballpark::OnTick(
     // If there hasn't yet passed a whole tick interval, then return
     if(lastDelta < mTickInterval*10000)
     {
-        BeOS->NextScheduledEvent(mTickInterval - int(timer.GetTime()/10000) - int(lastDelta/10000));
-        //CCP_LOG_CH( s_chPark,"Requesting tick after %d msec",(mTickInterval*10000 - lastDelta)/10000);
         return;
     }
-    //CCP_LOGWARN_CH( s_chPark,"Interval since last tick: %I64d",lastDelta/10000);
 
     // lastDelta is at least one whole tick interval
 
@@ -328,8 +325,6 @@ void Ballpark::OnTick(
     // Now lastDelta contains the 'dust' that was left.
     // Flag the last time I was called as the time minus the 'dust'..
     mTime = simTime - lastDelta;
-    BeOS->NextScheduledEvent(mTickInterval - int(timer.GetTime()/10000) - int(lastDelta/10000));
-    //CCP_LOG_CH( s_chPark,"Requesting tick after %d msec",mTickInterval - timer.GetTime()/10000);
 }
 
 void Ballpark::CalculateIterativeCollisionResponses()
@@ -3020,7 +3015,6 @@ void Ballpark::Start()
     if (!mHaveTicks)
     {
         BeOS->RegisterForTicks(this, (void*)TICK_EVOLVE);
-        BeOS->NextScheduledEvent(mTickInterval);
 
         mHaveTicks = true;
     }
