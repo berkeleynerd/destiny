@@ -255,7 +255,7 @@ class ParkUpdateBatcher(object):
                         )
                         packaged_action = blue.marshal.Save(user_actions)
                         deletions_per_bubble[bubble_id] = (
-                            self._park.currentTime, ('PackagedAction'.encode('utf-8'), packaged_action)
+                            self._park.currentTime, ('PackagedAction', packaged_action)
                         )
 
             with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildAdditions"):
@@ -272,7 +272,7 @@ class ParkUpdateBatcher(object):
                             # Now we have all the actions for this bubble, package them up into a single action
                             packaged_action = blue.marshal.Save(user_actions)
                             add_actions_per_bubble[bubble_id] = (
-                                self._park.currentTime, ('PackagedAction'.encode('utf-8'), packaged_action)
+                                self._park.currentTime, ('PackagedAction', packaged_action)
                             )
 
             # Now 'deletions' and 'additions' contain the actions for each user
@@ -291,7 +291,7 @@ class ParkUpdateBatcher(object):
                     elif len(dels) > 0:
                         for character_id in getter(ball_id):
                             self.add_to_character_history(
-                                character_id, (self._park.currentTime, ('RemoveBalls'.encode('utf-8'), (dels,)))
+                                character_id, (self._park.currentTime, ('RemoveBalls', (dels,)))
                             )
 
             with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::Additions"):
@@ -316,7 +316,7 @@ class ParkUpdateBatcher(object):
                                 packaged_action = blue.marshal.Save(user_actions)
                                 for character_id in characters:
                                     self.add_to_character_history(
-                                        character_id, (self._park.currentTime, ('PackagedAction'.encode('utf-8'), packaged_action))
+                                        character_id, (self._park.currentTime, ('PackagedAction', packaged_action))
                                     )
         finally:
             blue.pyos.taskletTimer.ReturnFromTasklet(last)
