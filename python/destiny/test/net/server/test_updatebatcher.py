@@ -174,7 +174,6 @@ class TestUpdateBatcher(DestinyTestCase):
         self.assertEqual("AddBallsToPark", action_name)
         self.assertEqual(1, len(action_parameters))
         ball_stream, = action_parameters
-        ball_stream = ball_stream.encode('latin-1')
         park = self.read_balls_from_stream_into_park(ball_stream)
         for ball_id in ball_list:
             self.assertBallsEqual(self._park.balls[ball_id], park.balls[ball_id], ignore_bubble_id=True)

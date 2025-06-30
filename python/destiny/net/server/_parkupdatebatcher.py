@@ -226,8 +226,7 @@ class ParkUpdateBatcher(object):
         dump = blue.MemStream()
         self._park.WriteBallsToStream(ball_id_list, dump)
         ball_stream = dump.Read()
-        ball_stream_utf8 = ball_stream.decode('latin-1').encode('utf-8')
-        return 'AddBallsToPark'.encode('utf-8'), ((ball_stream_utf8),)
+        return 'AddBallsToPark', ((ball_stream),)
 
     def update_bubbles(self):
         """
