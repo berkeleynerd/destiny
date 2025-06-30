@@ -100,8 +100,8 @@ class TestMiniBall(helpers.BallparkTestCase):
         # Make sure there is no significant overlap, and we move only in
         # the z-direction
         for coord in coords:
-            self.assertAlmostEquals(coord[0], 200)
-            self.assertAlmostEquals(coord[1], 0.0)
+            self.assertAlmostEqual(coord[0], 200)
+            self.assertAlmostEqual(coord[1], 0.0)
             self.assertTrue(1.1*coord[2] < -20, "Significant overlap: %f, %f"%(coord[2], -20))
 
     def test_collide_with_miniballs(self):
@@ -124,6 +124,6 @@ class TestMiniBall(helpers.BallparkTestCase):
         # Make sure there is no significant overlap, and we move only in
         # the z-direction.  The overlap is roughly estimated
         for coord in coords:
-            self.assertAlmostEquals(coord[0], 200)
-            self.assertAlmostEquals(coord[1], 0.0)
+            self.assertAlmostEqual(coord[0], 200)
+            self.assertAlmostEqual(coord[1], 0.0)
             self.assertTrue(1.01*coord[2] < -17, "Significant overlap: %f, %f"%(coord[2], -17))
