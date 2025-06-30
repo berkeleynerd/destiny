@@ -7,7 +7,7 @@ class TestWriteBallsToStream(helpers.BallparkTestCase):
     def test_write_no_ball(self):
         stream = blue.MemStream()
         self.park.WriteBallsToStream([], stream)
-        self.assertEqual(stream.Read(), "\x01\x00\x00\x00\x00")
+        self.assertEqual(stream.Read(), b"\x01\x00\x00\x00\x00")
 
     def test_write_ball_then_read_ball(self):
         stream = blue.MemStream()
@@ -60,7 +60,7 @@ class TestWriteFullStateToStream(helpers.BallparkTestCase):
     def test_write_no_ball(self):
         stream = blue.MemStream()
         self.park.WriteFullStateToStream(stream)
-        self.assertEqual(stream.Read(), "\x00\x00\x00\x00\x00")
+        self.assertEqual(stream.Read(), b"\x00\x00\x00\x00\x00")
 
     def test_write_ball_then_read_ball(self):
         stream = blue.MemStream()

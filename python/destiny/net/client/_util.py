@@ -39,7 +39,7 @@ def merge_state_into_history(state, history_list, wait_for_bubble):
     entries_by_time = collections.defaultdict(list)
     for entry in state:
         entries_by_time[entry[0]].append(entry)
-    time_list = sorted(entries_by_time.iterkeys())
+    time_list = sorted(entries_by_time.keys())
     # Insert events happening earlier than (some of) our current history
     time_list_idx = 0
     for history_idx, history_time_entries in enumerate(history_list):
@@ -62,5 +62,5 @@ def merge_state_into_history(state, history_list, wait_for_bubble):
     # of history entries before we ran out of new actions in the previous loop, which in turn implies that all the
     # remaining new actions have a timestamp larger than the largest history timestamp, and can thus be appended to
     # the current history.
-    for tl_idx in xrange(time_list_idx, len(time_list)):
+    for tl_idx in range(time_list_idx, len(time_list)):
         history_list.append([entries_by_time[time_list[tl_idx]], wait_for_bubble])

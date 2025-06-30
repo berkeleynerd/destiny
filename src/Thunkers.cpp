@@ -1416,7 +1416,7 @@ PyObject* Ballpark::GetBallIdsInRange(
 	TASKLET(Timer_GetBallIdsInRange);
 
 	// Cycle over all balls in same bubble
-	PyObject *newBubbleId = PyInt_FromLong(bubbleID);
+	PyObject *newBubbleId = PyLong_FromLong(bubbleID);
 	PyObject *theBubble = PyDict_GetItem(bubbles, newBubbleId);
 
 	if(theBubble)
@@ -1632,7 +1632,7 @@ PyObject* Ballpark::GetActiveBubbleForBall(const Ball* ball)
 		return PyDict_New();
 	}
 	
-	PyObject *newBubbleId = PyInt_FromLong(bubbleID);
+	PyObject *newBubbleId = PyLong_FromLong(bubbleID);
 	PyObject *theBubble = PyDict_GetItem(bubbles, newBubbleId);
 	Py_DECREF(newBubbleId);
 	return theBubble;
@@ -1970,7 +1970,7 @@ PyObject* Ballpark::PySetBoxObject(
 		success=1;
 	}
 
-	return PyInt_FromLong(success);
+	return PyLong_FromLong(success);
 }
 
 //---------------------------------------------------------------------------------------
@@ -2021,7 +2021,7 @@ PyObject* Ballpark::PyGetBubbleAtCoordinates(
 	Box *top = mPartition->GetExistingTopBox(Vector3d(x,y,z));
 
 	if(top)
-		return PyInt_FromLong(top->mBubble);
+		return PyLong_FromLong(top->mBubble);
 
 	Py_INCREF(Py_None);
 	return Py_None;
@@ -2517,14 +2517,14 @@ void Ballpark::PopulateAddDelForBubble(PyObject *bubble, PyObject *bubbleAddList
 			// Something wrong with key
 			PyObject *e, *v, *t;
 			PyErr_Fetch(&e, &v, &t);
-			PyObject *repr = PyObject_Repr(key);			
-			CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not __int64: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
+			PyObject *repr = PyObject_Repr(key);
+			CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not __int64: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr? PyUnicode_AsUTF8(repr):"<bork>");
 			Py_XDECREF(repr);
 			PyErr_Restore(e, v, t);
 			return;
 		}
 
-		long action = PyInt_AS_LONG(value);
+		long action = PyLong_AS_LONG(value);
 
 		if(ballID < DSTLOCALBALLS)
 			continue;
@@ -2665,7 +2665,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 			PyObject *e, *v, *t;
 			PyErr_Fetch(&e, &v, &t);
 			PyObject *repr = PyObject_Repr(val);
-			CCP_LOGERR_CH( s_chPark,"%s, %d: Value is not __int64: type=%s value=%s", __FILE__, __LINE__, val->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
+			CCP_LOGERR_CH( s_chPark,"%s, %d: Value is not __int64: type=%s value=%s", __FILE__, __LINE__, val->ob_type->tp_name, repr? PyUnicode_AsUTF8(repr):"<bork>");
 			Py_XDECREF(repr);
 			Py_XDECREF(shipBubbleTransitions);
 			PyErr_Restore(e, v, t);
@@ -2685,14 +2685,14 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 
 		if(uBall->mNewBubble != -1)
 		{
-			key = PyInt_FromLong(uBall->mNewBubble);
+			key = PyLong_FromLong(uBall->mNewBubble);
 			bubble = PyDict_GetItem(bubbles, key);
 			Py_DECREF(key);
 		}
 
 		if(uBall->mOldBubble != -1)
 		{
-			key = PyInt_FromLong(uBall->mOldBubble);
+			key = PyLong_FromLong(uBall->mOldBubble);
 			oldBubble = PyDict_GetItem(bubbles, key);
 			Py_DECREF(key);
 		}
@@ -2707,7 +2707,7 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 
 			PyObject *bubbleId;
 
-			bubbleId = PyInt_FromLong(uBall->mNewBubble);
+			bubbleId = PyLong_FromLong(uBall->mNewBubble);
 
 			if (PyDict_Contains(additionsPerBubble, bubbleId) && PyDict_Contains(deletionsPerBubble, bubbleId))
 			{
@@ -2760,14 +2760,15 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					// Something wrong with key
 					PyObject *e, *v, *t;
 					PyErr_Fetch(&e, &v, &t);
-					PyObject *repr = PyObject_Repr(key);
-					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not __int64: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
+					PyObject *repr = PyObject_Repr(key);			
+					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not __int64: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr? PyUnicode_AsUTF8(repr):"<bork>");
+
 					Py_XDECREF(repr);
 					Py_XDECREF(shipBubbleTransitions);
 					PyErr_Restore(e, v, t);
 					return 0;
 				}
-				long action = PyInt_AS_LONG(value);
+				long action = PyLong_AS_LONG(value);
 
 				// Don't include miniballs
 				if(ballID < DSTLOCALBALLS)
@@ -2823,14 +2824,15 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 					PyObject *e, *v, *t;
 					PyErr_Fetch(&e, &v, &t);
 					PyObject *repr = PyObject_Repr(key);
-					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not int: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr?PyString_AS_STRING(repr):"<bork>");
+					CCP_LOGERR_CH( s_chPark,"%s, %d: Key is not int: type=%s value=%s", __FILE__, __LINE__, key->ob_type->tp_name, repr? PyUnicode_AsUTF8(repr):"<bork>");
+
 					Py_XDECREF(repr);
 					Py_XDECREF(shipBubbleTransitions);
 					PyErr_Restore(e, v, t);
 					return 0;
 				}
 
-				long action = PyInt_AS_LONG(value);
+				long action = PyLong_AS_LONG(value);
 
 				// Don't include miniballs
 				if(ballID < DSTLOCALBALLS)

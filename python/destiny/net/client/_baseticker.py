@@ -131,7 +131,6 @@ def _expand_states(state):
             except StandardError:
                 # Not much we can do here other than log it and try to carry on
                 logger.exception("Exception whilst expanding a PackagedAction")
-                sys.exc_clear()
         else:
             # This is not a packaged update, so just use as-is
             expanded_states.append(action)

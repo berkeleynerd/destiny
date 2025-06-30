@@ -91,7 +91,7 @@ class Ticker(BaseTicker):
                         continue
 
                 event_bubble_id = self._find_bubble_id_for_event(event_ball_id, action, args)
-                with bluepy.Timer("Ticker::_apply_history::distribute_to_bubbles"):
+                with bluepy.Timer("Ticker::_apply_history::distribute_to_bubbles"):   
                     if not self._is_valid_event_bubble(event_bubble_id, event_ball_id):
                         continue
                     if not self._park.balls[event_ball_id].isCloaked:
@@ -117,7 +117,6 @@ class Ticker(BaseTicker):
                         fn(*args)
                     except Exception:
                         logger.exception("Bummer in park, fn %s args %s", action, args)
-                        sys.exc_clear()
                         continue
 
     def _handle_cloak_ball_action(self, args, event, event_ball_id, local_args, stamp):

@@ -1950,7 +1950,7 @@ void ClientBall::DispatchPartition()
 {
     for(int i =0; i<27;i++)
     {
-        PyList_SET_ITEM(mBoxList, i, PyInt_FromLong(mActiveBoxes[i]));
+        PyList_SET_ITEM(mBoxList, i, PyLong_FromLong(mActiveBoxes[i]));
     }
 
     if (!PyOS->SendEvent(
@@ -1983,7 +1983,7 @@ PyObject* ClientBall::PyGetPartitionBoxes(PyObject* args)
 
     for(int i =0; i<27;i++)
     {
-        PyList_SET_ITEM(boxes, i, PyInt_FromLong(mActiveBoxes[i]));
+        PyList_SET_ITEM(boxes, i, PyLong_FromLong(mActiveBoxes[i]));
     }
 
     // this is what we are returing (lox, loy, loz,hix,hiy,hiz, r, [boxinfo])
@@ -2261,7 +2261,7 @@ PyObject* Ball::PyReserveFormationSlot(
 {
     char slot = ReserveFormationSlot();
 
-    return PyInt_FromLong(slot);
+    return PyLong_FromLong(slot);
 }
 
 char Ball::ReserveFormationSlot()

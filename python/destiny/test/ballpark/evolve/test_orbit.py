@@ -65,7 +65,7 @@ class TestNewOrbit(helpers.BallparkTestCase):
                 distance = math.sqrt(sum(x**2 for x in tovector))
 
                 #Allow for a significant deviation
-                self.assertAlmostEquals(distance, expected_distance, delta=20)
+                self.assertAlmostEqual(distance, expected_distance, delta=20)
 
                 #Make sure we are rotating, the velocity should be nearly perpendicular to
                 #the direction to the orbitee
@@ -108,7 +108,7 @@ class TestNewOrbit(helpers.BallparkTestCase):
                 if (iorbit > i):
                     iorbit = i
                 # Allow for a significant deviation
-                self.assertAlmostEquals(distance, expected_distance, delta=10)
+                self.assertAlmostEqual(distance, expected_distance, delta=10)
 
         self.assertTrue(iorbit < 2000)
 
@@ -146,7 +146,7 @@ class TestNewOrbit(helpers.BallparkTestCase):
                 if (iorbit > i):
                     iorbit = i
                 # Allow for a significant deviation
-                self.assertAlmostEquals(distance, expected_distance, delta=20)
+                self.assertAlmostEqual(distance, expected_distance, delta=20)
 
         self.assertTrue(iorbit < 2000)
 
@@ -173,7 +173,7 @@ class TestNewOrbit(helpers.BallparkTestCase):
             distance = math.sqrt(sum(x ** 2 for x in tovector))
 
             # Allow for an even more significant deviation
-            self.assertAlmostEquals(distance, expected_distance, delta=700)
+            self.assertAlmostEqual(distance, expected_distance, delta=700)
 
             # Assert that we are moving almost in a circle around the orbitee
             velocity = [self.orbiter.vx-self.orbitee.vx,

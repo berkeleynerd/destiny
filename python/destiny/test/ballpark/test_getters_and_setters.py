@@ -15,53 +15,53 @@ class TestSetters(helpers.BallparkTestCase):
     def test_can_set_ball_radius(self):
         ball, = self.add_balls(1)
         self.park.SetBallRadius(ball.id, 3.14)
-        self.assertAlmostEquals(ball.radius, 3.14, places=6)
+        self.assertAlmostEqual(ball.radius, 3.14, places=6)
 
     def test_setting_ball_radius_to_negative_value_is_ineffective(self):
         ball, = self.add_balls(1)
         self.park.SetBallRadius(ball.id, -1.0)
-        self.assertEquals(ball.radius, 0.0)
+        self.assertEqual(ball.radius, 0.0)
 
     def test_can_set_max_speed(self):
         ball, = self.add_balls(1)
         self.park.SetMaxSpeed(ball.id, 3.14)
-        self.assertAlmostEquals(ball.maxVelocity, 3.14, places=6)
+        self.assertAlmostEqual(ball.maxVelocity, 3.14, places=6)
 
     def test_setting_max_speed_to_negative_value_is_ineffective(self):
         ball, = self.add_balls(1)
         self.park.SetMaxSpeed(ball.id, -1.0)
-        self.assertEquals(ball.maxVelocity, 0.0)
+        self.assertEqual(ball.maxVelocity, 0.0)
 
     def test_can_set_ball_position(self):
         ball, = self.add_balls(1)
         x, y, z = 1.0, 2.0, 3.0
         self.park.SetBallPosition(ball.id, x, y, z)
-        self.assertAlmostEquals(ball.x, x)
-        self.assertAlmostEquals(ball.y, y)
-        self.assertAlmostEquals(ball.z, z)
+        self.assertAlmostEqual(ball.x, x)
+        self.assertAlmostEqual(ball.y, y)
+        self.assertAlmostEqual(ball.z, z)
 
     def test_can_set_ball_velocity(self):
         ball, = self.add_balls(1)
         x, y, z = 1.0, 2.0, 3.0
         self.park.SetBallVelocity(ball.id, x, y, z)
-        self.assertAlmostEquals(ball.vx, x)
-        self.assertAlmostEquals(ball.vy, y)
-        self.assertAlmostEquals(ball.vz, z)
+        self.assertAlmostEqual(ball.vx, x)
+        self.assertAlmostEqual(ball.vy, y)
+        self.assertAlmostEqual(ball.vz, z)
 
     def test_can_set_speed_fraction(self):
         ball, = self.add_balls(1)
         self.park.SetSpeedFraction(ball.id, 0.2)
-        self.assertAlmostEquals(ball.speedFraction, 0.2)
+        self.assertAlmostEqual(ball.speedFraction, 0.2)
 
     def test_setting_speed_fraction_clamps_upper_bound_at_one(self):
         ball, = self.add_balls(1)
         self.park.SetSpeedFraction(ball.id, 2.0)
-        self.assertAlmostEquals(ball.speedFraction, 1.0)
+        self.assertAlmostEqual(ball.speedFraction, 1.0)
 
     def test_setting_speed_fraction_clamps_lowe_bound_at_zero(self):
         ball, = self.add_balls(1)
         self.park.SetSpeedFraction(ball.id, -2.0)
-        self.assertAlmostEquals(ball.speedFraction, 0.0)
+        self.assertAlmostEqual(ball.speedFraction, 0.0)
 
     def test_can_set_ball_free(self):
         ball, = self.add_balls(1)
@@ -81,12 +81,12 @@ class TestSetters(helpers.BallparkTestCase):
     def test_can_set_ball_agility(self):
         ball, = self.add_balls(1)
         self.park.SetBallAgility(ball.id, 3.14)
-        self.assertAlmostEquals(ball.Agility, 3.14, places=6)
+        self.assertAlmostEqual(ball.Agility, 3.14, places=6)
 
     def test_setting_agility_to_negative_value_is_ineffective(self):
         ball, = self.add_balls(1)
         self.park.SetBallAgility(ball.id, -1.0)
-        self.assertAlmostEquals(ball.Agility, 1.0)
+        self.assertAlmostEqual(ball.Agility, 1.0)
 
     def test_can_set_ball_interactive(self):
         ball, = self.add_balls(1)
@@ -97,9 +97,9 @@ class TestSetters(helpers.BallparkTestCase):
         ball, = self.add_balls(1)
         x, y, z = 1.0, 2.0, 3.0
         self.park.SetBallVelocity(ball.id, x, y, z)
-        self.assertAlmostEquals(ball.yaw, 0.3217505543966422)
-        self.assertAlmostEquals(ball.pitch, -0.5639426413606289)
-        self.assertAlmostEquals(ball.roll, 0.0)
+        self.assertAlmostEqual(ball.yaw, 0.3217505543966422)
+        self.assertAlmostEqual(ball.pitch, -0.5639426413606289)
+        self.assertAlmostEqual(ball.roll, 0.0)
 
     def test_set_boid_true(self):
         ball, = self.add_balls(1)
@@ -139,7 +139,7 @@ class TestSetters(helpers.BallparkTestCase):
         self.assertEqual(ball.harmonic, harmonic)
         self.assertEqual(ball.corporationID, corportationID)
         self.assertEqual(ball.allianceID, allianceID)
-        self.assertEquals(ball.mode, destiny.DSTBALL_STOP)
+        self.assertEqual(ball.mode, destiny.DSTBALL_STOP)
 
     def test_can_set_ball_harmonic_make_forcefield(self):
         ball, = self.add_balls(1)
@@ -151,7 +151,7 @@ class TestSetters(helpers.BallparkTestCase):
         self.assertEqual(ball.harmonic, harmonic)
         self.assertEqual(ball.corporationID, corportationID)
         self.assertEqual(ball.allianceID, allianceID)
-        self.assertEquals(ball.mode, destiny.DSTBALL_FIELD)
+        self.assertEqual(ball.mode, destiny.DSTBALL_FIELD)
 
     def test_can_set_ball_harmonic_remove_forcefield(self):
         ball, = self.add_balls(1)
@@ -160,7 +160,7 @@ class TestSetters(helpers.BallparkTestCase):
         allianceID = 3
         self.park.SetBallHarmonic(ball.id, harmonic, corportationID, allianceID, True)
         self.park.SetBallHarmonic(ball.id, harmonic, corportationID, allianceID, False)
-        self.assertEquals(ball.mode, destiny.DSTBALL_STOP)
+        self.assertEqual(ball.mode, destiny.DSTBALL_STOP)
 
 
 class TestGetAccuracy(helpers.BallparkTestCase):

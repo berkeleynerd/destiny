@@ -146,7 +146,7 @@ class TestBubbleTransitions(helpers.BallparkWrappedTestCase):
         )
         new_bubble_id = ball.newBubbleId
 
-        self.assertNotEquals(old_bubble_id, new_bubble_id)
+        self.assertNotEqual(old_bubble_id, new_bubble_id)
 
         expected_transitions = [(ball_id, old_bubble_id, new_bubble_id)]
         self.check_transitions(expected_transitions)
@@ -172,8 +172,8 @@ class TestBubbleTransitions(helpers.BallparkWrappedTestCase):
         new_bubble_id_1 = ball_1.newBubbleId
         new_bubble_id_2 = ball_2.newBubbleId
 
-        self.assertNotEquals(old_bubble_id_1, new_bubble_id_1)
-        self.assertNotEquals(old_bubble_id_2, new_bubble_id_2)
+        self.assertNotEqual(old_bubble_id_1, new_bubble_id_1)
+        self.assertNotEqual(old_bubble_id_2, new_bubble_id_2)
 
         expected_transitions = [
             (ball_1.id, old_bubble_id_1, new_bubble_id_1),

@@ -218,9 +218,9 @@ class TestOrbit(helpers.BallparkTestCase):
         first, second = self.add_balls(2)
         self.park.CloakBall(second.id, destiny.DSTNORMALCLOAK)
         self.park.Orbit(first.id, second.id)
-        self.assertNotEquals(first.followId, second.id)
-        self.assertNotEquals(first.followRange, 1.0)
-        self.assertNotEquals(first.mode, destiny.DSTBALL_ORBIT)
+        self.assertNotEqual(first.followId, second.id)
+        self.assertNotEqual(first.followRange, 1.0)
+        self.assertNotEqual(first.mode, destiny.DSTBALL_ORBIT)
         self.assertNotIn(first.id, self.park.GetFollowers(second.id))
 
     def test_can_not_orbit_ball_in_different_bubble(self):

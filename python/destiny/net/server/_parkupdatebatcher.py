@@ -39,7 +39,7 @@ class ParkUpdateBatcher(object):
         :rtype: list
         """
         client_ids = []
-        for char_id, state in self._character_history.iteritems():
+        for char_id, state in self._character_history.items():
             client_id = self._character_interests.get_client_id_for_character(char_id)
             if client_id is None:
                 continue
@@ -67,7 +67,7 @@ class ParkUpdateBatcher(object):
         dual_batch_narrowcasts = []    # For characters who get DoDestinyUpdate for the bubble as well as for their character specifically.
         singlecasts = []
 
-        for bubble_id, state in self._bubble_history.iteritems():
+        for bubble_id, state in self._bubble_history.items():
             if bubble_id in self._park.bubbleInteractives:
                 client_ids = set()
                 for ball_id in self._park.bubbleInteractives[bubble_id]:
@@ -106,7 +106,7 @@ class ParkUpdateBatcher(object):
                 clients_waiting_for_bubble.update(client_ids)
         self._bubble_history = {}
 
-        for char_id, state in self._character_history.iteritems():
+        for char_id, state in self._character_history.items():
             client_id = self._character_interests.get_client_id_for_character(char_id)
             if client_id is None:
                 continue
@@ -248,7 +248,7 @@ class ParkUpdateBatcher(object):
             with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildDeletions"):
                 # Before: deletions_per_bubble value is a list of ballIDs
                 # After : deletions_per_bubble value is an update we can add directly to AddToCharacterHistory
-                for bubble_id, dels in deletions_per_bubble.iteritems():
+                for bubble_id, dels in deletions_per_bubble.items():
                     if len(dels) > 0:
                         user_actions = (
                             (self._park.currentTime, ('RemoveBalls', (dels,))),
@@ -261,7 +261,7 @@ class ParkUpdateBatcher(object):
             with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildAdditions"):
                 # Before: additions_per_bubble value is a list of ballIDs
                 # After : additions_per_bubble value is an update we can add directly to AddToCharacterHistory
-                for bubble_id, adds in additions_per_bubble.iteritems():
+                for bubble_id, adds in additions_per_bubble.items():
                     if len(adds) > 0:
                         # Collect up all the user actions for this bubble
                         user_actions = [
@@ -280,7 +280,7 @@ class ParkUpdateBatcher(object):
             getter = self._character_interests.get_interested_character_ids_for_ball
 
             with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::Deletions"):
-                for ball_id, dels in deletions_per_player.iteritems():
+                for ball_id, dels in deletions_per_player.items():
                     # If dels is an int, it is the ID of a bubble
                     # We can use this ID to look up a pre-serialised update for the user
                     if isinstance(dels, int):
@@ -295,7 +295,7 @@ class ParkUpdateBatcher(object):
                             )
 
             with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::Additions"):
-                for ball_id, adds in additions_per_player.iteritems():
+                for ball_id, adds in additions_per_player.items():
 
                     # If adds is an int, it is the ID of a bubble
                     # We can use this ID to look up a pre-serialised update for the user
