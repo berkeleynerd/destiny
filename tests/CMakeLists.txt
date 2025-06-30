@@ -41,6 +41,12 @@ add_custom_command(TARGET DestinyTest POST_BUILD
 
 add_custom_command(TARGET DestinyTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:CcpCore>
+        $<TARGET_FILE_DIR:DestinyTest>
+)
+
+add_custom_command(TARGET DestinyTest POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:Tracy::TracyClient>
         $<TARGET_FILE_DIR:DestinyTest>
 )
