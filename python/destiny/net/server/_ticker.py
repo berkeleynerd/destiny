@@ -43,14 +43,10 @@ class Ticker(BaseTicker):
         self.on_set_ball_position = Signal()
 
     def _get_parent_methods(self):
-        # HAWK this is the result of a dir on python2, dir not working on py3, this is just a temp fix until we can ascertain why we don't get the same dir,
-        tempWorkaround = ['AddBall', 'AddCapsule', 'AddMushroom', 'AddOrientedBox', 'AddProximitySensor', 'AdditionsAndDeletions', 'AdjustTimes', 'CheckVisibility', 'ClearAll', 'CloakBall', 'CloneTo', 'CopyBubbles', 'CopyTo', 'EntityWarpIn', 'Evolve', 'Find', 'FollowBall', 'FormationFollow', 'GetAccuracy', 'GetActiveBoxes', 'GetBallBox', 'GetBallBoxKeys', 'GetBallIdsAndDistInRange', 'GetBallIdsInCapsule', 'GetBallIdsInCone', 'GetBallIdsInRange', 'GetBallIdsInRangeOfTriangle', 'GetBoxCenter', 'GetBoxChildren', 'GetBoxKey', 'GetBoxObject', 'GetBubbleAtCoordinates', 'GetCenterDist', 'GetCurrentEgoPos', 'GetFollowers', 'GetRefCounts', 'GetRemoteFollowers', 'GetStaticCollidableBox', 'GetSurfaceDist', 'GotoDirection', 'GotoPoint', 'InitializeBubbles', 'LaunchMissile', 'LoadFormations', 'MissileFollow', 'Orbit', 'Pause', 'ReadFullStateFromStream', 'RemoveBall', 'RemoveCapsule', 'RemoveOrientedBox', 'RemoveProximitySensor', 'ScanCone', 'SetBallAgility', 'SetBallFormation', 'SetBallFree', 'SetBallGlobal', 'SetBallHarmonic', 'SetBallInteractive', 'SetBallMass', 'SetBallMassive', 'SetBallNotInParkCallback', 'SetBallPosition', 'SetBallRadius', 'SetBallRigid', 'SetBallTroll', 'SetBallVelocity', 'SetBoid', 'SetBoxObject', 'SetMaxSpeed', 'SetNotificationRange', 'SetSpeedFraction', 'SetTargetTracking', 'Start', 'Stop', 'TypeInfo', 'UncloakBall', 'Validate', 'WarpTo', 'WriteBallsToStream', 'WriteFullStateToStream', '__bluetype__', '__cid__', '__class__', '__delattr__', '__dict__', '__doc__', '__format__', '__getattribute__', '__hash__', '__init__', '__iroot__', '__klass__', '__members__', '__metaclass__', '__methods__', '__module__', '__new__', '__nonpersistvars__', '__persistvars__', '__reduce__', '__reduce_ex__', '__repr__', '__setattr__', '__sizeof__', '__str__', '__subclasshook__', '__typename__', '__weakref__', 'balls', 'bubbleInteractives', 'bubbleKeepAliveBalls', 'bubbleKeepAlives', 'bubbleSubs', 'bubbles', 'currentTime', 'ego', 'friction', 'globals', 'int1', 'int2', 'isMaster', 'isRunning', 'lagDamping', 'moribundBallRemovalBuffer', 'moribundBallRemovalCount', 'para1', 'para2', 'probe', 'rollAcceleration', 'rollDecay', 'rollSpeedAcceleration', 'rollSpeedDecay', 'solarsystemID', 'tickInterval', 'time', 'warpSpeed']
-
         if Ticker._parent_methods is None:
             Ticker._parent_methods = [
                 "_parent_" + x
-                #for x in dir(self._park)
-                for x in tempWorkaround
+                for x in dir(self._park)
                 if not x.startswith("__") and callable(getattr(self._park, "_parent_" + x, None))
             ]
         return Ticker._parent_methods
