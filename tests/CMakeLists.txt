@@ -25,31 +25,33 @@ if(APPLE)
     target_link_libraries(DestinyTest PRIVATE "-framework CoreFoundation")
 endif()
 
-# Copy shared library dependencies to folder containing test executable.
-add_custom_command(TARGET DestinyTest POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${Python3_LIBRARY}
-    $<TARGET_FILE_DIR:DestinyTest>
-)
-
-add_custom_command(TARGET DestinyTest POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:Blue>
-    $<TARGET_FILE_DIR:DestinyTest>
-)
-
-add_custom_command(TARGET DestinyTest POST_BUILD
+if (WIN32)
+    # Copy shared library dependencies to folder containing test executable.
+    add_custom_command(TARGET DestinyTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_RUNTIME_DLLS:DestinyTest>
+        ${Python3_LIBRARY}
         $<TARGET_FILE_DIR:DestinyTest>
-        COMMAND_EXPAND_LISTS
-)
+    )
 
-add_custom_command(TARGET DestinyTest POST_BUILD
+    add_custom_command(TARGET DestinyTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:Tracy::TracyClient>
+        $<TARGET_FILE:Blue>
         $<TARGET_FILE_DIR:DestinyTest>
-)
+    )
+
+    add_custom_command(TARGET DestinyTest POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:DestinyTest>
+            $<TARGET_FILE_DIR:DestinyTest>
+            COMMAND_EXPAND_LISTS
+    )
+
+    add_custom_command(TARGET DestinyTest POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:Tracy::TracyClient>
+            $<TARGET_FILE_DIR:DestinyTest>
+    )
+endif ()
 
 set_target_properties(DestinyTest PROPERTIES FOLDER "Tests")
 gtest_discover_tests(DestinyTest myListOfTests)
