@@ -1,0 +1,40 @@
+{
+  "dependencies": [
+    {
+      "name": "carbon-blue"
+    },
+    {
+      "name": "gtest"
+    },
+    {
+      "name": "carbon-core"
+    },
+    {
+      "name": "carbon-math"
+    },
+    {
+      "name": "carbon-exefile"
+    },
+    {
+      "name": "python3-prebuilt"
+    },
+    {
+      "name": "carbon-exefile",
+      "host": true
+    },
+    {
+      "name": "carbon-exefile-interpreter",
+      "host": true
+    }
+  ],
+  "overrides": [
+    {
+      "name": "openssl",
+      "version": "1.1.1k#8"
+    },
+    {
+      "name": "protobuf",
+      "version": "3.6.0.1"
+    }
+  ]
+}
