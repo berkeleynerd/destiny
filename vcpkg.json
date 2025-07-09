@@ -1,12 +1,12 @@
 {
   "dependencies": [
     {
-      "name": "carbon-blue",
-      "version>=": "4.1.0-alpha.1"
-    },
-    {
       "name": "gtest",
       "version>=": "1.16.0"
+    },
+    {
+      "name": "carbon-blue",
+      "version>=": "4.1.0-alpha.1#2"
     },
     {
       "name": "carbon-core",
@@ -15,22 +15,9 @@
     {
       "name": "carbon-math",
       "version>=": "1.1.2-alpha.0#2"
-    },
-    {
-      "name": "python3-prebuilt",
-      "version>=": "3.12.3#3"
-    },
-    {
-      "name": "carbon-exefile-interpreter",
-      "version>=": "1.0.1#1",
-      "host": true
     }
   ],
   "overrides": [
-    {
-      "name": "openssl",
-      "version": "1.1.1k#8"
-    },
     {
       "name": "protobuf",
       "version": "3.6.0.1"
