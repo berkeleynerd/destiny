@@ -1,3 +1,4 @@
 # Ignore folder where we copy dependencies to run benchmarks
 /tools/benchmark/bin
-
+binaryCache
+CMakeUserPresets.json
