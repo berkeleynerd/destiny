@@ -5,9 +5,10 @@ find_package(carbon-blue CONFIG REQUIRED)
 find_package(carbon-core CONFIG REQUIRED)
 find_package(carbon-math CONFIG REQUIRED)
 
-include(cmake/CcpGlobalSettings.cmake)
 include(cmake/CcpTargetConfigurations.cmake)
+include(cmake/CcpDocsGenerator.cmake)
 include(cmake/CcpPackageConfigHelpers.cmake)
+include(cmake/CcpBuildConfigurations.cmake)
 
 ccp_add_library(destiny MODULE)
 target_link_libraries(destiny PUBLIC Blue CcpCore PRIVATE CcpMath)
