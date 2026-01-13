@@ -9,6 +9,7 @@ include(cmake/CcpTargetConfigurations.cmake)
 include(cmake/CcpDocsGenerator.cmake)
 include(cmake/CcpPackageConfigHelpers.cmake)
 include(cmake/CcpBuildConfigurations.cmake)
+include(cmake/CcpMonolithVendorConfig.cmake)
 
 ccp_add_library(destiny MODULE)
 target_link_libraries(destiny PUBLIC Blue CcpCore PRIVATE CcpMath)
