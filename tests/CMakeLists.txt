@@ -29,12 +29,6 @@ if (WIN32)
     # Copy shared library dependencies to folder containing test executable.
     add_custom_command(TARGET DestinyTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${Python3_LIBRARY}
-        $<TARGET_FILE_DIR:DestinyTest>
-    )
-
-    add_custom_command(TARGET DestinyTest POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:Blue>
         $<TARGET_FILE_DIR:DestinyTest>
     )
