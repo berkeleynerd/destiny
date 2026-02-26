@@ -19,7 +19,6 @@ target_sources(DestinyTest PRIVATE
 target_precompile_headers(DestinyTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/StdAfx.h)
 target_include_directories(DestinyTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(DestinyTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
-target_include_directories(DestinyTest PRIVATE ${BRANCH_ROOT_DIR}/carbon/src/trinity/Include)
 
 if(APPLE)
     target_link_libraries(DestinyTest PRIVATE "-framework CoreFoundation")
