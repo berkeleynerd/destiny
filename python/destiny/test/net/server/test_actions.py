@@ -1,7 +1,7 @@
 import destiny
 from destiny.test.net.server.helpers import add_ball_to_park, DestinyTestCase
 from destiny.net.server import Actions
-from destiny._util import (
+from destiny._util.settings import (
     enable_dynamical_orientation,
     disable_dynamical_orientation,
     reset_settings_to_default

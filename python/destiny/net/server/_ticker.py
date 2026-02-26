@@ -1,9 +1,9 @@
 import sys
-from signals import Signal
+from destiny._util.signal import Signal
+from destiny._util.timing import Timer
 import logging
 
 import blue
-import bluepy
 
 from destiny.net.server._baseticker import BaseTicker
 
@@ -53,7 +53,7 @@ class Ticker(BaseTicker):
 
     def _clean_up_followers(self):
         # Clean up balls following other balls if that arrangement is no longer tenable
-        with bluepy.Timer("Ticker::_clean_up_followers"):
+        with Timer("Ticker::_clean_up_followers"):
             self._actions.clean_up_followers()
 
     def _finalize_tick(self):
@@ -70,14 +70,14 @@ class Ticker(BaseTicker):
         self._apply_park_parent_methods_except_cloak_ball()
 
     def _update_bubbles(self):
-        with bluepy.Timer("Ticker::_update_bubbles"):
+        with Timer("Ticker::_update_bubbles"):
             self._update_batcher.update_bubbles()
 
     def _post_update_bubbles(self):
         self._apply_history()
 
     def _apply_history(self):
-        with bluepy.Timer("Ticker::_apply_history"):
+        with Timer("Ticker::_apply_history"):
             for entry in self.current_system_history:
                 # Only apply ballpark methods to ballpark. Note that the 'RemoveBall' commands
                 # are handled specially, because they have already been applied to the ballpark
@@ -91,7 +91,7 @@ class Ticker(BaseTicker):
                         continue
 
                 event_bubble_id = self._find_bubble_id_for_event(event_ball_id, action, args)
-                with bluepy.Timer("Ticker::_apply_history::distribute_to_bubbles"):   
+                with Timer("Ticker::_apply_history::distribute_to_bubbles"):
                     if not self._is_valid_event_bubble(event_bubble_id, event_ball_id):
                         continue
                     if not self._park.balls[event_ball_id].isCloaked:
@@ -102,7 +102,7 @@ class Ticker(BaseTicker):
                             self._update_batcher.add_to_character_history(charID, (stamp, event))
 
     def _apply_park_parent_methods_except_cloak_ball(self):
-        with bluepy.Timer("Ticker::_ApplyParkParentMethodsExceptCloakBall"):
+        with Timer("Ticker::_ApplyParkParentMethodsExceptCloakBall"):
             for entry in self.current_system_history:
                 event_ball_id, stamp, event = entry
                 action, args = event[0], event[1]

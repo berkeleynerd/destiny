@@ -15,6 +15,11 @@
     {
       "name": "carbon-math",
       "version>=": "1.2.0"
+    },
+    {
+      "name": "carbon-exefile",
+      "version>=": "4.1.0",
+      "host": true
     }
   ],
   "overrides": [

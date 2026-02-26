@@ -45,6 +45,12 @@ if (WIN32)
             $<TARGET_FILE:Tracy::TracyClient>
             $<TARGET_FILE_DIR:DestinyTest>
     )
+
+    add_custom_command(TARGET DestinyTest POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:destiny>
+            $<TARGET_FILE_DIR:DestinyTest>
+    )
 endif ()
 
 set_target_properties(DestinyTest PROPERTIES FOLDER "Tests")
@@ -52,17 +58,22 @@ gtest_discover_tests(DestinyTest myListOfTests)
 
 option(RUN_PYTHON_TESTS "As running the python tests relies on game-code, these are off by default" OFF)
 if (RUN_PYTHON_TESTS)
-    if(WIN32)
-        # Discover and run Python tests as a single CTest test.
-        set(PYTHON_INTERPRETER_PATH "${BRANCH_ROOT_DIR}/eve/client/pythonInterpreter.bat")
-    elseif(APPLE)
-        set(PYTHON_INTERPRETER_PATH "${BRANCH_ROOT_DIR}/eve/client/pythonInterpreter.sh")
+    if (DEFINED CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE MATCHES "Release")
+        set(EXEFILE_TOOL_NAME exefile_${CMAKE_BUILD_TYPE})
+    else()
+        set(EXEFILE_TOOL_NAME exefile)
     endif()
-    set(PYTHON_TEST PythonTests)
-    add_test(NAME ${PYTHON_TEST}
-            COMMAND ${PYTHON_INTERPRETER_PATH} -m unittest discover -v
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../python
+    find_program(exefile_tool ${EXEFILE_TOOL_NAME} NO_CACHE)
+    if (WIN32)
+        add_custom_command(TARGET DestinyTest POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy ${exefile_tool} $<TARGET_FILE_DIR:DestinyTest>
+        )
+        set(exefile_tool  $<TARGET_FILE_DIR:DestinyTest>/${EXEFILE_TOOL_NAME})
+    endif ()
+    add_test(NAME PythonTests
+            COMMAND ${exefile_tool} /inherit /buildflavor=$<LOWER_CASE:$<CONFIG>> /py -m unittest discover -v ${CMAKE_CURRENT_SOURCE_DIR}/../python/destiny/test
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../python/destiny/test
             COMMAND_EXPAND_LISTS
     )
-    set_tests_properties(${PYTHON_TEST} PROPERTIES ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:destiny>;BUILDFLAVOR=$<LOWER_CASE:$<CONFIG>>")
+    set_tests_properties(PythonTests PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/../python\;$<TARGET_FILE_DIR:DestinyTest>\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/python\;${Python3_STDLIB};BUILDFLAVOR=$<LOWER_CASE:$<CONFIG>>")
 endif()

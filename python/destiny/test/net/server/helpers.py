@@ -10,7 +10,7 @@ from destiny.net.server import (
     CharacterInterestsInterface,
     ClientInterestsInterface
 )
-from destiny._util import is_dynamical_orientation_enabled
+from destiny._util.settings import is_dynamical_orientation_enabled
 
 
 def add_ball_to_park(
