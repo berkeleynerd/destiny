@@ -119,6 +119,16 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     option(BUILD_TESTING "Build and run tests. Enabled by default." ON)
     include(CTest)
     if(BUILD_TESTING)
+        find_package(carbon-exefile-interpreter REQUIRED CONFIG)
+        # Interpreter must be created in this file, since it creates a POST_BUILD target on destiny.
+        ccp_prepare_interpreter(
+            TARGET destiny
+            BUILD_TYPE ${CMAKE_BUILD_TYPE}
+            COMMAND_OUT EXEFILE_INTERPRETER
+            PYTHONPATH_OUT PYTHONPATH
+            RUN_DIR $<TARGET_FILE_DIR:destiny>
+            BLUE_DIR_OUT BLUE_LOCATION_DIR
+        )
 	    add_subdirectory(tests)
     endif()
 endif()
