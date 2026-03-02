@@ -55,24 +55,24 @@ endif ()
 set_target_properties(DestinyTest PROPERTIES FOLDER "Tests")
 gtest_discover_tests(DestinyTest myListOfTests)
 
-option(RUN_PYTHON_TESTS "As running the python tests relies on game-code, these are off by default" OFF)
-if (RUN_PYTHON_TESTS)
-    if (DEFINED CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE MATCHES "Release")
-        set(EXEFILE_TOOL_NAME exefile_${CMAKE_BUILD_TYPE})
-    else()
-        set(EXEFILE_TOOL_NAME exefile)
-    endif()
-    find_program(exefile_tool ${EXEFILE_TOOL_NAME} NO_CACHE)
-    if (WIN32)
-        add_custom_command(TARGET DestinyTest POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy ${exefile_tool} $<TARGET_FILE_DIR:DestinyTest>
-        )
-        set(exefile_tool  $<TARGET_FILE_DIR:DestinyTest>/${EXEFILE_TOOL_NAME})
-    endif ()
-    add_test(NAME PythonTests
-            COMMAND ${exefile_tool} /inherit /buildflavor=$<LOWER_CASE:$<CONFIG>> /py -m unittest discover -v ${CMAKE_CURRENT_SOURCE_DIR}/../python/destiny/test
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../python/destiny/test
-            COMMAND_EXPAND_LISTS
-    )
-    set_tests_properties(PythonTests PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/../python\;$<TARGET_FILE_DIR:DestinyTest>\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/python\;${Python3_STDLIB};BUILDFLAVOR=$<LOWER_CASE:$<CONFIG>>")
+if (DEFINED CMAKE_BUILD_TYPE AND NOT CMAKE_BUILD_TYPE MATCHES "Release")
+    set(EXEFILE_TOOL_NAME exefile_${CMAKE_BUILD_TYPE})
+else()
+    set(EXEFILE_TOOL_NAME exefile)
 endif()
+find_program(exefile_tool ${EXEFILE_TOOL_NAME} NO_CACHE)
+if (WIN32)
+    add_custom_command(TARGET DestinyTest POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy ${exefile_tool} $<TARGET_FILE_DIR:DestinyTest>
+    )
+    set(exefile_tool  $<TARGET_FILE_DIR:DestinyTest>/${EXEFILE_TOOL_NAME})
+endif ()
+add_test(NAME PythonTests
+        COMMAND ${exefile_tool} /inherit /buildflavor=$<LOWER_CASE:$<CONFIG>> /py -m unittest discover -v ${CMAKE_CURRENT_SOURCE_DIR}/../python/destiny/test
+        COMMAND_EXPAND_LISTS
+)
+if (WIN32)
+    set_tests_properties(PythonTests PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/../python\;$<TARGET_FILE_DIR:DestinyTest>\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib\;${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/python\;${Python3_STDLIB};BUILDFLAVOR=$<LOWER_CASE:$<CONFIG>>")
+else ()
+    set_tests_properties(PythonTests PROPERTIES ENVIRONMENT "PYTHONPATH=${CMAKE_CURRENT_SOURCE_DIR}/../python:$<TARGET_FILE_DIR:destiny>:${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin:${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib:${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/lib/python3.12/lib-dynload:${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/bin/python:${Python3_STDLIB};BUILDFLAVOR=$<LOWER_CASE:$<CONFIG>>")
+endif ()
