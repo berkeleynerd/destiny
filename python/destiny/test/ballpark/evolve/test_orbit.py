@@ -1,6 +1,6 @@
 import destiny
 from destiny.test import helpers
-from destiny._util import enable_new_orbit, reset_settings_to_default
+from destiny._util.settings import enable_new_orbit, reset_settings_to_default
 import math
 
 

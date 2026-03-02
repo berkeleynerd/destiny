@@ -9,7 +9,7 @@
       "kind": "git",
       "repository": "git@github.com:ccpgames/carbon-vcpkg-registry.git",
       "baseline": "bd0e4644d7d8a7ce9bfa426192cdf37a23e61b5f",
-      "packages": ["carbon-pdmprotowrapper", "carbon-pdm", "carbon-blueexposure", "carbon-blue", "carbon-exefile", "carbon-io", "carbon-math"]
+      "packages": ["carbon-pdmprotowrapper", "carbon-pdm", "carbon-blueexposure", "carbon-blue", "carbon-exefile", "carbon-exefile-interpreter", "carbon-io", "carbon-math"]
     },
     {
       "kind": "git",

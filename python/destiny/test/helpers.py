@@ -1,7 +1,7 @@
-import decometaclass
 import struct
 import unittest
 import destiny
+from destiny._util.decometaclass import WrapBlueClass
 
 MAX_FORMATION_SLOTS_FOR_BALLS = 16
 TEN_BILLION = 10000000000.0
@@ -264,7 +264,7 @@ class BallEventSpy(destiny.Ball):
         self.collision_callback_args.append((id, x, y, z))
 
 
-class BallparkWrapped(decometaclass.WrapBlueClass("destiny.Ballpark")):
+class BallparkWrapped(WrapBlueClass("destiny.Ballpark")):
 
     def __init__(self):
         self.transitions = []

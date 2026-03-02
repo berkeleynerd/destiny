@@ -1,10 +1,10 @@
-from signals import Signal
 import logging
 
 import blue
-import bluepy
 
-from destiny._util import is_dynamical_orientation_enabled
+from destiny._util.settings import is_dynamical_orientation_enabled
+from destiny._util.signal import Signal
+from destiny._util.timing import TimedFunction
 
 logger = logging.getLogger(__name__)
 
@@ -672,7 +672,7 @@ class Actions(object):
             dst_id, owner_id, is_aimed_launch, is_missile_massive
         )
 
-    @bluepy.TimedFunction("destiny.net::actions::clean_up_followers")
+    @TimedFunction("destiny.net::actions::clean_up_followers")
     def clean_up_followers(self):
         """
         Stop all balls that are following a
@@ -681,7 +681,7 @@ class Actions(object):
         for followerID in self._park.GetRemoteFollowers():
             self.stop(followerID)
 
-    @bluepy.TimedFunction("destiny.net::actions::undo_pending_cloak")
+    @TimedFunction("destiny.net::actions::undo_pending_cloak")
     def undo_pending_cloak(self, src_id):
         removed_count = self._prune_pending_actions(src_id, "CloakBall")
         logger.info(

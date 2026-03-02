@@ -1,11 +1,11 @@
-from signals import Signal
 import logging
 from copy import copy
 from collections import defaultdict
 import blue
-import bluepy
 
 from ..const import ClientUpdateCountThisTick
+from destiny._util.signal import Signal
+from destiny._util.timing import Timer
 
 logger = logging.getLogger(__name__)
 
@@ -245,7 +245,7 @@ class ParkUpdateBatcher(object):
         last = blue.pyos.taskletTimer.EnterTasklet("destiny.net::parkupdatebatcher::update_bubbles")
         try:
             # For each bubble, pre-build-and-serialise the addition/deletion updates
-            with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildDeletions"):
+            with Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildDeletions"):
                 # Before: deletions_per_bubble value is a list of ballIDs
                 # After : deletions_per_bubble value is an update we can add directly to AddToCharacterHistory
                 for bubble_id, dels in deletions_per_bubble.items():
@@ -258,7 +258,7 @@ class ParkUpdateBatcher(object):
                             self._park.currentTime, ('PackagedAction', packaged_action)
                         )
 
-            with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildAdditions"):
+            with Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildAdditions"):
                 # Before: additions_per_bubble value is a list of ballIDs
                 # After : additions_per_bubble value is an update we can add directly to AddToCharacterHistory
                 for bubble_id, adds in additions_per_bubble.items():
@@ -268,7 +268,7 @@ class ParkUpdateBatcher(object):
                             (self._park.currentTime, self._dump_ball_list(adds)),
                         ]
 
-                        with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildAdditions::Marshal"):
+                        with Timer("destiny.net::parkupdatebatcher::update_bubbles::PreBuildAdditions::Marshal"):
                             # Now we have all the actions for this bubble, package them up into a single action
                             packaged_action = blue.marshal.Save(user_actions)
                             add_actions_per_bubble[bubble_id] = (
@@ -279,7 +279,7 @@ class ParkUpdateBatcher(object):
             # Let's build that into the history
             getter = self._character_interests.get_interested_character_ids_for_ball
 
-            with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::Deletions"):
+            with Timer("destiny.net::parkupdatebatcher::update_bubbles::Deletions"):
                 for ball_id, dels in deletions_per_player.items():
                     # If dels is an int, it is the ID of a bubble
                     # We can use this ID to look up a pre-serialised update for the user
@@ -294,7 +294,7 @@ class ParkUpdateBatcher(object):
                                 character_id, (self._park.currentTime, ('RemoveBalls', (dels,)))
                             )
 
-            with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::Additions"):
+            with Timer("destiny.net::parkupdatebatcher::update_bubbles::Additions"):
                 for ball_id, adds in additions_per_player.items():
 
                     # If adds is an int, it is the ID of a bubble
@@ -311,7 +311,7 @@ class ParkUpdateBatcher(object):
                             user_actions = [
                                 (self._park.currentTime, self._dump_ball_list(adds)),
                             ]
-                            with bluepy.Timer("destiny.net::parkupdatebatcher::update_bubbles::AddToCharacterHistory"):
+                            with Timer("destiny.net::parkupdatebatcher::update_bubbles::AddToCharacterHistory"):
                                 # Now we have all the actions for this user, package them up into a single action
                                 packaged_action = blue.marshal.Save(user_actions)
                                 for character_id in characters:
