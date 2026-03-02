@@ -11,8 +11,6 @@ import blue
 import types
 
 
-types.BlueType = type(blue.os)
-
 class DecoMetaclass(type):
     """
     Metaclass that gets a blue class instance and returns it as a blue.BlueWrapper
@@ -66,7 +64,7 @@ class DecoMetaclass(type):
     subclasses = {}
 
 
-def GetDecoMetaclassInst(cid):
+def WrapBlueClass(cid):
     #Create a metaclass subclass that knows about __cid__
     #when looking for an attribute on a type object (cld)
     #its parents are searhced too.  So, putting __cid__ in
@@ -75,7 +73,3 @@ def GetDecoMetaclassInst(cid):
         __cid__ = cid
 
     return parentclass
-
-#Compatibility layer
-BlueWrappedMetaclass = DecoMetaclass
-WrapBlueClass = GetDecoMetaclassInst
