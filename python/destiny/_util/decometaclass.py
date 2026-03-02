@@ -8,7 +8,6 @@ a decorator hanging off of it.
 """
 
 import blue
-import types
 
 
 class DecoMetaclass(type):
