@@ -1,3 +1,5 @@
+// Copyright © 2014 CCP ehf.
+
 #ifndef DESTINY_QUATERNION
 #define DESTINY_QUATERNION
 

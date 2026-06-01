@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 import logging
 import sys
 from benchmark.loader import load_benchmark

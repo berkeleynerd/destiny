@@ -1,3 +1,5 @@
+// Copyright © 2014 CCP ehf.
+
 #ifndef DST_PARTITION_H
 #define DST_PARTITION_H
 

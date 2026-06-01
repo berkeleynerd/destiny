@@ -1,3 +1,5 @@
+# Copyright © 2000 CCP ehf.
+
 import destiny
 import unittest
 

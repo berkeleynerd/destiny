@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 ccp_add_executable(DestinyTest)
 find_package(GTest REQUIRED)
 find_package(Tracy REQUIRED NO_CMAKE_PATH)

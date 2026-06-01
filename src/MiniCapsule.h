@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #ifndef _MINICAPSULE_H_
 #define _MINICAPSULE_H_
 

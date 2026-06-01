@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #ifndef _MINIBox_H_
 #define _MINIBox_H_
 

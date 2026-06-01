@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #include "StdAfx.h"
 #include "Capsule.h"
 #include "Collision.h"

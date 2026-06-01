@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 """
 This package encapsulates the performing of actions such as GotoPoint, Orbit, etc.
 

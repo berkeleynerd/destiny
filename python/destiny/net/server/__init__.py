@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 from destiny.net.server._actions import Actions
 from destiny.net.server._baseticker import BaseTicker
 from destiny.net.server._bubbleupdater import BubbleUpdater

@@ -1,26 +1,4 @@
-/*
-	*************************************************************************
-
-	Ball.h
-
-	Author:    Kjartan Pierre Emilsson
-	Created:   Nov. 2001
-	OS:        Win32
-	Project:   Destiny
-
-	Description:
-
-		Destiny schmestiny sample object
-
-
-	Dependencies:
-
-		Blue
-
-	(c) CCP 2000, 2001, 2002
-
-	*************************************************************************
-*/
+// Copyright © 2000 CCP ehf.
 
 #ifndef _MINIBALL_H_
 #define _MINIBALL_H_

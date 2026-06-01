@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 import abc
 import random
 from time import time

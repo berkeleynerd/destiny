@@ -1,3 +1,5 @@
+// Copyright © 2014 CCP ehf.
+
 #ifndef DST_MAPOFBALLS
 #define DST_MAPOFBALLS
 

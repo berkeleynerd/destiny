@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 from collections import defaultdict
 from destiny.net.server import (
     BallInfoInterface,

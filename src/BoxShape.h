@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #ifndef _BOX_SHAPE_H_
 #define _BOX_SHAPE_H_
 #include "Vector3d.h"

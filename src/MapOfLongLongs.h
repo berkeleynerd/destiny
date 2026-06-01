@@ -1,3 +1,5 @@
+// Copyright © 2014 CCP ehf.
+
 #ifndef DST_MAPOFLONGLONGS
 #define DST_MAPOFLONGLONGS
 

@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #ifndef _COLLISION_H_
 #define _COLLISION_H_
 

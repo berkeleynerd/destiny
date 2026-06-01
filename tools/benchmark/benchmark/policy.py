@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 import abc
 from time import time
 from benchmark.output import print_ball_state

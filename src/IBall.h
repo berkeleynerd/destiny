@@ -1,26 +1,4 @@
-/* 
-	*************************************************************************
-
-	ITriFunction.h
-
-	Author:    Hilmar Veigar Pétursson
-	Created:   August 2001
-	OS:        Win32
-	Project:   Trinity
-
-	Description:   
-
-		Yeap
-
-
-	Dependencies:
-
-		DirectX 8.0, Probably more, ytbd.
-
-	(c) CCP 2000
-
-	*************************************************************************
-*/
+// Copyright Â© 2000 CCP ehf.
 
 #ifndef _IBall_H_
 #define _IBall_H_

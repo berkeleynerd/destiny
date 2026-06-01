@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 from time import time
 from benchmark.destinyinterface import BallInfo, Network, ClientInterests, CharacterInterests
 from benchmark.util import get_id_for_interactive_ball

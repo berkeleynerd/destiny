@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 import argparse
 from benchmark import run_benchmark
 

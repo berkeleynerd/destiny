@@ -1,26 +1,4 @@
-/*
-	*************************************************************************
-
-	Ballpark.h
-
-	Author:    Kjartan Pierre Emilsson
-	Created:   January 2002
-	OS:        Win32
-	Project:   Destiny
-
-	Description:
-
-		Includes the headers for
-
-
-	Dependencies:
-
-		Blue and possibly Trinity
-
-	(c) CCP 2000, 2001, 2002
-
-	*************************************************************************
-*/
+// Copyright © 2000 CCP ehf.
 
 #ifndef _DYNAMIC_H_
 #define _DYNAMIC_H_

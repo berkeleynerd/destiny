@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #ifndef _ORIENTED_BOX_H_
 #define _ORIENTED_BOX_H_
 

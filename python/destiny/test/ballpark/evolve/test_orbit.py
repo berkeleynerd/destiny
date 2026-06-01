@@ -1,3 +1,5 @@
+# Copyright © 2015 CCP ehf.
+
 import destiny
 from destiny.test import helpers
 from destiny._util.settings import enable_new_orbit, reset_settings_to_default

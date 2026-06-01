@@ -1,3 +1,5 @@
+// Copyright © 2019 CCP ehf.
+
 #ifndef DST_SORTEDSETS_H
 #define DST_SORTEDSETS_H
 

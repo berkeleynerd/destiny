@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 import destiny
 from destiny.test import helpers
 import math

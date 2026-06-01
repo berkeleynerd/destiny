@@ -1,3 +1,5 @@
+// Copyright © 2014 CCP ehf.
+
 #ifndef RANDOM_H_
 #define RANDOM_H_
 

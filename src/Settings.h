@@ -1,3 +1,5 @@
+// Copyright © 2023 CCP ehf.
+
 #pragma once
 #ifndef DESTINY_SETTINGS_H
 #define DESTINY_SETTINGS_H

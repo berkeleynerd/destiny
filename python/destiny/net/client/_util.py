@@ -1,3 +1,5 @@
+# Copyright © 2007 CCP ehf.
+
 import collections
 
 

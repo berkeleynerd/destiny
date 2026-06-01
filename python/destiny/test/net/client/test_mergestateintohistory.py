@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 import unittest
 
 from destiny.net.client import merge_state_into_history

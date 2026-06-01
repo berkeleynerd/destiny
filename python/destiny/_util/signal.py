@@ -1,4 +1,4 @@
-# Copyright (c) CCP 2015
+# Copyright © 2015 CCP ehf.
 
 import inspect
 import logging

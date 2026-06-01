@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 from enum import IntEnum
 
 

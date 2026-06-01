@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #ifndef _PLANE_H_
 #define _PLANE_H_
 

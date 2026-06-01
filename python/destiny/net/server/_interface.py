@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 """
 Since we are basically dumping this package into each monolith and therefore
 cannot rely on any packages inside the particular monolith that it gets

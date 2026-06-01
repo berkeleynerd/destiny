@@ -1,3 +1,5 @@
+// Copyright © 2014 CCP ehf.
+
 #include "stdafx.h"
 #include "Ballpark.h"
 #include "Ball.h"
@@ -1215,7 +1217,7 @@ PyObject* Ballpark::PyGetRemoteFollowers(
 			}
 			else
 			{
-				// This is some fuck up, but I'll include it in the stop list nonetheless
+				// This is an inconsistent follower state, but include it in the stop list nonetheless.
 				CCP_LOGERR_CH( s_chPark,"Ballpark::GetRemoteFollowers follower %I64d in mode %d following %I64d but without a pointer", src->mId, src->mMode, src->mFollowId);
 			}
 

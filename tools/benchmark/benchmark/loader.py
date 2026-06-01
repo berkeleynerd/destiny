@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 from benchmark.runner import Benchmark
 import benchmark.initializer
 import benchmark.policy

@@ -1,26 +1,4 @@
-/*
-	*************************************************************************
-
-	destiny.cpp
-
-	Author:    Matthias Gudmundsson
-	Created:   Nov. 2001
-	OS:        Win32
-	Project:   Destiny
-
-	Description:
-
-		destiny DLL
-
-
-	Dependencies:
-
-		Blue, Trinity
-
-	(c) CCP 2000, 2001, 2002
-
-	*************************************************************************
-*/
+// Copyright © 2000 CCP ehf.
 
 #include "stdafx.h"
 

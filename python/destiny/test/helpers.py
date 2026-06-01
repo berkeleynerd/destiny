@@ -1,3 +1,5 @@
+# Copyright © 2015 CCP ehf.
+
 import struct
 import unittest
 import destiny

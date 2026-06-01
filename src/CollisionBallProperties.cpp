@@ -1,3 +1,5 @@
+// Copyright © 2023 CCP ehf.
+
 #include "CollisionBallProperties.h"
 #include "Ballpark.h"
 #include "Settings.h"

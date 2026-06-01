@@ -1,26 +1,4 @@
-/* 
-	*************************************************************************
-
-	destinyId.h
-
-	Author:    Matthias Gudmundsson
-	Created:   Nov. 2001
-	OS:        Win32
-	Project:   Destiny
-
-	Description:   
-
-		Thingamajic
-
-
-	Dependencies:
-
-		Blue
-
-	(c) CCP 2001
-
-	*************************************************************************
-*/
+// Copyright © 2001 CCP ehf.
 
 #ifndef _DESTINYID_H_
 #define _DESTINYID_H_

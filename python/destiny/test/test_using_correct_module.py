@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 from os.path import abspath, dirname
 import sys
 import destiny

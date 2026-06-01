@@ -1,3 +1,5 @@
+# Copyright © 2015 CCP ehf.
+
 from destiny.test import helpers
 from destiny.test.helpers import MIN_BOX_SIZE
 import math

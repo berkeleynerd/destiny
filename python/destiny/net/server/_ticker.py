@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 import sys
 from destiny._util.signal import Signal
 from destiny._util.timing import Timer

@@ -1,3 +1,5 @@
+// Copyright © 2014 CCP ehf.
+
 #ifndef DST_BOX_H
 #define DST_BOX_H
 

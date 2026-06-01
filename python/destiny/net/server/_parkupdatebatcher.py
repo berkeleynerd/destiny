@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 import logging
 from copy import copy
 from collections import defaultdict

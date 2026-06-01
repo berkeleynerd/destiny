@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #ifndef _STATIC_COLLIDABLE_H_
 #define _STATIC_COLLIDABLE_H_
 

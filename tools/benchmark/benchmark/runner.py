@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 from benchmark.output import IterationProgress, InitializationProgress, print_results, print_starting_benchmark
 from benchmark.results import Duration, Results, NetworkStats
 

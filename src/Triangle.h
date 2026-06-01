@@ -1,3 +1,5 @@
+// Copyright © 2015 CCP ehf.
+
 #ifndef _TRIANGLE_H_
 #define _TRIANGLE_H_
 #include "Vector3d.h"

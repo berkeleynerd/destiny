@@ -1,3 +1,5 @@
+// Copyright © 2017 CCP ehf.
+
 package _Self.buildTypes
 
 import jetbrains.buildServer.configs.kotlin.*

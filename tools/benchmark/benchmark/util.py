@@ -1,3 +1,5 @@
+# Copyright © 2023 CCP ehf.
+
 # stddev and mean shamelessly copied from matchmaking package
 # to mimimize external dependencies and
 # avoid reinventing the wheel.

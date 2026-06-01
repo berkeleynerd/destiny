@@ -1,3 +1,5 @@
+// Copyright © 2023 CCP ehf.
+
 #pragma once
 #ifndef COLLISION_BALL_PROPERTIES_H
 #include "CollisionStructures.h"

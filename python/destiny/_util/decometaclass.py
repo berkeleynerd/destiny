@@ -1,4 +1,4 @@
-# Copyright (c) CCP 2012
+# Copyright © 2012 CCP ehf.
 
 """
 See documentation for metaclasses to understand.

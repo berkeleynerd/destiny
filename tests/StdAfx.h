@@ -1,4 +1,6 @@
 
+// Copyright © 2023 CCP ehf.
+
 #include "gtest/gtest.h"
 
 #define BLUE_OVERRIDE_VECTOR_TYPES 1
