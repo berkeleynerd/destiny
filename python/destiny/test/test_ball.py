@@ -18,6 +18,17 @@ class BallTest(helpers.BallparkTestCase):
         b.AddMiniBall(x, y, z, radius)
         self.assertEqual(len(b.miniBalls), 1)
 
+    def test_can_add_minicapsule(self):
+        b = helpers.add_ball_to_park(self.park)
+        b.AddMiniCapsule(1.0, 0.0, 0.0, 2.0, 0.0, 0.0, 1)
+        self.assertEqual(len(b.miniCapsules), 1)
+
+    def test_can_not_add_minicapsule_with_negative_radius(self):
+        b = helpers.add_ball_to_park(self.park)
+        with self.assertRaises(ValueError):
+            b.AddMiniCapsule(1.0, 0.0, 0.0, 2.0, 0.0, 0.0, -1)
+        self.assertEqual(len(b.miniCapsules), 0)
+
     def test_get_rotated_vector_returns_original_vector_if_there_is_no_rotation(self):
         b = destiny.Ball()
         original_vector = [1.0,2.0,3.0]
