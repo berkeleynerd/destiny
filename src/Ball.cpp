@@ -2153,6 +2153,12 @@ PyObject* Ball::PyAddMiniCapsule(PyObject* args)
 		return NULL;
 	}
 
+	if( r <= 0.0 )
+	{
+		PyErr_SetString( PyExc_ValueError, "Radius must be positive" );
+		return nullptr;
+	}
+
 	AddMiniCapsule(ax, ay, az, bx, by, bz, r);
 
 	Py_INCREF(Py_None);

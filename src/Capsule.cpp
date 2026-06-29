@@ -456,6 +456,12 @@ void Capsule::InsertInBoxes(Box* box1, Box* top, long newBubbleId)
 		return;
 	}
 
+	if( mRadius <= 0.0f )
+	{
+		// Capsule doesn't have any volume. No need to insert it in boxes.
+		return;
+	}
+
 	// Now we know all the boxes we might have to add
 	// We assume that when both modifiers are non-null, then the diagonal
 	// box should be added as well. This is justified by the fact that it usually
