@@ -6744,14 +6744,27 @@ PyObject* Ballpark::PySetBallNotInParkCallback(
 
 void Ballpark::UpdateKeepAliveBalls(Partitionable *p, long oldBubble, long newBubble)
 {
-	PyObject *ballId = PyLong_FromLongLong(p->mId);
-    if(!(PySet_Contains(bubbleKeepAliveBalls, ballId) > 0))
-    {
-        return;
+	PyObject* ballId = PyLong_FromLongLong( p->mId );
+	if( !ballId )
+	{
+		CCP_LOGWARN( "Ballpark::UpdateKeepAliveBalls failed to convert ballId to PyLong" );
+		PyErr_Clear();
+		return;
 	}
-    AddKeepAliveBall(ballId, newBubble);
-    RemoveKeepAliveBall(ballId, oldBubble);
-	Py_DECREF(ballId);
+	ON_BLOCK_EXIT( [ballId] { Py_DECREF( ballId ); } );
+	int containsResult = PySet_Contains( bubbleKeepAliveBalls, ballId );
+	if( containsResult < 0 )
+	{
+		CCP_LOGWARN( "Ballpark::UpdateKeepAliveBalls failed to check membership in bubbleKeepAliveBalls" );
+		PyErr_Clear();
+		return;
+	}
+	if( !containsResult )
+	{
+		return;
+	}
+	AddKeepAliveBall( ballId, newBubble );
+	RemoveKeepAliveBall( ballId, oldBubble );
 }
 
 void Ballpark::AddKeepAliveBall(PyObject *ballId, long inBubble)
