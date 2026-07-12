@@ -3,6 +3,14 @@
 cmake_minimum_required(VERSION 3.16)
 project(destiny VERSION 1.0.0)
 
+option(BUILD_DESTINY_EMBEDDED "Build the static Destiny integration target." OFF)
+option(BUILD_DESTINY_EMBEDDED_TESTING "Build the standalone embedded contract test." OFF)
+option(DESTINY_INSTALL_EMBEDDED_ONLY "Install only the embedded Destiny package surface." OFF)
+
+if(DESTINY_INSTALL_EMBEDDED_ONLY AND NOT BUILD_DESTINY_EMBEDDED)
+    message(FATAL_ERROR "DESTINY_INSTALL_EMBEDDED_ONLY requires BUILD_DESTINY_EMBEDDED")
+endif()
+
 find_package(carbon-blue CONFIG REQUIRED)
 find_package(carbon-core CONFIG REQUIRED)
 find_package(carbon-math CONFIG REQUIRED)
@@ -20,6 +28,10 @@ set(PUBLIC_HEADER_FILES_INCLUDE
     include/IEveReferencePoint.h
     include/IEveBallpark.h
 )
+
+if(BUILD_DESTINY_EMBEDDED)
+    list(APPEND PUBLIC_HEADER_FILES_INCLUDE include/DestinyEmbedded.h)
+endif()
 
 set(_SOURCES
     src/AABB.cpp
@@ -99,6 +111,66 @@ if(APPLE)
     set_property(TARGET destiny APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-nonportable-include-path -Wno-inconsistent-missing-override")
 endif()
 
+if(BUILD_DESTINY_EMBEDDED)
+    set(_EMBEDDED_SOURCES ${_SOURCES})
+    list(REMOVE_ITEM _EMBEDDED_SOURCES
+        src/Ball_Blue.cpp
+        src/Ballpark_Blue.cpp
+        src/Capsule_Blue.cpp
+        src/destiny.cpp
+        src/Miniball_Blue.cpp
+        src/MiniBox_Blue.cpp
+        src/MiniCapsule_Blue.cpp
+        src/OrientedBox_Blue.cpp
+        src/Partition_Blue.cpp
+        src/Settings_Blue.cpp
+        src/Thunkers.cpp
+    )
+    list(APPEND _EMBEDDED_SOURCES
+        include/DestinyEmbedded.h
+        src/DestinyEmbedded.cpp
+        src/DestinyEmbeddedBlue.cpp
+        src/DestinyEmbeddedInternal.h
+    )
+
+    ccp_add_library(destinyEmbedded STATIC)
+    target_sources(destinyEmbedded PRIVATE ${_EMBEDDED_SOURCES})
+    target_link_libraries(destinyEmbedded PUBLIC Blue CcpCore CcpMath)
+    target_precompile_headers(destinyEmbedded PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/StdAfx.h)
+    target_include_directories(destinyEmbedded
+        PUBLIC
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+            $<INSTALL_INTERFACE:include>
+        PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+    )
+    target_compile_definitions(destinyEmbedded PRIVATE
+        DESTINY_EMBEDDED=1
+        g_moduleName=g_destinyEmbeddedModuleName
+    )
+    if(APPLE)
+        set_property(TARGET destinyEmbedded APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-nonportable-include-path -Wno-inconsistent-missing-override")
+    endif()
+
+    if(BUILD_DESTINY_EMBEDDED_TESTING)
+        ccp_add_executable(DestinyEmbeddedContractTest)
+        target_sources(DestinyEmbeddedContractTest PRIVATE tests/DestinyEmbeddedContractTest.cpp)
+        target_include_directories(DestinyEmbeddedContractTest PRIVATE
+            ${CMAKE_CURRENT_SOURCE_DIR}/include
+            ${CMAKE_CURRENT_SOURCE_DIR}/src
+        )
+        target_link_libraries(DestinyEmbeddedContractTest PRIVATE
+            "$<LINK_LIBRARY:WHOLE_ARCHIVE,destinyEmbedded>"
+        )
+        if(APPLE)
+            target_link_libraries(DestinyEmbeddedContractTest PRIVATE "-framework CoreFoundation")
+        endif()
+        if(BUILD_TESTING)
+            add_test(NAME DestinyEmbeddedContract COMMAND DestinyEmbeddedContractTest)
+        endif()
+    endif()
+endif()
+
 set_target_properties(destiny PROPERTIES OUTPUT_NAME "_destiny")
 
 ccp_add_library(destinyStatic STATIC)
@@ -162,8 +234,16 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
         )
     else()
         # Install rule to ensure that our runtime and linker files are in the expected, platform-specific folders
+        if(DESTINY_INSTALL_EMBEDDED_ONLY)
+            set(_DESTINY_INSTALL_TARGETS destinyEmbedded)
+        else()
+            set(_DESTINY_INSTALL_TARGETS destiny)
+        endif()
+        if(BUILD_DESTINY_EMBEDDED AND NOT DESTINY_INSTALL_EMBEDDED_ONLY)
+            list(APPEND _DESTINY_INSTALL_TARGETS destinyEmbedded)
+        endif()
         install(
-                TARGETS destiny
+                TARGETS ${_DESTINY_INSTALL_TARGETS}
                 EXPORT DestinyTargets
                 CONFIGURATIONS ${CMAKE_CONFIGURATION_TYPES}
                 ARCHIVE DESTINATION lib/
@@ -176,16 +256,18 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
                 FILE carbon-destiny.cmake
         )
 
-        install(FILES carbon-destinyConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX}/share/carbon-destiny)
+        install(FILES carbon-destinyConfig.cmake DESTINATION share/carbon-destiny)
 
         # Install rule for available public headers
         install(FILES ${PUBLIC_HEADER_FILES_INCLUDE} DESTINATION include)
 
         # Install python package
-        install(DIRECTORY python/destiny DESTINATION bin/python
-                FILES_MATCHING
-                PATTERN "*.py"
-                PATTERN "package.yaml"
-        )
+        if(NOT DESTINY_INSTALL_EMBEDDED_ONLY)
+            install(DIRECTORY python/destiny DESTINATION bin/python
+                    FILES_MATCHING
+                    PATTERN "*.py"
+                    PATTERN "package.yaml"
+            )
+        endif()
     endif()
 endif()

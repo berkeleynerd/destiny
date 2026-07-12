@@ -21,7 +21,9 @@ double floatrand(double a,double b){
     return a+rand()/(double)RAND_MAX*(b-a);
 }
 
+#ifndef DESTINY_EMBEDDED
 BLUE_DEFINE_INTERFACE( IEveReferencePoint );
+#endif
 
 static CcpLogChannel_t s_ch = CCP_LOG_DEFINE_CHANNEL( "Ball" );
 
@@ -473,7 +475,7 @@ void Ball::DispatchCollisions()
     {
         for(size_t i = 0; i < size ; i++)
         {
-            if (!PyOS->SendEvent(
+            if (!DESTINY_PY_SEND_EVENT(
                 (IBall*)this, "Destiny::Ball::DoCollision",
                 "DoCollision", NULL,
                 "Lddd", mCollisions[i],mLastC.x,mLastC.y,mLastC.z
@@ -577,7 +579,7 @@ void Ball::CheckForProximity_NotificationRange()
 
     if(sendNotification)
     {
-        if (!PyOS->SendEvent(
+        if (!DESTINY_PY_SEND_EVENT(
             (IBall*)this, "Destiny::Ball::DoRange",
             "DoRange", NULL,
             "(i)", mWithinRange
@@ -623,7 +625,7 @@ void Ball::CheckForProximity_TargetTracking()
 
     if(sendNotification)
     {
-        if (!PyOS->SendEvent(
+        if (!DESTINY_PY_SEND_EVENT(
             (IBall*)this, "Destiny::Ball::DoTargetTracking",
             "DoTargetTracking", NULL,
             "(i)", mWithinTrackingRange
@@ -693,7 +695,7 @@ void Ball::CheckForProximity_Sensor()
             mSensor.balls.erase(store);
             CCP_LOG_CH( s_ch,"Ball:%I64d vanished from proximity of ball:%I64d",anID, mId);
 
-            if (!PyOS->SendEvent(
+            if (!DESTINY_PY_SEND_EVENT(
                 (IBall*)this, "Destiny::Ball::DoProximity",
                 "DoProximity", NULL,
                 "Li", anID, 0
@@ -737,7 +739,7 @@ void Ball::CheckForProximity_Sensor()
                 mSensor.balls.erase(b->mId);
                 CCP_LOG_CH( s_ch,"Ball:%I64d left proximity of ball:%I64d",b->mId, mId);
 
-                if (!PyOS->SendEvent(
+                if (!DESTINY_PY_SEND_EVENT(
                     (IBall*)this, "Destiny::Ball::DoProximity",
                     "DoProximity", NULL,
                     "Li", b->mId, 0
@@ -756,7 +758,7 @@ void Ball::CheckForProximity_Sensor()
                 mSensor.balls.insert(b->mId, 0);
                 CCP_LOG_CH( s_ch,"Ball:%I64d entered proximity of ball:%I64d", b->mId, mId);
 
-                if (!PyOS->SendEvent(
+                if (!DESTINY_PY_SEND_EVENT(
                     (IBall*)this, "Destiny::Ball::DoProximity",
                     "DoProximity", NULL,
                     "Li", b->mId, 1
@@ -914,7 +916,7 @@ void Ball::SetMode(DSTBALLMODE mode)
         }
         else if(mMode==DSTBALL_WARP)
         {
-            if (mPark && !PyOS->PostEvent(
+            if (mPark && !DESTINY_PY_POST_EVENT(
                 (IEveBallpark*)mPark, "Destiny::OnExitWarp",
                 "OnExitWarp",
                 "Li", mId,0
@@ -924,7 +926,7 @@ void Ball::SetMode(DSTBALLMODE mode)
             }
         }
 
-        if (!PyOS->SendEvent(
+        if (!DESTINY_PY_SEND_EVENT(
             (IBall*)this, "Destiny::Ball::DoModeChange",
             "DoModeChange", NULL,
             "ii", mMode, mode
@@ -1955,7 +1957,7 @@ void ClientBall::DispatchPartition()
         PyList_SET_ITEM(mBoxList, i, PyLong_FromLong(mActiveBoxes[i]));
     }
 
-    if (!PyOS->SendEvent(
+    if (!DESTINY_PY_SEND_EVENT(
         (IBall*)this, "Destiny::Ball::DoPartition",
         "DoPartition", NULL,
         "fffffffO",
