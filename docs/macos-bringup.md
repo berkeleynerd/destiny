@@ -213,3 +213,33 @@ Installed `code.ccp` has SHA-256
 `232a2c1552cd00d030e7b9f6bf1d4956673e3c1be85f07f4b19ebe19131fa67f`.
 It contains `enable_new_orbit` but no observed caller; Frontier orbit is an
 explicit Promised Land choice rather than claimed installed-client policy.
+
+## PL-12 celestial ball exposure (2026-07-12)
+
+The embedded session now owns up to four celestial balls through
+`Destiny_AddEmbeddedCelestial`, `Destiny_GetEmbeddedCelestialPosition`, and
+`Destiny_GetEmbeddedCelestialState`. Celestials are created with
+`AddOldStyleOrientedBall` as fixed, global, non-massive, non-interactive,
+zero-velocity balls and set to `DSTBALL_RIGID` through `SetBallRigid`;
+additions are accepted only before the first advance or command, with unique
+nonzero identifiers distinct from the primary, ego, and navigation-target
+balls. Mass is pinned to `1.0` because mass has no effect on non-free,
+non-massive balls; celestial collision remains out of scope.
+
+Because a client-mode park creates every ball as an `OClientBall`, the
+celestial ball is itself the `ITriVectorFunction` position curve: a fixed
+global ball returns `(mNewPos - referencePoint) / unitBase` in floats, which
+at the embedded unit base `1.0` is observer-relative meters — exactly the
+units Trinity's planet pass and lens flare consume. `DestinyEmbedded.h` also
+mirrors `DSTBALL_STOP`/`DSTBALL_RIGID` as `DestinyEmbeddedBallMode` for
+consumers that must not include destiny internals; static asserts pin the
+mirror to the real enum.
+
+`DestinyEmbeddedCelestialContractTest` proves the addition constraints, the
+RIGID/global/fixed state, bit-exact positions and radii across all evolves,
+curve outputs against the ego and observer reference points, and — by
+running the complete PL-11B orbit fixture with and without celestials —
+that celestial balls leave the accepted trajectory bit-identical. The New
+Eden fixture uses authored item identifiers `40334263` (star, radius
+`158,400,000 m`) and `40334264` (planet, radius `2,630,000 m`) at their
+stargate-anchored solarSystemContent positions.

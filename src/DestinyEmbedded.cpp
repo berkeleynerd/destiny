@@ -16,9 +16,13 @@
 #include <limits>
 #include <new>
 
+static_assert( DESTINY_EMBEDDED_BALL_MODE_STOP == DSTBALL_STOP, "embedded ball-mode mirror diverged" );
+static_assert( DESTINY_EMBEDDED_BALL_MODE_RIGID == DSTBALL_RIGID, "embedded ball-mode mirror diverged" );
+
 namespace
 {
 constexpr Be::Time kTicksPerSecond = 10000000;
+constexpr size_t kMaxCelestialBalls = 4;
 std::atomic<uint64_t> s_startCallCount = 0;
 std::atomic<uint64_t> s_onTickCallCount = 0;
 std::atomic<uint64_t> s_pythonCallbackCount = 0;
@@ -80,6 +84,8 @@ struct DestinyEmbeddedSession
 	BluePtr<Ballpark> ballpark;
 	ClientBall* ball = nullptr;
 	Ball* fixedTarget = nullptr;
+	Ball* celestials[kMaxCelestialBalls] = {};
+	size_t celestialCount = 0;
 	IRoot* ballRoot = nullptr;
 	Be::Time lastRequestedTime = 0;
 	Be::Time nextTickTime = kTicksPerSecond;
@@ -416,6 +422,91 @@ extern "C" bool Destiny_AddEmbeddedFixedTarget(
 		return false;
 	}
 	return true;
+}
+
+extern "C" bool Destiny_AddEmbeddedCelestial(
+	DestinyEmbeddedSession* session,
+	const DestinyEmbeddedCelestialConfig* config,
+	char* error,
+	size_t errorSize )
+{
+	if( error && errorSize )
+		error[0] = '\0';
+	bool duplicate = false;
+	if( session && config )
+	{
+		for( size_t i = 0; i < session->celestialCount; ++i )
+			if( session->celestials[i]->mId == config->ballId )
+				duplicate = true;
+	}
+	if( !session || !config || duplicate || session->directEvolveCount != 0 ||
+		session->commandCount != 0 || session->celestialCount >= kMaxCelestialBalls ||
+		config->ballId == 0 || config->ballId == session->ball->mId ||
+		config->ballId == session->ballpark->mEgo ||
+		( session->fixedTarget && config->ballId == session->fixedTarget->mId ) ||
+		!std::isfinite( config->radius ) || config->radius <= 0.0f ||
+		!std::isfinite( config->position[0] ) || !std::isfinite( config->position[1] ) ||
+		!std::isfinite( config->position[2] ) )
+	{
+		SetError( error, errorSize, "Embedded Destiny requires finite unique celestials before advance or commands" );
+		return false;
+	}
+	Ball* celestial = session->ballpark->AddOldStyleOrientedBall(
+		config->ballId, 1.0, config->radius, 0.0f, false, true, false, false, false,
+		config->position[0], config->position[1], config->position[2], 0.0, 0.0, 0.0, 1.0f, 0.0f );
+	if( !celestial )
+	{
+		SetError( error, errorSize, "Failed to add embedded Destiny celestial ball" );
+		return false;
+	}
+	session->ballpark->SetBallRigid( config->ballId );
+	session->celestials[session->celestialCount] = celestial;
+	++session->celestialCount;
+	return true;
+}
+
+extern "C" ITriVectorFunction* Destiny_GetEmbeddedCelestialPosition(
+	DestinyEmbeddedSession* session,
+	int64_t ballId )
+{
+	if( !session )
+		return nullptr;
+	for( size_t i = 0; i < session->celestialCount; ++i )
+	{
+		if( session->celestials[i]->mId == ballId )
+			return static_cast<ITriVectorFunction*>( static_cast<ClientBall*>( session->celestials[i] ) );
+	}
+	return nullptr;
+}
+
+extern "C" bool Destiny_GetEmbeddedCelestialState(
+	DestinyEmbeddedSession* session,
+	int64_t ballId,
+	DestinyEmbeddedCelestialState* state )
+{
+	if( !session || !state )
+		return false;
+	for( size_t i = 0; i < session->celestialCount; ++i )
+	{
+		Ball* celestial = session->celestials[i];
+		if( celestial->mId != ballId )
+			continue;
+		*state = {};
+		state->ballId = celestial->mId;
+		state->mode = static_cast<int32_t>( celestial->mMode );
+		state->isFree = celestial->isFree;
+		state->isGlobal = celestial->isGlobal;
+		state->isMassive = celestial->isMassive;
+		state->isInteractive = celestial->isInteractive;
+		state->radius = celestial->mRadius;
+		for( size_t axis = 0; axis < 3; ++axis )
+		{
+			state->position[axis] = ( &celestial->mNewPos.x )[axis];
+			state->velocity[axis] = ( &celestial->mNewVel.x )[axis];
+		}
+		return true;
+	}
+	return false;
 }
 
 extern "C" bool Destiny_CommandEmbeddedGoto(

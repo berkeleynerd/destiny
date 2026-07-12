@@ -35,6 +35,13 @@ enum DestinyEmbeddedOrbitPolicy
 	DESTINY_EMBEDDED_ORBIT_FRONTIER_NEW = 1,
 };
 
+// Mirrors DSTBALLMODE for embedded consumers that must not include destiny internals.
+enum DestinyEmbeddedBallMode
+{
+	DESTINY_EMBEDDED_BALL_MODE_STOP = 2,
+	DESTINY_EMBEDDED_BALL_MODE_RIGID = 11,
+};
+
 struct DestinyEmbeddedRegistration
 {
 	uint32_t discoveredClassCount;
@@ -79,6 +86,26 @@ struct DestinyEmbeddedFixedTargetConfig
 	int64_t ballId;
 	float radius;
 	double position[3];
+};
+
+struct DestinyEmbeddedCelestialConfig
+{
+	int64_t ballId;
+	float radius;
+	double position[3];
+};
+
+struct DestinyEmbeddedCelestialState
+{
+	int64_t ballId;
+	int32_t mode;
+	bool isFree;
+	bool isGlobal;
+	bool isMassive;
+	bool isInteractive;
+	float radius;
+	double position[3];
+	double velocity[3];
 };
 
 struct DestinyEmbeddedDiagnostics
@@ -141,6 +168,18 @@ extern "C"
 		const DestinyEmbeddedFixedTargetConfig* config,
 		char* error,
 		size_t errorSize );
+	DESTINY_EMBEDDED_API bool Destiny_AddEmbeddedCelestial(
+		DestinyEmbeddedSession* session,
+		const DestinyEmbeddedCelestialConfig* config,
+		char* error,
+		size_t errorSize );
+	DESTINY_EMBEDDED_API ITriVectorFunction* Destiny_GetEmbeddedCelestialPosition(
+		DestinyEmbeddedSession* session,
+		int64_t ballId );
+	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedCelestialState(
+		DestinyEmbeddedSession* session,
+		int64_t ballId,
+		DestinyEmbeddedCelestialState* state );
 	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedGoto(
 		DestinyEmbeddedSession* session,
 		Be::Time effectiveTime,

@@ -31,6 +31,7 @@ do and provide, gate by gate.
 | D-03 | Python-free build: `DESTINY_WITH_PYTHON`-style seam guarding `src/Thunkers.cpp` (3,531 lines); Python-hosted tests ported to gtest or retired | PL-13 | Active (independent) | — | Build with the seam off links no libpython (`otool -L` clean); 73 C++ tests green; journal updated. |
 | D-04 | Wire-format recovery: document the park-update stream (from `python/destiny/net` semantics and the C++ `WriteBallsToStream` path) and provide a scripted-scenario recorder | PL-33 | Blocked | D-01 | Format writeup sufficient for an independent consumer; recorder emits a deterministic stream with tick numbers and RNG seed. |
 | D-05 | Oracle role for kernel succession: replay-equivalence corpora (motion, collision predicates) and exported RNG state for journaling; destiny retires to reference implementation | PL-50 | Blocked | D-02, D-04 | SPARK kernel matches destiny bit-for-bit over the corpora on same-binary replay terms; divergences adjudicated against the closed forms. |
+| D-06 | Celestial ball exposure: fixed/global RIGID celestial balls with per-ball position curves and state queries in `destinyEmbedded` | PL-12 | Accepted | D-01 | `DestinyEmbeddedCelestialContractTest` proves addition constraints, RIGID/global/fixed state, bit-exact placement across evolves, ego/observer curve outputs, and a bit-identical PL-11B orbit trajectory with celestials present. Journal: `macos-bringup.md` PL-12 section. |
 
 ## Scope and succession notes
 
