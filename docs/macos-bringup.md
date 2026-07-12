@@ -136,3 +136,6 @@ Apple Silicon host, AppleClang 21.0.0, CMake 4.4.0, Ninja 1.13.2.
     state, with origin rebasing observed in logs. Subsequent contracts, one
     at a time: authentic motion states, the sun-ball flare linkage, thunker
     excision, and a deterministic replay consumer for recorded park updates.
+    These are now tracked gate-by-gate in
+    [`integration-roadmap.md`](integration-roadmap.md), which is
+    authoritative for destiny-side work.
