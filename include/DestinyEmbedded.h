@@ -29,6 +29,12 @@ enum DestinyEmbeddedReferenceFrame
 	DESTINY_EMBEDDED_FIXED_OBSERVER = 1,
 };
 
+enum DestinyEmbeddedOrbitPolicy
+{
+	DESTINY_EMBEDDED_ORBIT_CHECKOUT_DEFAULT = 0,
+	DESTINY_EMBEDDED_ORBIT_FRONTIER_NEW = 1,
+};
+
 struct DestinyEmbeddedRegistration
 {
 	uint32_t discoveredClassCount;
@@ -63,8 +69,16 @@ struct DestinyEmbeddedSessionOptions
 {
 	DestinyEmbeddedOrientationPolicy orientationPolicy;
 	DestinyEmbeddedReferenceFrame referenceFrame;
+	DestinyEmbeddedOrbitPolicy orbitPolicy;
 	int64_t observerBallId;
 	double observerPosition[3];
+};
+
+struct DestinyEmbeddedFixedTargetConfig
+{
+	int64_t ballId;
+	float radius;
+	double position[3];
 };
 
 struct DestinyEmbeddedDiagnostics
@@ -78,6 +92,7 @@ struct DestinyEmbeddedDiagnostics
 	int32_t mode;
 	bool schedulerRegistered;
 	bool dynamicalOrientationEnabled;
+	bool frontierOrbitEnabled;
 	int64_t primaryBallId;
 	int64_t egoBallId;
 	uint64_t commandCount;
@@ -94,6 +109,17 @@ struct DestinyEmbeddedDiagnostics
 	float rotation[4];
 	float angularVelocity[3];
 	double gotoPoint[3];
+	int64_t orbitTargetBallId;
+	int64_t followBallId;
+	float followRange;
+	double orbitTargetPosition[3];
+	double orbitTargetVelocity[3];
+	double orbitCenterDistance;
+	double orbitSurfaceDistance;
+	double orbitRadialVelocity;
+	double orbitTangentialVelocity;
+	double orbitNormal[3];
+	double orbitAccumulatedPhase;
 };
 
 extern "C"
@@ -110,6 +136,11 @@ extern "C"
 		size_t errorSize );
 	DESTINY_EMBEDDED_API void Destiny_DestroyEmbeddedSession( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session, Be::Time simulationTime );
+	DESTINY_EMBEDDED_API bool Destiny_AddEmbeddedFixedTarget(
+		DestinyEmbeddedSession* session,
+		const DestinyEmbeddedFixedTargetConfig* config,
+		char* error,
+		size_t errorSize );
 	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedGoto(
 		DestinyEmbeddedSession* session,
 		Be::Time effectiveTime,
@@ -117,6 +148,11 @@ extern "C"
 	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedStop(
 		DestinyEmbeddedSession* session,
 		Be::Time effectiveTime );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedOrbit(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime,
+		int64_t targetBallId,
+		float surfaceRange );
 	DESTINY_EMBEDDED_API IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriVectorFunction* Destiny_GetEmbeddedPosition( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedRotation( DestinyEmbeddedSession* session );

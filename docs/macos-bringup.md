@@ -198,3 +198,18 @@ byte-identical. Origin updates equal 180; reference point, origin, shift,
 deltas, and velocity remain zero. The integrated image loads exactly one
 `blue_debug.so` and Trinity's existing one Python dylib, with no Destiny
 module initializer, timer, thunker, Granny, or tracked EVE payload.
+
+## PL-11B Frontier orbit contract (2026-07-12)
+
+The embedded session now owns one fixed navigation target and queues native
+`Orbit` through the existing next-tick command seam. PL-11B explicitly selects
+the opt-in Frontier solver, preserves two STOP evolves, and checks 60 ORBIT
+evolves against the independently generated Python-Ballpark corpus
+`tests/data/pl11b-orbit-new.csv`. Ego, repeated ego, and fixed-observer runs
+are bit-identical. The target remains stationary and nonrendered, and all
+scheduler/Python callback counters remain zero.
+
+Installed `code.ccp` has SHA-256
+`232a2c1552cd00d030e7b9f6bf1d4956673e3c1be85f07f4b19ebe19131fa67f`.
+It contains `enable_new_orbit` but no observed caller; Frontier orbit is an
+explicit Promised Land choice rather than claimed installed-client policy.
