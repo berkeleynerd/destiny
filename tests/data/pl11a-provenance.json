@@ -1,0 +1,26 @@
+{
+  "fixture": "PL-11A Astero STOP and linear GOTO",
+  "clientBuild": 3428504,
+  "typeId": 33468,
+  "esi": "https://esi.evetech.net/latest/universe/types/33468/?datasource=tranquility&language=en",
+  "types": {
+    "logicalPath": "res:/staticdata/types.fsdbinary",
+    "source": "/Users/rebecca/Library/Application Support/EVE Online/SharedCache/ResFiles/3c/3cc5bf8ff5e9099a_cfa48196efa545978dfdb065a89c41a7",
+    "size": 9075696,
+    "sha256": "5abeb9c093400891e8d330d4d42d2f0f63f028d969ad907f8f97d9f973a3d30e"
+  },
+  "typeDogma": {
+    "logicalPath": "res:/staticdata/typedogma.fsdbinary",
+    "source": "/Users/rebecca/Library/Application Support/EVE Online/SharedCache/ResFiles/a5/a5dc877f4620b63d_7b003c1877cf503b52f6fbde331b4bb1",
+    "size": 12252760,
+    "sha256": "363d5e341e6eb04921fe6344cd8e09d1392cc9151884ac5a3cc98676c3e577ba"
+  },
+  "attributes": {
+    "mass": 975000.0,
+    "radius": 35.0,
+    "maxVelocity": 312.0,
+    "agility": 2.87,
+    "warpSpeedMultiplier": 5.0
+  },
+  "equation": "m*x'' + k*x' - m*g = 0; each one-second segment uses Destiny's analytic Integrate solution with the committed native steering acceleration, including float-vector quantization and the post-overshoot turn gate"
+}

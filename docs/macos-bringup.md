@@ -167,6 +167,22 @@ Native free-ball evolve applies roll-upright behavior, so PL-10 restores that
 quaternion after each evolve to keep the null visual contract exact. PL-11
 will remove the pin while accepting authentic orientation and motion.
 
+## PL-11A native STOP and linear GOTO (2026-07-12)
+
+`Destiny_CreateEmbeddedSessionWithOptions` now selects native orientation and
+either the primary-ego or fixed-observer reference frame. Commands are accepted
+only for the next native tick; the fixture applies one `GotoPoint` at frame 180
+and reaches 19 direct evolves over 1,200 render frames without `Start`,
+`OnTick`, scheduler, tasklet, or Python callback activity.
+
+The Astero fixture uses mass `975000 kg`, radius `35 m`, maximum velocity
+`312 m/s`, agility `2.87`, and starts at `(0,0,-1000)`. The committed STOP and
+17-tick GOTO corpora are checked against the `Equations.mws` drag/thrust closed
+form. Their provenance ledger records the exact local SharedCache paths,
+sizes, and SHA-256 values for `types.fsdbinary` and `typedogma.fsdbinary`; no
+client bytes are committed. Native motion overshoots the target, turns, and
+reverses velocity. PL-11B native orbit is the next D-02 gate.
+
 Evidence lives outside source control:
 
 ```text
