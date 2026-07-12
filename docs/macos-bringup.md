@@ -243,3 +243,48 @@ that celestial balls leave the accepted trajectory bit-identical. The New
 Eden fixture uses authored item identifiers `40334263` (star, radius
 `158,400,000 m`) and `40334264` (planet, radius `2,630,000 m`) at their
 stargate-anchored solarSystemContent positions.
+
+## D-07 embedded warp command (2026-07-12)
+
+Warp enters the embedded seam the same way STOP, GOTO, and ORBIT did:
+`Destiny_CommandEmbeddedWarp` validates against the exact next-tick time,
+monotonic command ordering, and finite arguments, then queues a single
+pending command that `Destiny_AdvanceEmbeddedSession` dispatches to the
+recovered `Ballpark::WarpTo` on its effective tick. One contract
+tightening is deliberate: `WarpTo` silently downgrades sub-100 km warps
+to `GotoPoint`, and the embedded command rejects that zone outright with
+a 200 km floor — a warp command always means a warp. Diagnostics expose
+the warp state without leaking the sim's member reuse: the effect stamp
+(negative while aligning, the warp-start tick afterward), the warp
+factor and minimum range unpunned from the shanghaied `mOwnerId` and
+`mFollowId` members, the total leg length from the repurposed
+`mLastCollision`, and the ball's collision/sensor participation. The
+three warp lifecycle events compile to no-ops in the scheduler-free
+build (`DESTINY_PY_POST_EVENT` is `true` under the embedded seam), so
+nothing is absorbed at runtime because nothing is emitted.
+
+`DestinyEmbeddedWarpContractTest` proves the contract on the PL-11C
+fixture leg — the stargate anchor to the New Eden planet, 9.058774 AU,
+at `warpFactor 5000` (5.0 AU/s from the Astero's `warpSpeedMultiplier
+5.0` already recorded in the pl11a provenance): eight align ticks to
+the 75 %-of-max-velocity/8.1° gate, activation at evolve 11, dropout at
+evolve 31 below 100 m/s with collision and sensor participation
+restored, settling ~9,997 km short of the planet center under drag.
+Every warp-phase sample is re-derived in-test from the recovered closed
+forms (`SetupWarpConstants`/`WarpDistance` replicated verbatim) against
+the previous sample; the 42-sample corpus (`pl11c-warp.csv` +
+provenance) matches at `max(1e-5 m, 1e-12 relative)` per axis; and the
+trajectory is bit-exact across two ego runs, a fixed-observer run, and
+a run with the full PL-12 celestial set present.
+
+The unit's precision finding extends the D1 doctrine: warp positions
+are computed destination-relative at the ~1.4e12 m leg scale
+(`p = goto − remaining·dir`), so every sample inherits that scale's
+~2.4e-4 m double ULP regardless of its own magnitude — near-origin
+early-warp samples quantize at ~1e-4 m granularity, and any
+independent re-derivation agrees to a few ULP of the LEG scale, not of
+the sample. The closed-form gate therefore uses a 5e-3 m floor
+(~20 ULP at leg scale) with 1e-9 relative; absolute PL-11A-style 5e-10
+gates are structurally impossible at warp magnitudes and are not
+claimed. Run-to-run determinism remains bit-exact, which is the strong
+contract.

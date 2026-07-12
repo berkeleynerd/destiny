@@ -147,6 +147,18 @@ struct DestinyEmbeddedDiagnostics
 	double orbitTangentialVelocity;
 	double orbitNormal[3];
 	double orbitAccumulatedPhase;
+	// Warp state (valid while mode is DSTBALL_WARP, zero otherwise). The
+	// effect stamp is negative while aligning and holds the warp-start tick
+	// once warp proper begins; factor and minimum range echo the command
+	// inputs the sim stores in its shanghaied ball members.
+	int64_t warpEffectStamp;
+	int32_t warpFactor;
+	double warpMinRange;
+	double warpTotalDistance;
+	// Collision/sensor participation of the primary ball; warp suspends both
+	// and dropout must restore them.
+	bool isMassive;
+	bool sensorActive;
 };
 
 extern "C"
@@ -192,6 +204,12 @@ extern "C"
 		Be::Time effectiveTime,
 		int64_t targetBallId,
 		float surfaceRange );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedWarp(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime,
+		const double target[3],
+		double minimumRange,
+		int32_t warpFactor );
 	DESTINY_EMBEDDED_API IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriVectorFunction* Destiny_GetEmbeddedPosition( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedRotation( DestinyEmbeddedSession* session );

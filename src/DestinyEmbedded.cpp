@@ -102,6 +102,8 @@ struct DestinyEmbeddedSession
 	double pendingTarget[3] = {};
 	int64_t pendingTargetBallId = 0;
 	float pendingRange = 0.0f;
+	double pendingMinRange = 0.0;
+	int32_t pendingWarpFactor = 0;
 	Vector3d previousOrbitRelative;
 	bool hasPreviousOrbitRelative = false;
 	double orbitAccumulatedPhase = 0.0;
@@ -347,10 +349,20 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 			{
 				session->ballpark->Stop( session->ball->mId );
 			}
-			else
+			else if( session->pendingCommand == 3 )
 			{
 				session->ballpark->Orbit(
 					session->ball->mId, session->pendingTargetBallId, session->pendingRange );
+			}
+			else
+			{
+				session->ballpark->WarpTo(
+					session->ball->mId,
+					session->pendingTarget[0],
+					session->pendingTarget[1],
+					session->pendingTarget[2],
+					session->pendingMinRange,
+					session->pendingWarpFactor );
 			}
 			session->pendingCommand = 0;
 		}
@@ -566,6 +578,47 @@ extern "C" bool Destiny_CommandEmbeddedOrbit(
 	return true;
 }
 
+extern "C" bool Destiny_CommandEmbeddedWarp(
+	DestinyEmbeddedSession* session,
+	Be::Time effectiveTime,
+	const double target[3],
+	double minimumRange,
+	int32_t warpFactor )
+{
+	if( !session || !target || effectiveTime != session->nextTickTime ||
+		effectiveTime < session->lastRequestedTime ||
+		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
+		!std::isfinite( target[0] ) || !std::isfinite( target[1] ) || !std::isfinite( target[2] ) ||
+		!std::isfinite( minimumRange ) || minimumRange < 0.0 || warpFactor < 1 )
+	{
+		return false;
+	}
+	// The sim silently downgrades sub-100 km warps to GotoPoint
+	// (Ballpark::WarpTo); the embedded contract rejects that zone outright,
+	// with margin, so a warp command always means a warp. Evaluated against
+	// the ball's current position at issue time.
+	const double offset[3] = {
+		target[0] - session->ball->mNewPos.x,
+		target[1] - session->ball->mNewPos.y,
+		target[2] - session->ball->mNewPos.z,
+	};
+	const double distanceSquared =
+		offset[0] * offset[0] + offset[1] * offset[1] + offset[2] * offset[2];
+	if( distanceSquared < 4e10 ) // (200 km)^2
+	{
+		return false;
+	}
+	session->pendingCommand = 4;
+	session->pendingCommandTime = effectiveTime;
+	for( size_t i = 0; i < 3; ++i )
+		session->pendingTarget[i] = target[i];
+	session->pendingMinRange = minimumRange;
+	session->pendingWarpFactor = warpFactor;
+	session->lastCommandTime = effectiveTime;
+	++session->commandCount;
+	return true;
+}
+
 extern "C" IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session )
 {
 	return session ? static_cast<IEveBallpark*>( session->ballpark.p ) : nullptr;
@@ -638,6 +691,28 @@ extern "C" bool Destiny_GetEmbeddedDiagnostics(
 	diagnostics->followBallId = session->ball->mFollowId;
 	diagnostics->followRange = session->ball->mFollowRange;
 	diagnostics->orbitAccumulatedPhase = session->orbitAccumulatedPhase;
+	diagnostics->warpEffectStamp = 0;
+	diagnostics->warpFactor = 0;
+	diagnostics->warpMinRange = 0.0;
+	diagnostics->isMassive = session->ball->isMassive;
+	diagnostics->sensorActive = session->ball->mSensor.active;
+	if( session->ball->mMode == DSTBALL_WARP )
+	{
+		// WarpTo shanghais mFollowId to hold the minimum range as bit-punned
+		// double and mOwnerId to hold the warp factor; unpun them here so
+		// consumers never see the raw reuse.
+		diagnostics->warpEffectStamp = session->ball->mEffectStamp;
+		diagnostics->warpFactor = static_cast<int32_t>( session->ball->mOwnerId );
+		double minimumRange = 0.0;
+		const int64_t punned = session->ball->mFollowId;
+		std::memcpy( &minimumRange, &punned, sizeof( minimumRange ) );
+		diagnostics->warpMinRange = minimumRange;
+		// mLastCollision is repurposed as the total warp length once warp
+		// proper begins (RealWarp); zero while still aligning.
+		diagnostics->warpTotalDistance =
+			session->ball->mEffectStamp >= 0 ? session->ball->mLastCollision : 0.0;
+		diagnostics->followBallId = 0;
+	}
 	if( session->fixedTarget )
 	{
 		diagnostics->orbitTargetBallId = session->fixedTarget->mId;

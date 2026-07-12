@@ -1,0 +1,25 @@
+{
+  "contract": "PL-11C native warp",
+  "generator": "DestinyEmbeddedWarpContractTest --record (embedded C API over the recovered Ballpark warp path)",
+  "independentValidation": "every warp-phase sample is re-derived in-test from the recovered closed forms (Ballpark::SetupWarpConstants / WarpDistance, Ballpark.cpp:4185-4380) against the previous sample within max(5e-3 m, 1e-9 relative); the 5e-3 floor is ~20 double ULP at the 1.4e12 m leg scale that every warp position is computed at",
+  "fixture": {
+    "primary": {"ballId": 1, "mass": 975000.0, "radius": 35.0, "maximumVelocity": 312.0, "agility": 2.87, "position": [0.0, 0.0, -1000.0]},
+    "target": "New Eden planet 40334264, stargate-anchored [1083758787326, -205372890997, -787280443197] (accepted PL-12 value, verified float64-exact against solarsystemcontent.static)",
+    "minimumRange": 10000000.0,
+    "warpFactor": 5000,
+    "commandEffectiveTick": 3,
+    "stopTicksBeforeCommand": 2,
+    "ticks": 44
+  },
+  "warpFactorProvenance": "5.0 AU/s from the Astero's warpSpeedMultiplier 5.0 recorded in pl11a-provenance.json (types/typedogma fsdbinary, client build 3428504); warpFactor units are milli-AU/s per Ballpark.cpp:67 WARP_FACTOR_TO_AU_PER_SECOND = 0.001",
+  "phases": {
+    "alignTicks": 8,
+    "activationEvolve": 11,
+    "dropoutEvolve": 31,
+    "totalWarpDistanceAu": 9.058774,
+    "alignmentPrecondition": "velocity within dot-error 0.01 of the leg direction AND speed above 75% of maximumVelocity (Ball.cpp:1913-1923), force-start after 180 ticks",
+    "equations": "S = warpFactor*0.001*AU; ACC = warpFactor/1000; DEC = min(warpFactor/3000, 2); accel x = exp(ACC*t); cruise v = S; decel v = S*exp(-DEC*t); dropout below min(maxVel/2, 100) m/s; position computed destination-relative p = goto - remaining*dir (Ballpark.cpp:4278-4380)"
+  },
+  "precisionDoctrine": "leg magnitudes cross the 2^40 m boundary where the double ULP is 2.44e-4 m; corpus comparison uses max(1e-5 m, 1e-12 relative) per axis and run-to-run determinism remains bit-exact (D1 stargate-anchored frame doctrine extended to warp scale)",
+  "events": "OnActivatingWarp / OnDeactivatingWarp / OnExitWarp compile to no-ops in the embedded build (DESTINY_PY_POST_EVENT, DestinyEmbeddedInternal.h:17)"
+}

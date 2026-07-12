@@ -204,6 +204,22 @@ if(BUILD_DESTINY_EMBEDDED)
 			add_test(NAME DestinyEmbeddedOrbitContract COMMAND DestinyEmbeddedOrbitContractTest)
 		endif()
 
+		ccp_add_executable(DestinyEmbeddedWarpContractTest)
+		target_sources(DestinyEmbeddedWarpContractTest PRIVATE tests/DestinyEmbeddedWarpContractTest.cpp)
+		target_include_directories(DestinyEmbeddedWarpContractTest PRIVATE
+			${CMAKE_CURRENT_SOURCE_DIR}/include
+			${CMAKE_CURRENT_SOURCE_DIR}/src)
+		target_compile_definitions(DestinyEmbeddedWarpContractTest PRIVATE
+			DESTINY_MOTION_CORPUS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/data")
+		target_link_libraries(DestinyEmbeddedWarpContractTest PRIVATE
+			"$<LINK_LIBRARY:WHOLE_ARCHIVE,destinyEmbedded>")
+		if(APPLE)
+			target_link_libraries(DestinyEmbeddedWarpContractTest PRIVATE "-framework CoreFoundation")
+		endif()
+		if(BUILD_TESTING)
+			add_test(NAME DestinyEmbeddedWarpContract COMMAND DestinyEmbeddedWarpContractTest)
+		endif()
+
 		ccp_add_executable(DestinyEmbeddedCelestialContractTest)
 		target_sources(DestinyEmbeddedCelestialContractTest PRIVATE tests/DestinyEmbeddedCelestialContractTest.cpp)
 		target_include_directories(DestinyEmbeddedCelestialContractTest PRIVATE
