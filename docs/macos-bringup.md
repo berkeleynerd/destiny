@@ -288,3 +288,14 @@ the sample. The closed-form gate therefore uses a 5e-3 m floor
 gates are structurally impossible at warp magnitudes and are not
 claimed. Run-to-run determinism remains bit-exact, which is the strong
 contract.
+
+### CP-37b consumer addendum (2026-07-12)
+
+Trinity's warp integration surfaced one API-surface gap: embedded
+consumers gate warp-phase behavior on the ball mode, and the
+`DestinyEmbeddedBallMode` mirror only carried `STOP`/`RIGID`. The
+mirror gained `DESTINY_EMBEDDED_BALL_MODE_WARP = 3` so consumers read
+`DSTBALL_WARP` without including destiny internals. No behavioral
+change; the trinity probe's three PL-11C lanes (ego, repeat ego,
+fixed observer) validate against this header with bit-exact corpus
+scoring and a shared trajectory hash.

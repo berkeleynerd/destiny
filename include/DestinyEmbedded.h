@@ -39,6 +39,7 @@ enum DestinyEmbeddedOrbitPolicy
 enum DestinyEmbeddedBallMode
 {
 	DESTINY_EMBEDDED_BALL_MODE_STOP = 2,
+	DESTINY_EMBEDDED_BALL_MODE_WARP = 3,
 	DESTINY_EMBEDDED_BALL_MODE_RIGID = 11,
 };
 
