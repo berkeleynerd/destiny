@@ -18,6 +18,8 @@
 
 static_assert( DESTINY_EMBEDDED_BALL_MODE_FOLLOW == DSTBALL_FOLLOW, "embedded ball-mode mirror diverged" );
 static_assert( DESTINY_EMBEDDED_BALL_MODE_STOP == DSTBALL_STOP, "embedded ball-mode mirror diverged" );
+static_assert( DESTINY_EMBEDDED_BALL_MODE_GOTO == DSTBALL_GOTO, "embedded ball-mode mirror diverged" );
+static_assert( DESTINY_EMBEDDED_BALL_MODE_ORBIT == DSTBALL_ORBIT, "embedded ball-mode mirror diverged" );
 static_assert( DESTINY_EMBEDDED_BALL_MODE_RIGID == DSTBALL_RIGID, "embedded ball-mode mirror diverged" );
 
 namespace
@@ -85,6 +87,7 @@ struct DestinyEmbeddedSession
 	BluePtr<Ballpark> ballpark;
 	ClientBall* ball = nullptr;
 	Ball* fixedTarget = nullptr;
+	Ball* orbitTarget = nullptr;
 	Ball* celestials[kMaxCelestialBalls] = {};
 	size_t celestialCount = 0;
 	IRoot* ballRoot = nullptr;
@@ -370,15 +373,23 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 				session->ballpark->FollowBall(
 					session->ball->mId, session->pendingTargetBallId, session->pendingRange );
 			}
+			else if( session->pendingCommand == 6 )
+			{
+				session->ballpark->GotoDirection(
+					session->ball->mId,
+					session->pendingTarget[0],
+					session->pendingTarget[1],
+					session->pendingTarget[2] );
+			}
 			session->pendingCommand = 0;
 		}
 		// ClientBall samples two ticks behind render time. Evolving the local fixture
 		// one tick behind the explicit clock keeps the latest interpolation segment
 		// aligned with that native history window without a scheduler or look-ahead.
 		session->ballpark->Evolve( session->nextTickTime - tickInterval );
-		if( session->ball->mMode == DSTBALL_ORBIT && session->fixedTarget )
+		if( session->ball->mMode == DSTBALL_ORBIT && session->orbitTarget )
 		{
-			const Vector3d relative = session->ball->mNewPos - session->fixedTarget->mNewPos;
+			const Vector3d relative = session->ball->mNewPos - session->orbitTarget->mNewPos;
 			if( session->hasPreviousOrbitRelative )
 			{
 				Vector3d normal = session->previousOrbitRelative;
@@ -549,6 +560,32 @@ extern "C" bool Destiny_CommandEmbeddedGoto(
 	return true;
 }
 
+extern "C" bool Destiny_CommandEmbeddedGotoDirection(
+	DestinyEmbeddedSession* session,
+	Be::Time effectiveTime,
+	const double direction[3] )
+{
+	if( !session || !direction || effectiveTime != session->nextTickTime ||
+		effectiveTime < session->lastRequestedTime ||
+		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
+		!std::isfinite( direction[0] ) || !std::isfinite( direction[1] ) ||
+		!std::isfinite( direction[2] ) )
+	{
+		return false;
+	}
+	const double lengthSquared =
+		direction[0] * direction[0] + direction[1] * direction[1] + direction[2] * direction[2];
+	if( lengthSquared <= 0.0 )
+		return false;
+	session->pendingCommand = 6;
+	session->pendingCommandTime = effectiveTime;
+	for( size_t i = 0; i < 3; ++i )
+		session->pendingTarget[i] = direction[i];
+	session->lastCommandTime = effectiveTime;
+	++session->commandCount;
+	return true;
+}
+
 extern "C" bool Destiny_CommandEmbeddedStop( DestinyEmbeddedSession* session, Be::Time effectiveTime )
 {
 	if( !session || effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
@@ -567,8 +604,16 @@ extern "C" bool Destiny_CommandEmbeddedOrbit(
 	int64_t targetBallId,
 	float surfaceRange )
 {
-	if( !session || !session->fixedTarget || targetBallId != session->fixedTarget->mId ||
-		targetBallId == session->ball->mId || targetBallId == session->ballpark->mEgo ||
+	Ball* target = nullptr;
+	if( session )
+	{
+		if( session->fixedTarget && targetBallId == session->fixedTarget->mId )
+			target = session->fixedTarget;
+		for( size_t i = 0; !target && i < session->celestialCount; ++i )
+			if( targetBallId == session->celestials[i]->mId )
+				target = session->celestials[i];
+	}
+	if( !session || !target || targetBallId == session->ball->mId || targetBallId == session->ballpark->mEgo ||
 		effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
 		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
 		!std::isfinite( surfaceRange ) || surfaceRange < 0.0f )
@@ -579,6 +624,7 @@ extern "C" bool Destiny_CommandEmbeddedOrbit(
 	session->pendingCommandTime = effectiveTime;
 	session->pendingTargetBallId = targetBallId;
 	session->pendingRange = surfaceRange;
+	session->orbitTarget = target;
 	session->lastCommandTime = effectiveTime;
 	++session->commandCount;
 	return true;
@@ -746,13 +792,13 @@ extern "C" bool Destiny_GetEmbeddedDiagnostics(
 			session->ball->mEffectStamp >= 0 ? session->ball->mLastCollision : 0.0;
 		diagnostics->followBallId = 0;
 	}
-	if( session->fixedTarget )
+	if( session->orbitTarget )
 	{
-		diagnostics->orbitTargetBallId = session->fixedTarget->mId;
-		const Vector3d relative = rawPosition - session->fixedTarget->mNewPos;
+		diagnostics->orbitTargetBallId = session->orbitTarget->mId;
+		const Vector3d relative = rawPosition - session->orbitTarget->mNewPos;
 		const double distance = relative.Length();
 		diagnostics->orbitCenterDistance = distance;
-		diagnostics->orbitSurfaceDistance = distance - session->ball->mRadius - session->fixedTarget->mRadius;
+		diagnostics->orbitSurfaceDistance = distance - session->ball->mRadius - session->orbitTarget->mRadius;
 		Vector3d radial = distance > 0.0 ? relative / distance : Vector3d();
 		diagnostics->orbitRadialVelocity = rawVelocity * radial;
 		const double speedSquared = rawVelocity.LengthSq();
@@ -764,8 +810,8 @@ extern "C" bool Destiny_GetEmbeddedDiagnostics(
 			normal.Normalize();
 		for( size_t i = 0; i < 3; ++i )
 		{
-			diagnostics->orbitTargetPosition[i] = ( &session->fixedTarget->mNewPos.x )[i];
-			diagnostics->orbitTargetVelocity[i] = ( &session->fixedTarget->mNewVel.x )[i];
+			diagnostics->orbitTargetPosition[i] = ( &session->orbitTarget->mNewPos.x )[i];
+			diagnostics->orbitTargetVelocity[i] = ( &session->orbitTarget->mNewVel.x )[i];
 			diagnostics->orbitNormal[i] = ( &normal.x )[i];
 		}
 	}

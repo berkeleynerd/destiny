@@ -281,9 +281,23 @@ bool CheckAdditionConstraints( std::string& error )
 		Destiny_DestroyEmbeddedSession( session );
 		return false;
 	}
+	if( !Destiny_CommandEmbeddedOrbit( session, kTicksPerSecond, kSunBallId, 2500.0f ) )
+	{
+		error = "registered celestial was rejected as an orbit target";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
 	if( !Destiny_AdvanceEmbeddedSession( session, kTicksPerSecond * 2 ) )
 	{
 		error = "constraint-session advance failed";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+	DestinyEmbeddedDiagnostics orbitState = {};
+	if( !Destiny_GetEmbeddedDiagnostics( session, &orbitState ) ||
+		orbitState.mode != DESTINY_EMBEDDED_BALL_MODE_ORBIT || orbitState.orbitTargetBallId != kSunBallId )
+	{
+		error = "registered celestial orbit command did not enter ORBIT mode";
 		Destiny_DestroyEmbeddedSession( session );
 		return false;
 	}

@@ -299,3 +299,21 @@ mirror gained `DESTINY_EMBEDDED_BALL_MODE_WARP = 3` so consumers read
 change; the trinity probe's three PL-11C lanes (ego, repeat ego,
 fixed observer) validate against this header with bit-exact corpus
 scoring and a shared trajectory hash.
+
+## D-08 embedded route commands and celestial orbit (2026-07-13)
+
+The EVE Gate round-trip consumer needed two existing Ballpark operations
+without including destiny internals. `Destiny_CommandEmbeddedGotoDirection`
+now validates a finite nonzero direction on the exact next tick and dispatches
+it to `Ballpark::GotoDirection`; public ball-mode mirrors now include GOTO and
+ORBIT as well as STOP, WARP, and RIGID. The motion contract rejects zero and
+out-of-order direction commands.
+
+Orbit targeting is no longer restricted to the session's synthetic fixed
+navigation ball. Any registered celestial may be selected, and the session
+tracks the actual orbit target for relative-state evolution and diagnostics.
+`DestinyEmbeddedCelestialContractTest` commands a native orbit around the Sun
+ball and observes ORBIT mode with the correct target ID. Trinity uses these
+seams to align to the EVE Gate, warp there, align back to the Sun, warp back,
+and enter a 2,500 m surface-range Sun orbit; warp execution remains the D-07
+`Destiny_CommandEmbeddedWarp` to `Ballpark::WarpTo` path.

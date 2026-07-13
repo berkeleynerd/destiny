@@ -158,9 +158,13 @@ bool RunScenario(
 	}
 
 	const double target[3] = { 0.0, 0.0, 1000.0 };
-	if( Destiny_CommandEmbeddedGoto( session, 2 * kTicksPerSecond, target ) )
+	const double direction[3] = { 0.0, 0.0, 1.0 };
+	const double zeroDirection[3] = { 0.0, 0.0, 0.0 };
+	if( Destiny_CommandEmbeddedGoto( session, 2 * kTicksPerSecond, target ) ||
+		Destiny_CommandEmbeddedGotoDirection( session, 2 * kTicksPerSecond, direction ) ||
+		Destiny_CommandEmbeddedGotoDirection( session, kTicksPerSecond, zeroDirection ) )
 	{
-		error = "out-of-order GOTO command was accepted";
+		error = "invalid point or direction GOTO command was accepted";
 		Destiny_DestroyEmbeddedSession( session );
 		return false;
 	}
@@ -328,6 +332,52 @@ bool RunScenario(
 	}
 	return true;
 }
+
+bool ValidateGotoDirectionCommand( std::string& error )
+{
+	DestinyEmbeddedBallConfig config = {};
+	config.ballId = 1;
+	config.solarSystemId = 30005286;
+	config.mass = 975000.0;
+	config.radius = 35.0f;
+	config.maximumVelocity = 312.0f;
+	config.maximumAngularVelocity = 1.0f;
+	config.agility = 2.87f;
+	config.rotationalAgility = 1.0f;
+	config.speedFraction = 1.0f;
+	config.isFree = true;
+	config.isMassive = true;
+	config.isInteractive = true;
+
+	DestinyEmbeddedSessionOptions options = {};
+	options.orientationPolicy = DESTINY_EMBEDDED_NATIVE_ORIENTATION;
+	options.referenceFrame = DESTINY_EMBEDDED_PRIMARY_EGO;
+
+	char createError[512] = {};
+	DestinyEmbeddedSession* session = Destiny_CreateEmbeddedSessionWithOptions(
+		&config, &options, createError, sizeof( createError ) );
+	if( !session )
+	{
+		error = createError;
+		return false;
+	}
+
+	const double direction[3] = { 0.0, 0.0, 1.0 };
+	const bool commanded = Destiny_CommandEmbeddedGotoDirection( session, kTicksPerSecond, direction );
+	const bool advanced = commanded && Destiny_AdvanceEmbeddedSession( session, 2 * kTicksPerSecond );
+	DestinyEmbeddedDiagnostics diagnostics = {};
+	const bool diagnosed = advanced && Destiny_GetEmbeddedDiagnostics( session, &diagnostics );
+	Destiny_DestroyEmbeddedSession( session );
+	if( !diagnosed || diagnostics.mode != DESTINY_EMBEDDED_BALL_MODE_GOTO ||
+		diagnostics.commandCount != 1 || diagnostics.lastCommandTime != kTicksPerSecond ||
+		std::abs( diagnostics.rawVelocity[0] ) > 1e-10 || std::abs( diagnostics.rawVelocity[1] ) > 1e-10 ||
+		diagnostics.rawVelocity[2] <= 0.0 )
+	{
+		error = "valid GotoDirection command did not enter positive-Z GOTO motion";
+		return false;
+	}
+	return true;
+}
 }
 
 int main()
@@ -354,7 +404,8 @@ int main()
 	std::string error;
 	if( !RunScenario( DESTINY_EMBEDDED_PRIMARY_EGO, expected, primaryA, error ) ||
 		!RunScenario( DESTINY_EMBEDDED_PRIMARY_EGO, expected, primaryB, error ) ||
-		!RunScenario( DESTINY_EMBEDDED_FIXED_OBSERVER, expected, observer, error ) )
+		!RunScenario( DESTINY_EMBEDDED_FIXED_OBSERVER, expected, observer, error ) ||
+		!ValidateGotoDirectionCommand( error ) )
 	{
 		return Fail( error );
 	}
@@ -376,7 +427,8 @@ int main()
 	}
 
 	std::printf(
-		"Destiny PL-11A motion contract: samples=%zu evolves=19 command=GOTO nativeRoll=%.6f->%.6f frames=primary+observer\n",
+		"Destiny PL-11A motion contract: samples=%zu evolves=19 commands=GOTO_POINT+GOTO_DIRECTION "
+		"nativeRoll=%.6f->%.6f frames=primary+observer\n",
 		primaryA.rawMotion.size(),
 		primaryA.initialRoll,
 		primaryA.finalRoll );
