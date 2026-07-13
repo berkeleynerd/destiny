@@ -16,6 +16,7 @@
 #include <limits>
 #include <new>
 
+static_assert( DESTINY_EMBEDDED_BALL_MODE_FOLLOW == DSTBALL_FOLLOW, "embedded ball-mode mirror diverged" );
 static_assert( DESTINY_EMBEDDED_BALL_MODE_STOP == DSTBALL_STOP, "embedded ball-mode mirror diverged" );
 static_assert( DESTINY_EMBEDDED_BALL_MODE_RIGID == DSTBALL_RIGID, "embedded ball-mode mirror diverged" );
 
@@ -354,7 +355,7 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 				session->ballpark->Orbit(
 					session->ball->mId, session->pendingTargetBallId, session->pendingRange );
 			}
-			else
+			else if( session->pendingCommand == 4 )
 			{
 				session->ballpark->WarpTo(
 					session->ball->mId,
@@ -363,6 +364,11 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 					session->pendingTarget[2],
 					session->pendingMinRange,
 					session->pendingWarpFactor );
+			}
+			else if( session->pendingCommand == 5 )
+			{
+				session->ballpark->FollowBall(
+					session->ball->mId, session->pendingTargetBallId, session->pendingRange );
 			}
 			session->pendingCommand = 0;
 		}
@@ -614,6 +620,33 @@ extern "C" bool Destiny_CommandEmbeddedWarp(
 		session->pendingTarget[i] = target[i];
 	session->pendingMinRange = minimumRange;
 	session->pendingWarpFactor = warpFactor;
+	session->lastCommandTime = effectiveTime;
+	++session->commandCount;
+	return true;
+}
+
+extern "C" bool Destiny_CommandEmbeddedFollow(
+	DestinyEmbeddedSession* session,
+	Be::Time effectiveTime,
+	int64_t targetBallId,
+	float surfaceRange )
+{
+	// The client's Approach and Keep-at-Range both issue FollowBall; the sim
+	// only rejects a NaN range (Ballpark::FollowBall), so the embedded
+	// contract enforces finite non-negative ranges and a live fixed target
+	// itself, mirroring the orbit seam.
+	if( !session || !session->fixedTarget || targetBallId != session->fixedTarget->mId ||
+		targetBallId == session->ball->mId || targetBallId == session->ballpark->mEgo ||
+		effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
+		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
+		!std::isfinite( surfaceRange ) || surfaceRange < 0.0f )
+	{
+		return false;
+	}
+	session->pendingCommand = 5;
+	session->pendingCommandTime = effectiveTime;
+	session->pendingTargetBallId = targetBallId;
+	session->pendingRange = surfaceRange;
 	session->lastCommandTime = effectiveTime;
 	++session->commandCount;
 	return true;

@@ -38,6 +38,7 @@ enum DestinyEmbeddedOrbitPolicy
 // Mirrors DSTBALLMODE for embedded consumers that must not include destiny internals.
 enum DestinyEmbeddedBallMode
 {
+	DESTINY_EMBEDDED_BALL_MODE_FOLLOW = 1,
 	DESTINY_EMBEDDED_BALL_MODE_STOP = 2,
 	DESTINY_EMBEDDED_BALL_MODE_WARP = 3,
 	DESTINY_EMBEDDED_BALL_MODE_RIGID = 11,
@@ -211,6 +212,11 @@ extern "C"
 		const double target[3],
 		double minimumRange,
 		int32_t warpFactor );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedFollow(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime,
+		int64_t targetBallId,
+		float surfaceRange );
 	DESTINY_EMBEDDED_API IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriVectorFunction* Destiny_GetEmbeddedPosition( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedRotation( DestinyEmbeddedSession* session );

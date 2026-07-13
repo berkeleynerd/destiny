@@ -1,0 +1,35 @@
+{
+  "corpus": "pl11d-approach.csv",
+  "unit": "D-08 / PL-11D native approach (client Approach / Keep-at-Range)",
+  "recorded": "2026-07-13",
+  "command": "FollowBall(1, 3, 500.0) issued tick-aligned at t=3s (frame 180 of a 3780-frame, 60fps fixture)",
+  "clientContract": {
+    "approach": "CmdFollowBall(targetID, const.approachRange=50m) — eve/client/script/ui/services/menuSvcExtras/movementFunctions.py",
+    "keepAtRange": "CmdFollowBall(targetID, userRange; default 1000m)",
+    "note": "Both client verbs are the same destiny command; the corpus range 500m is a fixture selection like PL-11B's 2500m orbit."
+  },
+  "fixture": {
+    "ship": { "ballId": 1, "mass": 975000.0, "radius": 35.0, "maxVelocity": 312.0, "agility": 2.87, "speedFraction": 1.0, "position": [0.0, 0.0, -2570.0] },
+    "target": { "ballId": 3, "radius": 35.0, "position": [0.0, 0.0, 0.0], "isFree": false, "isMassive": false },
+    "surfaceRange": 500.0,
+    "centerSetpoint": 570.0
+  },
+  "equations": {
+    "evolveFollow": "goto point = targetPos + (pos - targetPos) * r/dist with r = range + shipRadius + targetRadius, recomputed every tick (Ballpark::EvolveFollow)",
+    "gotoThrust": "maxThrust = friction*speedFraction*maxVel/(mass*agility); inside homing distance d = speedFraction*maxVel*dt, thrust scales by (|delta|^2/d^2)^2 (Ballpark::GotoThrust, missile=false)",
+    "integrator": "PL-11A friction closed form: friction=1e6, effectiveMass=mass*agility, timeFactor=exp(-friction/effectiveMass); terminal velocity = speedFraction*maxVel"
+  },
+  "phases": {
+    "fullThrust": "ticks 1-9 (accelerating toward the setpoint at terminal velocity)",
+    "rangeCrossing": "the center distance crosses the 570 m setpoint near tick 10",
+    "deepestOvershoot": "minimum center distance 37.360883 m (the fixed target is non-massive; no collision)",
+    "settle": "damped return; speed < 1 m/s by ~tick 34, < 0.01 m/s by ~tick 47",
+    "stationKeeping": "mode remains DSTBALL_FOLLOW indefinitely; final center distance 568.299963 m (just inside the setpoint), final speed 9.838e-4 m/s at evolve 62"
+  },
+  "gates": {
+    "corpusReplay": "per-axis Near 1e-5 on position/velocity/acceleration for all 60 samples",
+    "closedForm": "every sample re-derived from its predecessor via the recovered equations at mixed (1e-8 abs, 1e-10 rel) — PL-11A-class gates; magnitudes stay at the 2.5e3 m fixture scale, no warp ULP waiver",
+    "aggregate": "min center in [30,50], final center in [560,580], final speed < 0.01, mode FOLLOW / followBallId 3 / followRange 500 at evolve 62",
+    "determinism": "bit-exact equality across two ego runs, a fixed-observer run, and a run with the PL-12 celestial set present"
+  }
+}
