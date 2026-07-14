@@ -132,17 +132,31 @@ to a live ball, the follower registers in the target's `mFollowers` set,
 and **a missing follow target degrades the ball to DSTBALL_GOTO** rather
 than failing the stream.
 
+## Additions and deletions (source-verified)
+
+`AdditionsAndDeletions` is **not a wire packet** — it is the host-side
+delta builder. From the bubble transition journal (the +1/0/-1 per-ball
+actions `AddToBubble` records and `CopyBubbles` prunes), it clears and
+fills four Python dicts: additions/deletions per bubble (for users who
+stayed in their bubble this tick — the common case the source comment
+calls out for fleet fights) and additions/deletions per player (for users
+who crossed bubbles, computed against their old/new bubble pair). Only
+bubbles containing interactive balls are materialized. Filters: journal
+action +1 appends to the add list, -1 to the delete list; cloaked-ball
+removals are suppressed; adds skip missing, global, and cloaked balls and
+the observer itself. The values are ball-ID lists — the wire bytes for an
+addition are produced separately by `WriteBallsToStream` over those IDs.
+Framing of the pair (ID deltas + ball streams) belongs to the
+`python/destiny/net` layer (next OPEN item).
+
 ## OPEN — remainder of the D-04 unit
 
-1. `AdditionsAndDeletions` packet shape: what `PyAdditionsAndDeletions`
-   emits from the bubble transition journal (add/del lists per bubble)
-   and how `python/destiny/net/server/_parkupdatebatcher.py` frames it.
-3. The `python/destiny/net` layer: server ticker cadence, per-client
+1. The `python/destiny/net` layer: server ticker cadence, per-client
    bubble batching, tick numbering as seen by the client ticker — the
    framing that carries these packets.
-4. RNG inventory: where randomness enters evolution (proximity shuffle
+2. RNG inventory: where randomness enters evolution (proximity shuffle
    et al.) and what seed the recorder must journal.
-5. The recorder itself: the four wire functions currently live in the
+3. The recorder itself: the four wire functions currently live in the
    D-03-gated `Thunkers.cpp` although their cores are Python-free
    (IBlueStream only) — relocate the cores un-gated, expose a
    scripted-scenario recorder on the embedded seam, and pin determinism
