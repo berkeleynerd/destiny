@@ -25,9 +25,9 @@ extern PyObject* Timer_WriteBallsToStream;
 extern ITaskletTimer *TheTimer;
 extern const std::array<int,4> followModes;
 
-#if DESTINY_WITH_PYTHON
-
 static size_t byteCount = 0;
+
+#if DESTINY_WITH_PYTHON
 
 void RaiseBallNotInParkError(const char* callerName, ID ballID)
 {
@@ -2462,6 +2462,8 @@ PyObject* Ballpark::PyScanCone(
 	return addList;
 }
 
+#endif // DESTINY_WITH_PYTHON
+
 bool Ballpark::ReadFullStateFromStream(IBlueStreamPtr s, int partial)
 {
 	int32_t timestamp;
@@ -2507,6 +2509,8 @@ bool Ballpark::ReadFullStateFromStream(IBlueStreamPtr s, int partial)
 	}
 	return false;
 }
+
+#if DESTINY_WITH_PYTHON
 
 void Ballpark::PopulateAddDelForBubble(PyObject *bubble, PyObject *bubbleAddList, PyObject *bubbleDelList)
 {
@@ -2895,6 +2899,8 @@ PyObject* Ballpark::PyAdditionsAndDeletions(PyObject* args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+
+#endif // DESTINY_WITH_PYTHON
 
 Ball* Ballpark::ReadBallFromStream(IBlueStreamPtr s, int partial)
 {
@@ -3377,6 +3383,29 @@ void Ballpark::WriteBallToStream(Ball* b, IBlueStreamPtr s)
 		byteCount += s->Write(&mc->mLocalZ, sizeof(mc->mLocalZ));
 	}
 }
+
+#ifdef DESTINY_EMBEDDED
+size_t Ballpark::DestinyEmbeddedWriteFullState( IBlueStreamPtr s )
+{
+	int32_t timestamp = int32_t( mCurrentTime );
+	char packet = DESTINY_FULLSTATE;
+	s->Seek( 0, ICcpStream::SO_BEGIN );
+	byteCount = s->Write( &packet, sizeof( packet ) );
+	byteCount += s->Write( &timestamp, sizeof( timestamp ) );
+	BallIterator it( &mBalls );
+	Ball* b;
+	while( ( b = it++ ) )
+	{
+		if( b->mId < DSTLOCALBALLS )
+			continue;
+		WriteBallToStream( b, s );
+	}
+	s->Seek( 0, ICcpStream::SO_BEGIN );
+	return byteCount;
+}
+#endif // DESTINY_EMBEDDED
+
+#if DESTINY_WITH_PYTHON
 
 PyObject* Ballpark::PyGetCurrentEgoPos(
 	PyObject* args

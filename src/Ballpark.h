@@ -897,6 +897,7 @@ public://FUNCTIONS
 
 #ifdef DESTINY_EMBEDDED
 	bool DestinyEmbeddedHasRegisteredTicks() const { return mHaveTicks; }
+	size_t DestinyEmbeddedWriteFullState( IBlueStreamPtr s );
 #endif
 
 	Vector3d* GetReferencePoint(Vector3d* out, Be::Time time) override;
