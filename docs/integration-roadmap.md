@@ -38,10 +38,13 @@ do and provide, gate by gate.
 ## Scope and succession notes
 
 - **D-01's Python policy is deliberately narrow.** Trinity continues to
-  initialize CPython because Ballpark still creates legacy Python containers.
-  The embedded target creates no Destiny module, exposes no Python methods,
-  and performs no scheduler, tasklet, `OnTick`, or callback work. Removing the
-  remaining container dependency belongs to D-03/PL-13.
+  initialize CPython because Blue's class registration requires a live
+  interpreter (`BLUE_WITH_PYTHON=1` for ABI parity). The embedded target
+  creates no Destiny module, exposes no Python methods, performs no
+  scheduler, tasklet, `OnTick`, or callback work, and — since D-03 — creates
+  no Python containers: the bubble bookkeeping runs on C++ twins and the
+  archive's CPython imports are pinned to the Blue-ABI whitelist at build
+  time. Removing the interpreter itself is PL-42's charter.
 - **The PL-10 STOP quaternion is a fixture constraint.** Native free-ball
   evolve applies roll-upright behavior even with zero angular velocity, so the
   embedded null test restores the authored quaternion after each evolve.

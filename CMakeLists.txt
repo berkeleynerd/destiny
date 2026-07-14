@@ -150,6 +150,15 @@ if(BUILD_DESTINY_EMBEDDED)
         g_moduleName=g_destinyEmbeddedModuleName
     )
     if(APPLE)
+        # D-03 symbol gate: fail the build itself if the archive imports any
+        # CPython symbol beyond the pinned Blue-ABI whitelist.
+        add_custom_command(TARGET destinyEmbedded POST_BUILD
+            COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/check-embedded-python-symbols.sh
+                $<TARGET_FILE:destinyEmbedded>
+                ${CMAKE_CURRENT_SOURCE_DIR}/tests/data/embedded-python-symbol-whitelist.txt
+            VERBATIM)
+    endif()
+    if(APPLE)
         set_property(TARGET destinyEmbedded APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-nonportable-include-path -Wno-inconsistent-missing-override")
     endif()
 

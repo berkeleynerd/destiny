@@ -38,9 +38,11 @@ visible as the sanctioned import whitelist
    guarded by Blue's own `BLUE_WITH_PYTHON`. Debug/repr plumbing only; never
    reachable on the simulation path.
 
-The executable gate (`DestinyEmbeddedSymbolGate`,
-`tests/check-embedded-python-symbols.sh`) diffs `nm -u` output against the
-whitelist — any new `_Py*` import fails the build's test run.
+The gate (`tests/check-embedded-python-symbols.sh`) diffs `nm -u` output
+against the whitelist and runs as a `POST_BUILD` step of `destinyEmbedded`
+on APPLE — any new `_Py*` import fails the build itself, in every tree that
+builds the archive (it is also registered as ctest `DestinyEmbeddedSymbolGate`
+where embedded testing is configured).
 
 ## Simulation-coupled twins
 
