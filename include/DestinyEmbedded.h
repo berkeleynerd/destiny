@@ -35,6 +35,23 @@ enum DestinyEmbeddedOrbitPolicy
 	DESTINY_EMBEDDED_ORBIT_FRONTIER_NEW = 1,
 };
 
+// The three semantic warp events destiny posts to its host (recovered from
+// the Python thunker surface; see docs/thunker-contract-audit.md). Firing
+// ticks are corpus-gated: activation at the RealWarp tick, deactivation at
+// dropout, exit on the warp-exit path.
+enum DestinyEmbeddedWarpEvent
+{
+	DESTINY_EMBEDDED_WARP_EVENT_ACTIVATING = 0,
+	DESTINY_EMBEDDED_WARP_EVENT_DEACTIVATING = 1,
+	DESTINY_EMBEDDED_WARP_EVENT_EXIT = 2,
+};
+
+typedef void ( *DestinyEmbeddedWarpEventCallback )(
+	int warpEvent,
+	int64_t ballId,
+	int64_t eventTime,
+	void* userData );
+
 // Mirrors DSTBALLMODE for embedded consumers that must not include destiny internals.
 enum DestinyEmbeddedBallMode
 {
@@ -83,6 +100,9 @@ struct DestinyEmbeddedSessionOptions
 	DestinyEmbeddedOrbitPolicy orbitPolicy;
 	int64_t observerBallId;
 	double observerPosition[3];
+	// Optional host callback for the three warp events; null disables.
+	DestinyEmbeddedWarpEventCallback warpEventCallback;
+	void* warpEventUserData;
 };
 
 struct DestinyEmbeddedFixedTargetConfig

@@ -232,6 +232,20 @@ bool AddNewEdenCelestials( DestinyEmbeddedSession* session, std::string& error )
 	return true;
 }
 
+struct WarpEventRecord
+{
+	int event;
+	int64_t ballId;
+	int64_t eventTime;
+};
+std::vector<WarpEventRecord> s_warpEvents;
+
+void CollectWarpEvent( int warpEvent, int64_t ballId, int64_t eventTime, void* userData )
+{
+	( void )userData;
+	s_warpEvents.push_back( { warpEvent, ballId, eventTime } );
+}
+
 bool RunScenario(
 	DestinyEmbeddedReferenceFrame referenceFrame,
 	bool withCelestials,
@@ -260,6 +274,8 @@ bool RunScenario(
 	options.orientationPolicy = DESTINY_EMBEDDED_NATIVE_ORIENTATION;
 	options.referenceFrame = referenceFrame;
 	options.observerBallId = 2;
+	options.warpEventCallback = CollectWarpEvent;
+	s_warpEvents.clear();
 
 	char createError[512] = {};
 	DestinyEmbeddedSession* session = Destiny_CreateEmbeddedSessionWithOptions(
@@ -507,6 +523,36 @@ bool RunScenario(
 	{
 		error = "total warp distance is inconsistent with the commanded leg";
 		return false;
+	}
+	// D-03 warp event contract, measured at recording: a completed warp
+	// fires exactly three events in order — OnActivatingWarp at the RealWarp
+	// tick (mCurrentTime 10, one behind the activation evolve), then
+	// OnDeactivatingWarp at dropout (tick 30), then OnExitWarp from
+	// Ball::SetMode's WARP-exit hook as dropout's Stop flips the mode
+	// (its event time is the historical literal 0, preserved verbatim).
+	{
+		if( s_warpEvents.size() != 3 ||
+			s_warpEvents[0].event != DESTINY_EMBEDDED_WARP_EVENT_ACTIVATING ||
+			s_warpEvents[1].event != DESTINY_EMBEDDED_WARP_EVENT_DEACTIVATING ||
+			s_warpEvents[2].event != DESTINY_EMBEDDED_WARP_EVENT_EXIT ||
+			s_warpEvents[0].ballId != 1 || s_warpEvents[1].ballId != 1 ||
+			s_warpEvents[2].ballId != 1 || s_warpEvents[0].eventTime != 10 ||
+			s_warpEvents[1].eventTime != 30 || s_warpEvents[2].eventTime != 0 )
+		{
+			char detail[256] = {};
+			std::snprintf( detail, sizeof( detail ),
+				"warp event contract failed: count=%zu", s_warpEvents.size() );
+			for( const WarpEventRecord& record : s_warpEvents )
+			{
+				char one[64] = {};
+				std::snprintf( one, sizeof( one ), " [%d ball=%lld t=%lld]", record.event,
+					static_cast<long long>( record.ballId ),
+					static_cast<long long>( record.eventTime ) );
+				std::strncat( detail, one, sizeof( detail ) - std::strlen( detail ) - 1 );
+			}
+			error = detail;
+			return false;
+		}
 	}
 	return true;
 }

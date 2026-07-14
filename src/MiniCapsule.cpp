@@ -31,6 +31,7 @@ MiniCapsule::~MiniCapsule()
 //
 //////////////////////////////////////////////////////////////////////
 
+#if DESTINY_WITH_PYTHON
 PyObject* MiniCapsule::Py__init__(
 	PyObject* args
 	)
@@ -44,3 +45,4 @@ PyObject* MiniCapsule::Py__init__(
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif // DESTINY_WITH_PYTHON

@@ -145,6 +145,7 @@ if(BUILD_DESTINY_EMBEDDED)
             ${CMAKE_CURRENT_SOURCE_DIR}/src
     )
     target_compile_definitions(destinyEmbedded PRIVATE
+        DESTINY_WITH_PYTHON=0
         DESTINY_EMBEDDED=1
         g_moduleName=g_destinyEmbeddedModuleName
     )
@@ -251,6 +252,43 @@ if(BUILD_DESTINY_EMBEDDED)
 		if(BUILD_TESTING)
 			add_test(NAME DestinyEmbeddedCelestialContract COMMAND DestinyEmbeddedCelestialContractTest)
 		endif()
+
+		ccp_add_executable(DestinyEmbeddedSeamTest)
+		target_sources(DestinyEmbeddedSeamTest PRIVATE tests/DestinyEmbeddedSeamTest.cpp)
+		target_include_directories(DestinyEmbeddedSeamTest PRIVATE
+			${CMAKE_CURRENT_SOURCE_DIR}/include
+			${CMAKE_CURRENT_SOURCE_DIR}/src)
+		target_link_libraries(DestinyEmbeddedSeamTest PRIVATE
+			"$<LINK_LIBRARY:WHOLE_ARCHIVE,destinyEmbedded>")
+		if(APPLE)
+			target_link_libraries(DestinyEmbeddedSeamTest PRIVATE "-framework CoreFoundation")
+		endif()
+		if(BUILD_TESTING)
+			add_test(NAME DestinyEmbeddedSeam COMMAND DestinyEmbeddedSeamTest)
+		endif()
+
+		if(BUILD_TESTING AND APPLE)
+			add_test(NAME DestinyEmbeddedSymbolGate
+				COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/check-embedded-python-symbols.sh
+					$<TARGET_FILE:destinyEmbedded>
+					${CMAKE_CURRENT_SOURCE_DIR}/tests/data/embedded-python-symbol-whitelist.txt)
+		endif()
+
+		# Embedded test translation units must see the exact ABI of the
+		# destinyEmbedded archive they link: MapOfBalls and the Ballpark
+		# bubble bookkeeping change layout under these flags.
+		foreach(_embeddedTest IN ITEMS
+			DestinyEmbeddedContractTest
+			DestinyEmbeddedMotionContractTest
+			DestinyEmbeddedOrbitContractTest
+			DestinyEmbeddedWarpContractTest
+			DestinyEmbeddedApproachContractTest
+			DestinyEmbeddedCelestialContractTest
+			DestinyEmbeddedSeamTest)
+			target_compile_definitions(${_embeddedTest} PRIVATE
+				DESTINY_WITH_PYTHON=0
+				DESTINY_EMBEDDED=1)
+		endforeach()
     endif()
 endif()
 

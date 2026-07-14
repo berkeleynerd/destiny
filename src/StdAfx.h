@@ -39,6 +39,14 @@ using std::exception;
 #include "IBluePersist.h"
 
 #include "BlueStatistics.h"
+// D-03 Python seam: destiny's own CPython call surface compiles out when
+// DESTINY_WITH_PYTHON is 0 (the embedded library). Blue keeps hosting the
+// interpreter and BLUE_WITH_PYTHON stays 1 for ABI parity; only destiny's
+// calls are excised (docs/thunker-contract-audit.md).
+#ifndef DESTINY_WITH_PYTHON
+#define DESTINY_WITH_PYTHON 1
+#endif
+
 #include "DestinyEmbeddedInternal.h"
 
               

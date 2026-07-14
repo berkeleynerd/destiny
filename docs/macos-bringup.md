@@ -317,3 +317,35 @@ ball and observes ORBIT mode with the correct target ID. Trinity uses these
 seams to align to the EVE Gate, warp there, align back to the Sun, warp back,
 and enter a 2,500 m surface-range Sun orbit; warp execution remains the D-07
 `Destiny_CommandEmbeddedWarp` to `Ballpark::WarpTo` path.
+
+## D-03 Python seam (2026-07-14)
+
+`DESTINY_WITH_PYTHON` now separates the simulation core from the CPython
+thunker surface (doctrine: `docs/destiny-python-seam.md`). The flag defaults
+to 1 in `src/StdAfx.h`; `destinyEmbedded` builds with it at 0 and its import
+surface is pinned by the executable `DestinyEmbeddedSymbolGate` to a
+15-symbol whitelist whose every entry is Blue-ABI interop, not
+destiny-authored CPython calls (`BLUE_WITH_PYTHON` must stay 1 for
+`Be::ClassInfo` layout parity with `blue.so`).
+
+The excision gates `Thunkers.cpp` whole, every `MAP_METHOD` table, and the
+in-file thunkers of Ball, Ballpark, the mini shapes, Partition, Box, and
+GlobalSettings. Two subsystems were simulation-coupled and received
+statement-mirrored C++ twins instead of stubs: the bubble interactive-count
+bookkeeping (`InDeadBubble` gates Evolve; `GetInteractiveCnt` feeds
+`Partition.cpp`) now runs on `std::unordered_map` under the seam, and the
+keep-alive/journal/subscription surfaces reduce to their count updates
+because their only writers were Python.
+
+Evidence, both ways: seam-off, all seven embedded contract tests green with
+corpus pins byte-identical (warp align 8 / activation 11 / dropout 31 at
+9.058774 AU; approach min-center 37.360883 m, final 568.299963 m) and the
+PL-11A/B/C/D lanes re-derive their pinned trajectory hashes; seam-on, the
+classic bringup tree rebuilds and passes 74/74 tests including the
+interpreter-hosted Python suite. `test_ball`, `test_cleanup`, and
+`test_configure` are ported to `tests/DestinyEmbeddedSeamTest.cpp`
+(mini-shape counts, Blue live-count hygiene across session create/destroy,
+settings-global projection/restore); `test_using_correct_module` is retired.
+Embedded test translation units now compile with `DESTINY_WITH_PYTHON=0` and
+`DESTINY_EMBEDDED=1` so they see the archive's exact ABI (`MapOfBalls` and
+the Ballpark bubble members differ across the seam).

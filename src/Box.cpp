@@ -54,7 +54,9 @@ Box::~Box()
 	mPartition->mLevels[mLevel].erase(mKey);
 	mChildren.clear();
 	balls.clear();
+#if DESTINY_WITH_PYTHON
 	Py_XDECREF(mObject);
+#endif // DESTINY_WITH_PYTHON
 	mHandled = false;
 }
 
@@ -77,13 +79,17 @@ void Box::SetObject(PyObject *object)
 
 	if(mObject)
 	{
+#if DESTINY_WITH_PYTHON
 		Py_DECREF(mObject);
+#endif // DESTINY_WITH_PYTHON
 		mObject = 0;
 	}
 
 	if(object)
 	{
+#if DESTINY_WITH_PYTHON
 		Py_INCREF(object);
+#endif // DESTINY_WITH_PYTHON
 		mObject = object;
 	}
 }

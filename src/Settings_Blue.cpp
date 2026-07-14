@@ -10,10 +10,12 @@ const Be::ClassInfo* GlobalSettings::ExposeToBlue()
 	EXPOSURE_BEGIN( GlobalSettings, "Use this to configure the destiny module" )
 		MAP_INTERFACE( IRoot )
 		MAP_INTERFACE( GlobalSettings )
+#if DESTINY_WITH_PYTHON
 		MAP_METHOD_AS_METHOD( "Apply", ApplyConfiguration, "Pass in an instance of destiny.SettingsConfiguration to configure global settings." );
 		MAP_METHOD_AS_METHOD( "Get", GetConfiguration, "Get the current global settings configuration." );
 		MAP_METHOD_AS_METHOD( "GetDefault", GetDefaultConfiguration, "Get the default global settings configuration." );
 		MAP_METHOD_AS_METHOD( "Reset", ResetConfiguration, "Reset the current global settings configuration to the default values." );
+#endif // DESTINY_WITH_PYTHON
 	EXPOSURE_END()
 }
 
