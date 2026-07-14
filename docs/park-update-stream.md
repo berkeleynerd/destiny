@@ -95,6 +95,26 @@ capsule/box order differs from the flag-bit order).
 
 ## Reader semantics (source-verified)
 
+`ReadBallFromStream(stream, partial)` — verified prefix (Thunkers.cpp:2899):
+
+- **End of stream** is a short read of the 8-byte id (`Read > 0` fails):
+  the record loop terminates and the packet is complete; there is no
+  count field or terminator byte.
+- Fields are read symmetrically to the writer through the free-ball
+  block. The dynamical-orientation quaternion block is read only when the
+  READER's `g_useDynamicalOrientation` is set, confirming the setting is
+  a stream-profile parameter that both ends must share.
+- Balls are **created, not updated**: `AddDynamicallyOrientedBall` under
+  dynamical orientation, `AddOldStyleOrientedBall` otherwise — the
+  reader's setting also selects the creation path. Defaults for fields
+  absent from RIGID/non-free records: mass sentinel `1.0e34`,
+  harmonic -1, corporation/alliance -1, identity rotation.
+- `partial != 1` and the ball is not free: existing mini shapes are
+  destroyed (mini balls individually `RemoveBall`'d, lists cleared)
+  before the stream's shapes are re-read — non-partial reads REPLACE
+  compound collision geometry on non-free balls; `partial = 1` preserves
+  it.
+
 `ReadFullStateFromStream(stream, partial)` adopts the stream timestamp as
 `mCurrentTime`, reads ball records to end of stream, then resolves follow
 topology: for FOLLOW/MISSILE/ORBIT/FORMATION balls, `followId` is resolved
@@ -104,8 +124,9 @@ than failing the stream.
 
 ## OPEN — remainder of the D-04 unit
 
-1. `ReadBallFromStream` field-by-field read path and the `partial` flag
-   semantics (update-in-place vs create; end-of-stream detection).
+1. `ReadBallFromStream` tail: mode-block and mini-shape read paths
+   (expected symmetric to the writer; verification pending), and the
+   remaining `partial` nuances beyond the verified prefix below.
 2. `AdditionsAndDeletions` packet shape: what `PyAdditionsAndDeletions`
    emits from the bubble transition journal (add/del lists per bubble)
    and how `python/destiny/net/server/_parkupdatebatcher.py` frames it.
