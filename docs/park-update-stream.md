@@ -110,10 +110,20 @@ capsule/box order differs from the flag-bit order).
   absent from RIGID/non-free records: mass sentinel `1.0e34`,
   harmonic -1, corporation/alliance -1, identity rotation.
 - `partial != 1` and the ball is not free: existing mini shapes are
-  destroyed (mini balls individually `RemoveBall`'d, lists cleared)
-  before the stream's shapes are re-read — non-partial reads REPLACE
-  compound collision geometry on non-free balls; `partial = 1` preserves
-  it.
+  destroyed (mini balls individually `RemoveBall`'d, capsules and boxes
+  likewise, lists cleared) before the stream's shapes are re-read —
+  non-partial reads REPLACE compound collision geometry on non-free
+  balls; `partial = 1` preserves it.
+- The mode-specific block reads mirror the writer field-for-field
+  (verified through the full mode table); `mEffectStamp` widens from the
+  wire's i32. The mode byte is applied directly after creation, before
+  follow-topology resolution.
+- **Robustness caveat:** an unknown mode byte aborts the record
+  (`return 0`), which the packet loop treats as end of stream — a
+  corrupt record silently truncates the packet rather than failing it.
+  The successor codec should reject, not truncate.
+- Mini-shape blocks read as written: flag-gated, u16 count, fields per
+  shape.
 
 `ReadFullStateFromStream(stream, partial)` adopts the stream timestamp as
 `mCurrentTime`, reads ball records to end of stream, then resolves follow
@@ -124,10 +134,7 @@ than failing the stream.
 
 ## OPEN — remainder of the D-04 unit
 
-1. `ReadBallFromStream` tail: mode-block and mini-shape read paths
-   (expected symmetric to the writer; verification pending), and the
-   remaining `partial` nuances beyond the verified prefix below.
-2. `AdditionsAndDeletions` packet shape: what `PyAdditionsAndDeletions`
+1. `AdditionsAndDeletions` packet shape: what `PyAdditionsAndDeletions`
    emits from the bubble transition journal (add/del lists per bubble)
    and how `python/destiny/net/server/_parkupdatebatcher.py` frames it.
 3. The `python/destiny/net` layer: server ticker cadence, per-client
