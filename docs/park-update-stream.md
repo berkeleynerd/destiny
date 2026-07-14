@@ -1,12 +1,11 @@
-# The Park-Update Stream (D-04) — DRAFT
+# The Park-Update Stream (D-04)
 
 Wire format of destiny's state-synchronization stream, recovered from the
 reference implementation (`Ballpark::WriteBallToStream` /
 `ReadFullStateFromStream`, `src/Thunkers.cpp`) and pinned by the Python
 oracle `python/destiny/test/ballpark/test_stream_read_write.py`. All values
 little-endian, packed in write order with no alignment padding (raw
-`ICcpStream::Write` of each field). Status: packet layouts below are
-source-verified; sections marked OPEN are the remainder of the D-04 unit.
+`ICcpStream::Write` of each field). Status: source-verified end to end; the recorder pins determinism.
 
 ## Packet header
 
@@ -185,11 +184,19 @@ journaled-RNG requirement is satisfied vacuously until a successor
 introduces a generator — at which point the seed goes in the snapshot
 and journal per architecture section 6.
 
-## OPEN — remainder of the D-04 unit
+## The deterministic recorder (source-verified, accepted)
 
-1. The recorder itself: the four wire functions currently live in the
-   D-03-gated `Thunkers.cpp` although their cores are Python-free
-   (IBlueStream only) — relocate the cores un-gated, expose a
-   scripted-scenario recorder on the embedded seam, and pin determinism
-   (same scenario → byte-identical stream, tick numbers + RNG seed in the
-   header of the recording, not the wire packets).
+The wire cores now live un-gated in `src/ParkStream.cpp` (shared by the
+classic thunker wrappers and the embedded seam; their D-03 gating was
+collateral and the embedded target never compiled `Thunkers.cpp` at all).
+`Destiny_WriteEmbeddedFullState(session, buffer, size, &written)` emits a
+`DESTINY_FULLSTATE` packet into a caller buffer through a fixed-buffer
+stream — no Blue factory involvement.
+
+`DestinyEmbeddedRecorderTest` is the scripted-scenario recorder: the
+PL-11A GOTO scenario, one FULLSTATE packet per evolve. Recording
+container: header (magic `0x44503034` "D-04", i64 tick rate 10^7,
+u8 RNG-seed marker = 0 absent per the RNG inventory), then per packet an
+i64 simulation tick, u32 size, and the packet bytes. Determinism is the
+pinned acceptance: two independent runs of the scenario produce
+byte-identical recordings (19 packets, 3,328 bytes).

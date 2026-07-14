@@ -195,6 +195,75 @@ bool DestinyEmbeddedPostEvent(
 	return true;
 }
 
+
+namespace
+{
+// Fixed caller-buffer stream for the embedded recorder: just enough of
+// IBlueStream for the un-gated wire cores (Write/Seek), no Blue factory.
+class EmbeddedByteStream final : public IBlueStream
+{
+public:
+	EmbeddedByteStream( void* buffer, size_t capacity ) :
+		mBuffer( static_cast<char*>( buffer ) ), mCapacity( capacity )
+	{
+	}
+	ptrdiff_t Read( void* dest, ptrdiff_t count ) override
+	{
+		const size_t n = std::min( size_t( count ), mEnd - mPos );
+		std::memcpy( dest, mBuffer + mPos, n );
+		mPos += n;
+		return ptrdiff_t( n );
+	}
+	ptrdiff_t Write( const void* source, size_t count ) override
+	{
+		if( mPos + count > mCapacity )
+		{
+			mOverflow = true;
+			return 0;
+		}
+		std::memcpy( mBuffer + mPos, source, count );
+		mPos += count;
+		mEnd = std::max( mEnd, mPos );
+		return ptrdiff_t( count );
+	}
+	ptrdiff_t Seek( ptrdiff_t distance, SeekOrigin method ) override
+	{
+		if( method == SO_BEGIN )
+			mPos = size_t( distance );
+		else if( method == SO_CURRENT )
+			mPos += size_t( distance );
+		else
+			mPos = mEnd + size_t( distance );
+		return ptrdiff_t( mPos );
+	}
+	ptrdiff_t GetPosition() override { return ptrdiff_t( mPos ); }
+	ptrdiff_t GetSize() override { return ptrdiff_t( mEnd ); }
+	bool LockData( void** data, size_t ) override { *data = mBuffer; return true; }
+	bool UnlockData() override { return true; }
+	const Be::ClassInfo* ClassType() const override { return nullptr; }
+	bool QueryInterface( const Be::IID&, void**, BLUEQIOPT ) override { return false; }
+	void Lock() override {}
+	void Unlock() override {}
+	long GetFlags() override { return 0; }
+	int GetRefCount() const override { return 1; }
+	IRoot* GetRootObject() const override
+	{
+		return const_cast<EmbeddedByteStream*>( this );
+	}
+	bool Overflowed() const { return mOverflow; }
+
+protected:
+	void FinalDelete() override {}
+
+private:
+	char* mBuffer;
+	size_t mCapacity;
+	size_t mPos = 0;
+	size_t mEnd = 0;
+	bool mOverflow = false;
+};
+}
+
 extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSession(
 	const DestinyEmbeddedBallConfig* config,
 	char* error,
@@ -853,4 +922,26 @@ extern "C" bool Destiny_GetEmbeddedDiagnostics(
 		}
 	}
 	return true;
+}
+
+extern "C"
+{
+
+__attribute__( ( visibility( "default" ) ) ) bool Destiny_WriteEmbeddedFullState(
+	DestinyEmbeddedSession* session,
+	void* buffer,
+	size_t bufferSize,
+	size_t* bytesWritten )
+{
+	if( !session || !buffer || !bytesWritten )
+		return false;
+	IEveBallpark* eve = Destiny_GetEmbeddedBallpark( session );
+	if( !eve )
+		return false;
+	EmbeddedByteStream stream( buffer, bufferSize );
+	const size_t written = static_cast<Ballpark*>( eve )
+		->DestinyEmbeddedWriteFullState( IBlueStreamPtr( &stream ) );
+	*bytesWritten = written;
+	return written > 0 && !stream.Overflowed();
+}
 }

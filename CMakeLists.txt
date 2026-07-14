@@ -89,6 +89,7 @@ set(_SOURCES
     src/StaticCollidable.cpp
     src/StaticCollidable.h
     src/StdAfx.cpp
+    src/ParkStream.cpp
     src/Thunkers.cpp
     src/Triangle.cpp
     src/Triangle.h
@@ -262,6 +263,20 @@ if(BUILD_DESTINY_EMBEDDED)
 			add_test(NAME DestinyEmbeddedCelestialContract COMMAND DestinyEmbeddedCelestialContractTest)
 		endif()
 
+		ccp_add_executable(DestinyEmbeddedRecorderTest)
+		target_sources(DestinyEmbeddedRecorderTest PRIVATE tests/DestinyEmbeddedRecorderTest.cpp)
+		target_include_directories(DestinyEmbeddedRecorderTest PRIVATE
+			${CMAKE_CURRENT_SOURCE_DIR}/include
+			${CMAKE_CURRENT_SOURCE_DIR}/src)
+		target_link_libraries(DestinyEmbeddedRecorderTest PRIVATE
+			"$<LINK_LIBRARY:WHOLE_ARCHIVE,destinyEmbedded>")
+		if(APPLE)
+			target_link_libraries(DestinyEmbeddedRecorderTest PRIVATE "-framework CoreFoundation")
+		endif()
+		if(BUILD_TESTING)
+			add_test(NAME DestinyEmbeddedRecorder COMMAND DestinyEmbeddedRecorderTest)
+		endif()
+
 		ccp_add_executable(DestinyEmbeddedSeamTest)
 		target_sources(DestinyEmbeddedSeamTest PRIVATE tests/DestinyEmbeddedSeamTest.cpp)
 		target_include_directories(DestinyEmbeddedSeamTest PRIVATE
@@ -293,7 +308,8 @@ if(BUILD_DESTINY_EMBEDDED)
 			DestinyEmbeddedWarpContractTest
 			DestinyEmbeddedApproachContractTest
 			DestinyEmbeddedCelestialContractTest
-			DestinyEmbeddedSeamTest)
+			DestinyEmbeddedSeamTest
+			DestinyEmbeddedRecorderTest)
 			target_compile_definitions(${_embeddedTest} PRIVATE
 				DESTINY_WITH_PYTHON=0
 				DESTINY_EMBEDDED=1)
