@@ -149,14 +149,33 @@ addition are produced separately by `WriteBallsToStream` over those IDs.
 Framing of the pair (ID deltas + ball streams) belongs to the
 `python/destiny/net` layer (next OPEN item).
 
+## Net framing (source-verified essentials)
+
+The transport unit is the `DoDestinyUpdate` message
+(`net/server/_parkupdatebatcher.py`), sent from the park's `DoPostTick`.
+Its payload is a per-tick list of `(stamp, event)` update actions; the
+batcher asserts every event's stamp equals the tick being flushed
+(`_check_state_timestamp` raises on mismatch) — the stamp is the park
+timestamp, i.e. the same value the packet headers truncate to i32. Ball
+streams ride inside events: `generate_add_balls_update` fills a
+`blue.MemStream` via `WriteBallsToStream` and the resulting
+`DESTINY_BALLS` bytes travel as an event argument.
+
+Fan-out: per-bubble narrowcasts to every client interested in any
+interactive ball in the bubble, plus per-character singlecasts for
+clients with character-specific history (cross-bubble moves). Because
+delivery is not order-guaranteed, each message carries
+`ClientUpdateCountThisTick` (ONE or TWO) so the client knows when the
+tick's Destiny updates are complete before applying dependent gameplay
+updates — an explicit per-tick completion barrier. Cloaked-ball events
+are withheld from other clients at distribution time. Histories clear
+every tick.
+
 ## OPEN — remainder of the D-04 unit
 
-1. The `python/destiny/net` layer: server ticker cadence, per-client
-   bubble batching, tick numbering as seen by the client ticker — the
-   framing that carries these packets.
-2. RNG inventory: where randomness enters evolution (proximity shuffle
+1. RNG inventory: where randomness enters evolution (proximity shuffle
    et al.) and what seed the recorder must journal.
-3. The recorder itself: the four wire functions currently live in the
+2. The recorder itself: the four wire functions currently live in the
    D-03-gated `Thunkers.cpp` although their cores are Python-free
    (IBlueStream only) — relocate the cores un-gated, expose a
    scripted-scenario recorder on the embedded seam, and pin determinism
