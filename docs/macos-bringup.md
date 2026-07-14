@@ -349,3 +349,21 @@ settings-global projection/restore); `test_using_correct_module` is retired.
 Embedded test translation units now compile with `DESTINY_WITH_PYTHON=0` and
 `DESTINY_EMBEDDED=1` so they see the archive's exact ABI (`MapOfBalls` and
 the Ballpark bubble members differ across the seam).
+
+## D-04 wire-format recovery (2026-07-14)
+
+The park-update stream is recovered as a written contract
+(`docs/park-update-stream.md`): one-byte packet type plus i32 timestamp,
+mode-dependent ball records verified in both directions against the
+Python oracle's golden vector, the additions/deletions delta builder, and
+the DoDestinyUpdate framing with its per-tick completion barrier. Two
+findings matter beyond D-04: the dynamical-orientation block is an
+unencoded stream-profile parameter, and a corrupt mode byte silently
+truncates a packet — both flagged for the successor codecs. The RNG
+inventory came back empty: evolution is randomness-free, and the orphaned
+Random class dates to the original mainline import. The wire cores now
+live un-gated in ParkStream.cpp (the embedded target never compiled
+Thunkers.cpp), Destiny_WriteEmbeddedFullState writes FULLSTATE packets
+into caller buffers, and DestinyEmbeddedRecorderTest pins the acceptance:
+byte-identical recordings across independent runs of the PL-11A scenario,
+tick numbers and the seed-absent marker in the recording header.
