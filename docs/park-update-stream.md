@@ -171,11 +171,23 @@ updates — an explicit per-tick completion barrier. Cloaked-ball events
 are withheld from other clients at distribution time. Histories clear
 every tick.
 
+## RNG inventory (source-verified)
+
+Destiny's evolution consumes **no randomness**. The tree carries a
+`Random` class (`src/Random.h/.cpp`, a small LCG utility) with **zero
+call sites anywhere in `src/`** — it is orphaned code. No other
+`rand`-family usage exists in the simulation sources. The proximity
+sensor API exposes a `shuffle` parameter, but nothing in the C++ core
+draws random numbers to honor it. Consequences: the recorder needs no
+RNG seed for destiny as it stands (the recording header reserves the
+field and records it as absent), and the determinism doctrine's
+journaled-RNG requirement is satisfied vacuously until a successor
+introduces a generator — at which point the seed goes in the snapshot
+and journal per architecture section 6.
+
 ## OPEN — remainder of the D-04 unit
 
-1. RNG inventory: where randomness enters evolution (proximity shuffle
-   et al.) and what seed the recorder must journal.
-2. The recorder itself: the four wire functions currently live in the
+1. The recorder itself: the four wire functions currently live in the
    D-03-gated `Thunkers.cpp` although their cores are Python-free
    (IBlueStream only) — relocate the cores un-gated, expose a
    scripted-scenario recorder on the embedded seam, and pin determinism
