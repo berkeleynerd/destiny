@@ -35,6 +35,40 @@ enum DestinyEmbeddedOrbitPolicy
 	DESTINY_EMBEDDED_ORBIT_FRONTIER_NEW = 1,
 };
 
+// The full-state wire shape is controlled by process globals in legacy
+// Destiny. Embedded import names the shape explicitly so validation and
+// deserialization cannot silently disagree about the packet layout.
+enum DestinyEmbeddedWireProfile
+{
+	DESTINY_EMBEDDED_DYNAMIC_ORIENTATION_V1 = 1,
+};
+
+// Stable fail-closed classifications for the timestamp-zero full-state seam.
+// Values 1..16 are the PL-14G evidence contract; INVALID_ARGUMENT covers a
+// caller that cannot be preflighted at all and is not one of those packet or
+// role rejection classes.
+enum DestinyEmbeddedFullStateRejection
+{
+	DESTINY_EMBEDDED_FULL_STATE_ACCEPTED = 0,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_SHORT_PACKET = 1,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_TRAILING_BYTES = 2,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_INVALID_FRAMING = 3,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_UNKNOWN_MODE = 4,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_INVALID_ID = 5,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_DUPLICATE_ID = 6,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_NONFINITE_VALUE = 7,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_OUT_OF_RANGE_VALUE = 8,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_UNSUPPORTED_FLAGS = 9,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_SELF_FOLLOW = 10,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_MISSING_FOLLOW = 11,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_NONZERO_TIMESTAMP = 12,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_CONFLICTING_ROLES = 13,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_MISSING_ROLES = 14,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_INCOMPATIBLE_ROLES = 15,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_UNKNOWN_WIRE_PROFILE = 16,
+	DESTINY_EMBEDDED_FULL_STATE_REJECT_INVALID_ARGUMENT = 17,
+};
+
 // The three semantic warp events destiny posts to its host (recovered from
 // the Python thunker surface; see docs/thunker-contract-audit.md). Firing
 // ticks are corpus-gated: activation at the RealWarp tick, deactivation at
@@ -132,6 +166,58 @@ struct DestinyEmbeddedCelestialState
 	double velocity[3];
 };
 
+// Host-owned roles omitted by Destiny's full-state wire format. Every nonzero
+// role must name a compatible packet ball; object roles are exclusive while
+// ego aliases the role selected by the reference-frame policy. The initial
+// PL-14G contract is a timestamp-zero construction seam; mid-run restoration
+// is intentionally not represented here. observerBallId may declare an
+// inactive observer while the reference frame and ego remain on the primary.
+struct DestinyEmbeddedFullStateDescriptor
+{
+	DestinyEmbeddedWireProfile wireProfile;
+	int64_t solarSystemId;
+	Be::Time initialTimestamp;
+	int64_t primaryBallId;
+	int64_t egoBallId;
+	int64_t observerBallId;
+	int64_t fixedTargetBallId;
+	int64_t celestialBallIds[4];
+	uint32_t celestialBallCount;
+};
+
+// Returned by the side-effect-free packet/role inspector. sideEffectFree is
+// always true for a completed call, including rejection; it is explicit so a
+// host report does not have to infer the construction boundary from an error
+// string. bytesConsumed and parsedBallCount describe the furthest validated
+// prefix when a packet is rejected.
+struct DestinyEmbeddedFullStatePreflightDiagnostics
+{
+	DestinyEmbeddedFullStateRejection rejection;
+	size_t packetSize;
+	size_t bytesConsumed;
+	uint32_t parsedBallCount;
+	int32_t packetTimestamp;
+	bool packetParsed;
+	bool rolesValidated;
+	bool sideEffectFree;
+};
+
+// Process-lifetime counters for the actual full-state creation path. Hosts can
+// take before/after snapshots to prove a rejected packet never acquired the
+// single-session slot, allocated a session/Ballpark, or mutated wire settings.
+// The inspector above intentionally does not alter these counters.
+struct DestinyEmbeddedFullStateCreationDiagnostics
+{
+	uint64_t creationAttemptCount;
+	uint64_t preflightAttemptCount;
+	uint64_t preflightRejectionCount;
+	uint64_t sessionSlotAcquisitionCount;
+	uint64_t sessionAllocationCount;
+	uint64_t globalSettingsMutationCount;
+	uint64_t ballparkAllocationCount;
+	uint64_t successfulCreationCount;
+};
+
 struct DestinyEmbeddedDiagnostics
 {
 	uint64_t directEvolveCount;
@@ -146,6 +232,7 @@ struct DestinyEmbeddedDiagnostics
 	bool frontierOrbitEnabled;
 	int64_t primaryBallId;
 	int64_t egoBallId;
+	int64_t observerBallId;
 	uint64_t commandCount;
 	uint64_t orientationPinCount;
 	Be::Time lastCommandTime;
@@ -248,9 +335,35 @@ extern "C"
 		void* buffer,
 		size_t bufferSize,
 		size_t* bytesWritten );
+	DESTINY_EMBEDDED_API bool Destiny_MeasureEmbeddedFullState(
+		DestinyEmbeddedSession* session,
+		size_t* bytesRequired );
+	DESTINY_EMBEDDED_API DestinyEmbeddedSession* Destiny_CreateEmbeddedSessionFromFullState(
+		const void* packet,
+		size_t packetSize,
+		const DestinyEmbeddedFullStateDescriptor* descriptor,
+		const DestinyEmbeddedSessionOptions* options,
+		char* error,
+		size_t errorSize );
+	DESTINY_EMBEDDED_API bool Destiny_InspectEmbeddedFullState(
+		const void* packet,
+		size_t packetSize,
+		const DestinyEmbeddedFullStateDescriptor* descriptor,
+		const DestinyEmbeddedSessionOptions* options,
+		DestinyEmbeddedFullStatePreflightDiagnostics* diagnostics,
+		char* error,
+		size_t errorSize );
+	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedFullStateCreationDiagnostics(
+		DestinyEmbeddedFullStateCreationDiagnostics* diagnostics );
 	DESTINY_EMBEDDED_API IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriVectorFunction* Destiny_GetEmbeddedPosition( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedRotation( DestinyEmbeddedSession* session );
+	DESTINY_EMBEDDED_API ITriVectorFunction* Destiny_GetEmbeddedBallPosition(
+		DestinyEmbeddedSession* session,
+		int64_t ballId );
+	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedBallRotation(
+		DestinyEmbeddedSession* session,
+		int64_t ballId );
 	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedDiagnostics(
 		DestinyEmbeddedSession* session,
 		DestinyEmbeddedDiagnostics* diagnostics );

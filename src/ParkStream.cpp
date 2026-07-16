@@ -12,6 +12,8 @@
 
 #include <IBluePersist.h>
 
+#include <unordered_set>
+
 static CcpLogChannel_t s_chPark = CCP_LOG_DEFINE_CHANNEL( "BallPark" );
 static CcpLogChannel_t s_chPThunk = CCP_LOG_DEFINE_CHANNEL( "ParkThunkers" );
 
@@ -561,6 +563,37 @@ size_t Ballpark::DestinyEmbeddedWriteFullState( IBlueStreamPtr s )
 		if( b->mId < DSTLOCALBALLS )
 			continue;
 		WriteBallToStream( b, s );
+	}
+	s->Seek( 0, ICcpStream::SO_BEGIN );
+	return byteCount;
+}
+
+size_t Ballpark::DestinyEmbeddedWriteFullStateOrdered(
+	IBlueStreamPtr s,
+	const ID* ballIds,
+	size_t ballCount )
+{
+	int32_t timestamp = int32_t( mCurrentTime );
+	char packet = DESTINY_FULLSTATE;
+	s->Seek( 0, ICcpStream::SO_BEGIN );
+	byteCount = s->Write( &packet, sizeof( packet ) );
+	byteCount += s->Write( &timestamp, sizeof( timestamp ) );
+	std::unordered_set<ID> writtenIds;
+	for( size_t i = 0; i < ballCount; ++i )
+	{
+		Ball* ball = mBalls[ballIds[i]];
+		if( !ball || ball->mId < DSTLOCALBALLS )
+			continue;
+		WriteBallToStream( ball, s );
+		writtenIds.insert( ball->mId );
+	}
+	BallIterator remaining( &mBalls );
+	Ball* ball = nullptr;
+	while( ( ball = remaining++ ) )
+	{
+		if( ball->mId < DSTLOCALBALLS || writtenIds.find( ball->mId ) != writtenIds.end() )
+			continue;
+		WriteBallToStream( ball, s );
 	}
 	s->Seek( 0, ICcpStream::SO_BEGIN );
 	return byteCount;
