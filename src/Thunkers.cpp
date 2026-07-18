@@ -882,68 +882,7 @@ PyObject* Ballpark::PyLaunchMissile(
 		return 0;
 	}
 
-    ID ownerIDCheck = ownerID;
-    if(ownerID < 0)
-        ownerIDCheck = -ownerID;
-
-	Ball *launcherBall = mBalls[ownerIDCheck];
-	Ball *targetBall = 0;
-
-	if(!launcherBall)
-	{
-		//PyErr_SetString(PyExc_RuntimeError, "BallNotInPark");
-        Py_RETURN_NONE;
-	}
-
-    if(dstID!=ownerID)
-        targetBall = mBalls[dstID];
-    
-	double maxVelocity = 0.0;
-	Vector3d ps = launcherBall->mNewPos;
-	Vector3d v0;
-
-    if(targetBall && aimedLaunch==1 && !targetBall->isCloaked)
-	{
-        // For aimed missiles, we instruct them to in the direction of the target
-        Vector3d pt = targetBall->mNewPos;
-        v0 = pt - ps;
-		v0.Normalize();
-	}
-	else
-	{
-        // For normal missiles, we give them an initial velocity in direction of the launcher
-        Vector3d vs =  launcherBall->mNewVel;
-        maxVelocity = launcherBall->mMaxVel;
-        Vector3d direction = vs;
-		direction.Normalize();
-
-        // If launcher is at a standstill, get the direction of the launcher
-        if(direction.LengthSq()==0.0)
-		{
-			Vector3 v( 0.0f, 0.0f, -1.0f );
-			launcherBall->GetRotatedVector(v);
-            direction = Vector3d(v);
-		}
-
-		v0 = vs +std::max(150.0, maxVelocity)*direction;
-	}
-
-    if(massive)
-        SetBallMassive(srcID, 1);
-
-	SetBallPosition(srcID, ps.x, ps.y, ps.z);
-	SetBallVelocity(srcID, v0.x, v0.y, v0.z);
-
-    if(targetBall && targetBall->isCloaked)
-        Py_RETURN_NONE;
-
-    if(!targetBall)
-        if(maxVelocity > 0.0)
-			GotoDirection(srcID, v0.x, v0.y, v0.z);
-        else
-            Py_RETURN_NONE;
-    else
-		MissileFollow(srcID, dstID, ownerID);
+	LaunchMissile( srcID, dstID, ownerID, aimedLaunch != 0, massive != 0 );
 
     Py_RETURN_NONE;
 }

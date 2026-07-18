@@ -3902,6 +3902,66 @@ void Ballpark::MissileFollow(
     target->mFollowers.insert(missile->mId);
 }
 
+bool Ballpark::LaunchMissile(
+	const ID& srcId,
+	const ID& dstId,
+	const ID& ownerId,
+	bool aimedLaunch,
+	bool massive )
+{
+	if( dstId < 0 )
+		return false;
+
+	const ID ownerIdCheck = ownerId < 0 ? -ownerId : ownerId;
+	Ball* missile = mBalls[srcId];
+	Ball* launcher = mBalls[ownerIdCheck];
+	Ball* target = dstId != ownerId ? mBalls[dstId] : nullptr;
+	if( !missile || !launcher )
+		return false;
+
+	const Vector3d launchPosition = launcher->mNewPos;
+	Vector3d launchVelocity;
+	double maximumVelocity = 0.0;
+	if( target && aimedLaunch && !target->isCloaked )
+	{
+		launchVelocity = target->mNewPos - launchPosition;
+		if( launchVelocity.LengthSq() <= 0.0 )
+			return false;
+		launchVelocity.Normalize();
+	}
+	else
+	{
+		const Vector3d sourceVelocity = launcher->mNewVel;
+		maximumVelocity = launcher->mMaxVel;
+		Vector3d direction = sourceVelocity;
+		direction.Normalize();
+		if( direction.LengthSq() == 0.0 )
+		{
+			Vector3 forward( 0.0f, 0.0f, -1.0f );
+			launcher->GetRotatedVector( forward );
+			direction = Vector3d( forward );
+		}
+		launchVelocity = sourceVelocity + std::max( 150.0, maximumVelocity ) * direction;
+	}
+
+	if( massive )
+		SetBallMassive( srcId, 1 );
+	SetBallPosition( srcId, launchPosition.x, launchPosition.y, launchPosition.z );
+	SetBallVelocity( srcId, launchVelocity.x, launchVelocity.y, launchVelocity.z );
+	if( target && target->isCloaked )
+		return false;
+	if( !target )
+	{
+		if( maximumVelocity <= 0.0 )
+			return false;
+		GotoDirection( srcId, launchVelocity.x, launchVelocity.y, launchVelocity.z );
+		return true;
+	}
+	MissileFollow( srcId, dstId, ownerId );
+	return missile->mMode == DSTBALL_MISSILE && missile->mFollowId == dstId &&
+		missile->mOwnerId == ownerId;
+}
+
 //---------------------------------------------------------------------------------------
 // FollowBall make src ball follow dst ball within a given range
 //---------------------------------------------------------------------------------------
