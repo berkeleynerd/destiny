@@ -879,14 +879,18 @@ Ball* ResolveCommandTarget(
 	return ( ( allowFixed && fixed ) || ( allowCelestial && IsCelestialRole( session, ballId ) ) ) ? ball : nullptr;
 }
 
-void InitializeEmbeddedPrimaryHistory( DestinyEmbeddedSession* session )
+void InitializeEmbeddedBallHistory(
+	DestinyEmbeddedSession* session,
+	ClientBall* ball )
 {
-	ClientBall* ball = session->ball;
-	session->authoredRotation = ball->mNewRot;
+	ball->mOldRot = ball->mNewRot;
 	ball->mLastRot = ball->mNewRot;
 	ball->mLastSpeed = Quaternion( 0.0f, 0.0f, 0.0f, 0.0f );
+	ball->mOldAngVel = ball->mNewAngVel;
 	ball->mLastAngVel = ball->mNewAngVel;
+	ball->mOldPos = ball->mNewPos;
 	ball->mLastPos = ball->mNewPos;
+	ball->mOldVel = ball->mNewVel;
 	ball->mLastVel = ball->mNewVel;
 	ball->mDeltaPos = Vector3d( 0.0, 0.0, 0.0 );
 	ball->mLastG = Vector3d( 0.0, 0.0, 0.0 );
@@ -897,6 +901,12 @@ void InitializeEmbeddedPrimaryHistory( DestinyEmbeddedSession* session )
 	ball->mNewTime = 0;
 	ball->mRotUpdateTime = 0;
 	ball->mPosUpdateTime = 0;
+}
+
+void InitializeEmbeddedPrimaryHistory( DestinyEmbeddedSession* session )
+{
+	session->authoredRotation = session->ball->mNewRot;
+	InitializeEmbeddedBallHistory( session, session->ball );
 }
 }
 
@@ -1458,6 +1468,7 @@ extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSessionFromFullState(
 		{
 			return fail( "Full-state runtime inventory diverged from preflight validation" );
 		}
+		InitializeEmbeddedBallHistory( session, static_cast<ClientBall*>( actual ) );
 		session->fullStateOrder.push_back( expectedBall.id );
 	}
 
@@ -1653,6 +1664,68 @@ extern "C" bool Destiny_AddEmbeddedFixedTarget(
 		return false;
 	}
 	session->fixedTargetRoleId = config->ballId;
+	return true;
+}
+
+extern "C" bool Destiny_AddEmbeddedDynamicBall(
+	DestinyEmbeddedSession* session,
+	const DestinyEmbeddedBallConfig* config,
+	char* error,
+	size_t errorSize )
+{
+	if( error && errorSize )
+		error[0] = '\0';
+	if( !session || !config || !IsFinite( *config ) || !config->isFree ||
+		config->ballId == 0 || config->solarSystemId != session->ballpark->mSolarsystemID ||
+		session->directEvolveCount != 0 || session->commandCount != 0 ||
+		FindEmbeddedBall( session, config->ballId ) )
+	{
+		SetError(
+			error,
+			errorSize,
+			"Embedded Destiny requires a finite, free, unique STOP ball in the active system before advance or commands" );
+		return false;
+	}
+
+	Ball* ball = session->ballpark->AddDynamicallyOrientedBall(
+		config->ballId,
+		config->mass,
+		config->radius,
+		config->maximumVelocity,
+		config->maximumAngularVelocity,
+		config->isFree,
+		config->isGlobal,
+		config->isMassive,
+		config->isInteractive,
+		config->isSpaceJunk,
+		config->position[0],
+		config->position[1],
+		config->position[2],
+		config->velocity[0],
+		config->velocity[1],
+		config->velocity[2],
+		config->rotation[0],
+		config->rotation[1],
+		config->rotation[2],
+		config->rotation[3],
+		config->angularVelocity[0],
+		config->angularVelocity[1],
+		config->angularVelocity[2],
+		config->agility,
+		config->rotationalAgility,
+		config->speedFraction );
+	if( !ball || ball->mMode != DSTBALL_STOP )
+	{
+		SetError( error, errorSize, "Failed to add embedded Destiny dynamic STOP ball" );
+		return false;
+	}
+	session->ballpark->SetBallRotation(
+		config->ballId,
+		config->rotation[0],
+		config->rotation[1],
+		config->rotation[2],
+		config->rotation[3] );
+	InitializeEmbeddedBallHistory( session, static_cast<ClientBall*>( ball ) );
 	return true;
 }
 
@@ -1913,6 +1986,37 @@ extern "C" ITriQuaternionFunction* Destiny_GetEmbeddedBallRotation(
 {
 	Ball* ball = FindEmbeddedBall( session, ballId );
 	return ball ? static_cast<ITriQuaternionFunction*>( static_cast<ClientBall*>( ball ) ) : nullptr;
+}
+
+extern "C" bool Destiny_GetEmbeddedBallState(
+	DestinyEmbeddedSession* session,
+	int64_t ballId,
+	DestinyEmbeddedBallState* state )
+{
+	if( !session || !state )
+		return false;
+	Ball* ball = FindEmbeddedBall( session, ballId );
+	if( !ball )
+		return false;
+	*state = {};
+	state->ballId = ball->mId;
+	state->mode = static_cast<int32_t>( ball->mMode );
+	state->flags = ( ball->isFree ? DSTBALL_ISFREE : 0 ) |
+		( ball->isGlobal ? DSTBALL_ISGLOBAL : 0 ) |
+		( ball->isMassive ? DSTBALL_ISMASSIVE : 0 ) |
+		( ball->isInteractive ? DSTBALL_ISINTERACTIVE : 0 ) |
+		( ball->isSpaceJunk ? DSTBALL_ISSPACEJUNK : 0 );
+	state->radius = ball->mRadius;
+	for( size_t axis = 0; axis < 3; ++axis )
+	{
+		state->position[axis] = ( &ball->mNewPos.x )[axis];
+		state->velocity[axis] = ( &ball->mNewVel.x )[axis];
+	}
+	state->rotation[0] = ball->mNewRot.x;
+	state->rotation[1] = ball->mNewRot.y;
+	state->rotation[2] = ball->mNewRot.z;
+	state->rotation[3] = ball->mNewRot.w;
+	return true;
 }
 
 extern "C" bool Destiny_GetEmbeddedDiagnostics(

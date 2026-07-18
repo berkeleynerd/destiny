@@ -166,6 +166,20 @@ struct DestinyEmbeddedCelestialState
 	double velocity[3];
 };
 
+// Generic read-only simulation state for any packet ball. flags uses the
+// public BALLFLAGS bit layout without requiring embedded hosts to include
+// Destiny's internal constants header.
+struct DestinyEmbeddedBallState
+{
+	int64_t ballId;
+	int32_t mode;
+	uint32_t flags;
+	float radius;
+	double position[3];
+	double velocity[3];
+	float rotation[4];
+};
+
 // Host-owned roles omitted by Destiny's full-state wire format. Every nonzero
 // role must name a compatible packet ball; object roles are exclusive while
 // ego aliases the role selected by the reference-frame policy. The initial
@@ -286,6 +300,11 @@ extern "C"
 		size_t errorSize );
 	DESTINY_EMBEDDED_API void Destiny_DestroyEmbeddedSession( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session, Be::Time simulationTime );
+	DESTINY_EMBEDDED_API bool Destiny_AddEmbeddedDynamicBall(
+		DestinyEmbeddedSession* session,
+		const DestinyEmbeddedBallConfig* config,
+		char* error,
+		size_t errorSize );
 	DESTINY_EMBEDDED_API bool Destiny_AddEmbeddedFixedTarget(
 		DestinyEmbeddedSession* session,
 		const DestinyEmbeddedFixedTargetConfig* config,
@@ -364,6 +383,10 @@ extern "C"
 	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedBallRotation(
 		DestinyEmbeddedSession* session,
 		int64_t ballId );
+	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedBallState(
+		DestinyEmbeddedSession* session,
+		int64_t ballId,
+		DestinyEmbeddedBallState* state );
 	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedDiagnostics(
 		DestinyEmbeddedSession* session,
 		DestinyEmbeddedDiagnostics* diagnostics );
