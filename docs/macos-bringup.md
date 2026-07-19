@@ -370,3 +370,59 @@ Thunkers.cpp), Destiny_WriteEmbeddedFullState writes FULLSTATE packets
 into caller buffers, and DestinyEmbeddedRecorderTest pins the acceptance:
 byte-identical recordings across independent runs of the PL-11A scenario,
 tick numbers and the seed-absent marker in the recording header.
+
+## D-09 deterministic two-ball combat state (2026-07-18)
+
+PL-C0 needs the second ship to be an ordinary Destiny ball, not a celestial or
+fixed navigation role. `Destiny_AddEmbeddedDynamicBall` now accepts the same
+finite configuration shape as the primary fixture and adds a unique free STOP
+ball only before any advance or command. It rejects zero/duplicate IDs,
+non-STOP or fixed/global configurations, cross-system identities, and late
+mutation. `Destiny_GetEmbeddedBallState` exposes mode, flags, radius,
+position, velocity, and rotation for any live ball, while the existing generic
+curve lookup supplies each visual's position and rotation functions.
+
+Combat Rehearsal revealed that the full-state importer initialized
+interpolation/history fields only for the primary ball. A packet-born Venture
+stored at `(0,0,5000)` consequently presented a curve that interpolated from
+the origin for roughly two seconds. The deterministic initializer is now
+applied to every parsed ball immediately after import, copying its current
+position, velocity, rotation, and angular velocity into the old/new/last
+history fields with the session timestamp. The primary helper delegates to the
+same implementation, so the older one-ball contract is unchanged.
+
+`DestinyEmbeddedMultiBallContractTest` proves two STOP ships, distinct curve
+identity and values at timestamp zero, one frame, and frame 119, rejection of
+duplicate/cross-system/late additions, byte equality for direct write → fresh
+read → write, and matching first two evolves. The accepted PL-C0 record/replay
+lanes consume that exact packet; role metadata remains application-side and is
+not invented in the wire format.
+
+The focused contract and normal full build pass, with all 85 CTest entries
+green. A forced repository-wide `CMAKE_COMPILE_WARNING_AS_ERROR=ON` build is
+still blocked by pre-existing Windows `%I64d` log formats and unrelated legacy
+warnings in `Ball.cpp`, `Ballpark.cpp`, `Box.cpp`, and `Thunkers.cpp`; it fails
+before reaching the PL-C0 additions. That baseline cleanup is intentionally
+not folded into the multi-ball contract.
+
+## D-10 native embedded missile lifecycle (2026-07-18)
+
+PL-C1 promotes the Python `LaunchMissile` thunker body into a reusable
+`Ballpark::LaunchMissile` operation and exposes the same path to an embedded
+host. `Destiny_CommandEmbeddedLaunchMissile` queues one ordinary late ball for
+the exact next native tick, records owner and target identity, and enters
+`DSTBALL_MISSILE` without changing the initial two-ship packet. The ball keeps
+the client contract's 800 ms straight-flight phase before native homing. First
+target contact and expiry are reported independently; only a terminal embedded
+missile may be removed.
+
+`DestinyEmbeddedMissileContractTest` fires type-210 fixture values from ball 1
+to ball 2 at 5,000 m, observes owner 1 / target 2, straight flight followed by
+homing, collision before the 5,000 ms lifetime, guarded removal, and an
+independent slow-missile expiry. Reimporting the original two-ball snapshot and
+replaying the command produces byte-identical missile state samples and the
+same collision tick. Combat Rehearsal consumes this as trajectory authority;
+Swift owns ammunition and the 16-second launcher cycle, while damage remains
+deferred to PL-C2. The incremental full build succeeds and all 86 CTest
+entries pass when the focused vcpkg Python home is supplied to the embedded
+test executables; the older repository-wide warning baseline is unchanged.

@@ -94,6 +94,7 @@ enum DestinyEmbeddedBallMode
 	DESTINY_EMBEDDED_BALL_MODE_STOP = 2,
 	DESTINY_EMBEDDED_BALL_MODE_WARP = 3,
 	DESTINY_EMBEDDED_BALL_MODE_ORBIT = 4,
+	DESTINY_EMBEDDED_BALL_MODE_MISSILE = 5,
 	DESTINY_EMBEDDED_BALL_MODE_RIGID = 11,
 };
 
@@ -164,6 +165,45 @@ struct DestinyEmbeddedCelestialState
 	float radius;
 	double position[3];
 	double velocity[3];
+};
+
+// Generic read-only simulation state for any packet ball. flags uses the
+// public BALLFLAGS bit layout without requiring embedded hosts to include
+// Destiny's internal constants header.
+struct DestinyEmbeddedBallState
+{
+	int64_t ballId;
+	int32_t mode;
+	uint32_t flags;
+	float radius;
+	double position[3];
+	double velocity[3];
+	float rotation[4];
+};
+
+// A late missile is deliberately outside the initial full-state snapshot.
+// The host journals this configuration with its fire command and recreates
+// the ball at the same native tick during replay.
+struct DestinyEmbeddedMissileConfig
+{
+	DestinyEmbeddedBallConfig ball;
+	Be::Time lifetime;
+};
+
+struct DestinyEmbeddedMissileState
+{
+	DestinyEmbeddedBallState ball;
+	int64_t ownerBallId;
+	int64_t targetBallId;
+	Be::Time launchTime;
+	Be::Time lifetime;
+	Be::Time firstCollisionTime;
+	int64_t firstCollisionBallId;
+	bool active;
+	bool initialStraightFlight;
+	bool collided;
+	bool expired;
+	bool removed;
 };
 
 // Host-owned roles omitted by Destiny's full-state wire format. Every nonzero
@@ -286,6 +326,11 @@ extern "C"
 		size_t errorSize );
 	DESTINY_EMBEDDED_API void Destiny_DestroyEmbeddedSession( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session, Be::Time simulationTime );
+	DESTINY_EMBEDDED_API bool Destiny_AddEmbeddedDynamicBall(
+		DestinyEmbeddedSession* session,
+		const DestinyEmbeddedBallConfig* config,
+		char* error,
+		size_t errorSize );
 	DESTINY_EMBEDDED_API bool Destiny_AddEmbeddedFixedTarget(
 		DestinyEmbeddedSession* session,
 		const DestinyEmbeddedFixedTargetConfig* config,
@@ -330,6 +375,21 @@ extern "C"
 		Be::Time effectiveTime,
 		int64_t targetBallId,
 		float surfaceRange );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedLaunchMissile(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime,
+		const DestinyEmbeddedMissileConfig* config,
+		int64_t ownerBallId,
+		int64_t targetBallId,
+		bool aimedLaunch,
+		bool massive );
+	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedMissileState(
+		DestinyEmbeddedSession* session,
+		int64_t missileBallId,
+		DestinyEmbeddedMissileState* state );
+	DESTINY_EMBEDDED_API bool Destiny_RemoveEmbeddedMissile(
+		DestinyEmbeddedSession* session,
+		int64_t missileBallId );
 	DESTINY_EMBEDDED_API bool Destiny_WriteEmbeddedFullState(
 		DestinyEmbeddedSession* session,
 		void* buffer,
@@ -364,6 +424,10 @@ extern "C"
 	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedBallRotation(
 		DestinyEmbeddedSession* session,
 		int64_t ballId );
+	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedBallState(
+		DestinyEmbeddedSession* session,
+		int64_t ballId,
+		DestinyEmbeddedBallState* state );
 	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedDiagnostics(
 		DestinyEmbeddedSession* session,
 		DestinyEmbeddedDiagnostics* diagnostics );
