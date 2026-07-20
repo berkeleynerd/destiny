@@ -9,6 +9,13 @@ Perforce branch.
 
 Once that is set up, building can be done using the usual CMake work flow
 
+## Continuous integration
+
+Pull requests run the standalone macOS build without installing into Trinity's
+monolith layout. The governed final gate repeats that build for the queued
+candidate, while dependency-graph integration remains the responsibility of
+the Promised Land superbuild.
+
 ## 📄 License and Legal Notices
 
 © 2026 CCP Games
