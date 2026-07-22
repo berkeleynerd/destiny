@@ -886,6 +886,10 @@ public://FUNCTIONS
 		float unit
 		) override {mSomeWeirdHackToFixSomething = unit;};
 
+#ifdef DESTINY_EMBEDDED
+	bool DestinyEmbeddedHasRegisteredTicks() const { return mHaveTicks; }
+#endif
+
 	Vector3d* GetReferencePoint(Vector3d* out, Be::Time time) override;
 
     void EntityWarpIn(const ID& srcId, double x, double y, double z, int warpFactor);

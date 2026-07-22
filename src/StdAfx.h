@@ -39,6 +39,7 @@ using std::exception;
 #include "IBluePersist.h"
 
 #include "BlueStatistics.h"
+#include "DestinyEmbeddedInternal.h"
 
               
 

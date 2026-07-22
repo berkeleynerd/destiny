@@ -2,6 +2,10 @@
 
 include(CMakeFindDependencyMacro)
 
+find_dependency(carbon-blue CONFIG REQUIRED)
+find_dependency(carbon-core CONFIG REQUIRED)
+find_dependency(carbon-math CONFIG REQUIRED)
+
 # This file is generated automatically by cmake as part of the install step
 include(${CMAKE_CURRENT_LIST_DIR}/carbon-destiny.cmake)
 
@@ -34,5 +38,3 @@ include(${CMAKE_CURRENT_LIST_DIR}/carbon-destiny.cmake)
 # find_dependency(b CONFIG NO_CMAKE_PATH REQUIRED)
 # find_dependency(c CONFIG NO_CMAKE_PATH REQUIRED)
 #
-
-find_dependency(carbon-blueexposure CONFIG REQUIRED)

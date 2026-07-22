@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <array>
 
+#ifndef DESTINY_EMBEDDED
 PyObject* Timer_ResolveBubbleConflicts;
 PyObject* Timer_HandleProximities;
 PyObject* Timer_InsertBallInBoxes;
@@ -35,6 +36,9 @@ PyObject* Timer_WriteBallsToStream;
 
 ITaskletTimer *TheTimer = PyOS->GetTaskletTimer();
 #define TASKLET(A) AutoTasklet _at(TheTimer, A)
+#else
+#define TASKLET(A) do { } while( false )
+#endif
 
 PyObject *Plus;
 PyObject *Zero;
@@ -44,7 +48,9 @@ PyObject *Minus;
 static CcpLogChannel_t s_chPark = CCP_LOG_DEFINE_CHANNEL( "BallPark" );
 static CcpLogChannel_t s_chPStat = CCP_LOG_DEFINE_CHANNEL( "ParkStats" );
 
+#ifndef DESTINY_EMBEDDED
 BLUE_DEFINE_INTERFACE( IEveBallpark );
+#endif
 
 const char* TICK_EVOLVE = "Destiny::Tick";
 #define SIGNUM(X) (X>=0.0?1.0:-1.0)
@@ -127,6 +133,7 @@ Ballpark::Ballpark(IRoot* lockobj) :
 
     if (ballparkCounter == 0)
     {   // these strings are really static and we make sure that they are only allocated one time
+#ifndef DESTINY_EMBEDDED
         Timer_ResolveBubbleConflicts = PyUnicode_FromString("Destiny::ResolveBubbleConflicts");
         Timer_HandleProximities = PyUnicode_FromString("Destiny::HandleProximities");
         Timer_InsertBallInBoxes = PyUnicode_FromString("Destiny::InsertBallInBoxes");
@@ -138,6 +145,7 @@ Ballpark::Ballpark(IRoot* lockobj) :
         Timer_WarpDistance = PyUnicode_FromString("Destiny::WarpDistance");
         Timer_CalculateYawPitchRoll = PyUnicode_FromString("Destiny::CalculateYawPitchRoll");
         Timer_WriteBallsToStream = PyUnicode_FromString("Destiny::WriteBallsToStream");
+#endif
         Plus  = PyLong_FromLong(1);
         Zero  = PyLong_FromLong(0);
         Minus = PyLong_FromLong(-1);
@@ -161,6 +169,7 @@ Ballpark::~Ballpark()
     if (ballparkCounter == 0)
     {   // these strings are really static and we have to make sure they are only
         // deallocated when ALL ballparks are gone.
+#ifndef DESTINY_EMBEDDED
         Py_DECREF(Timer_ResolveBubbleConflicts);
         Py_DECREF(Timer_HandleProximities);
         Py_DECREF(Timer_InsertBallInBoxes);
@@ -171,6 +180,7 @@ Ballpark::~Ballpark()
         Py_DECREF(Timer_GetBallIdsInRange);
         Py_DECREF(Timer_WarpDistance);
         Py_DECREF(Timer_CalculateYawPitchRoll);
+#endif
         Py_DECREF(Plus);
         Py_DECREF(Zero);
         Py_DECREF(Minus);
@@ -222,6 +232,10 @@ void Ballpark::OnTick(
     void* cookie
     )
 {
+#ifdef DESTINY_EMBEDDED
+	DestinyEmbeddedRecordOnTick();
+	return;
+#endif
 	BeTimer timer = BeTimer();
 
     // This is the delta since I was last called (the first time round it equals timestamp)
@@ -287,7 +301,7 @@ void Ballpark::OnTick(
             }
             */
 
-            if (!PyOS->SendEvent(
+            if (!DESTINY_PY_SEND_EVENT(
                 (IEveBallpark*)this, "Destiny::DoPreTick",
                 "DoPreTick", NULL, "(i)", mCurrentTime
                 ))
@@ -312,7 +326,7 @@ void Ballpark::OnTick(
 
             //CCP_LOG_CH( s_chPStat,"[%I64d] Total Evolve[%d]: %f", mSolarsystemID, mCurrentTime, timer.GetTime()/10000.0);
 
-            if (!PyOS->SendEvent(
+            if (!DESTINY_PY_SEND_EVENT(
                 (IEveBallpark*)this, "Destiny::DoPostTick",
                 "DoPostTick", NULL, "(i)", mCurrentTime
                 ))
@@ -924,7 +938,7 @@ Vector3d Ballpark::EvolveWarp(Ball* ball)
     //CCP_LOGWARN_CH( s_chPark,"... velDir (%f, %f, %f)", velDir.x, velDir.y, velDir.z);
     if( ball->IsAlignedForWarp())
     {
-        if (!PyOS->PostEvent(
+        if (!DESTINY_PY_POST_EVENT(
             (IEveBallpark*)this, "Destiny::OnActivatingWarp",
             "OnActivatingWarp", "Li", ball->mId, mCurrentTime
             ))
@@ -3012,6 +3026,10 @@ void Ballpark::Potential(Ball *me, Ball *other, int recursionDepth)
 #pragma region Ballpark start and pause
 void Ballpark::Start()
 {
+#ifdef DESTINY_EMBEDDED
+    DestinyEmbeddedRecordStart();
+	return;
+#endif
     // If this is the first time we are called
     // then register for evolution ticks.
     if (!mHaveTicks)
@@ -4105,7 +4123,7 @@ void Ballpark::WarpTo(
     {
         // Distance too small. Do a goto point instead
         GotoPoint(ball,Vector3d(x,y,z));
-        if (!PyOS->PostEvent((IEveBallpark*)this, "Destiny::OnExitWarp", "OnExitWarp", "Li", ball->mId, 1))
+        if (!DESTINY_PY_POST_EVENT((IEveBallpark*)this, "Destiny::OnExitWarp", "OnExitWarp", "Li", ball->mId, 1))
         {
             PyOS->PyError();
         }
@@ -4320,7 +4338,7 @@ double Ballpark::WarpDistance(Ball *ball, Vector3d& p, Vector3d& v, double t, bo
         // (This ensures that very fast ships still spend a bit of time in the end-warp phase before they become active/targetable)
         if (speed < std::min(ball->mMaxVel / 2.0, 100.0) && !interpolating)
         {
-            if (!isMaster && !PyOS->PostEvent(
+            if (!isMaster && !DESTINY_PY_POST_EVENT(
                 (IEveBallpark*)this, "Destiny::OnDeactivatingWarp",
                 "OnDeactivatingWarp", "Li", ball->mId, mCurrentTime
                 ))
@@ -4345,7 +4363,7 @@ double Ballpark::WarpDistance(Ball *ball, Vector3d& p, Vector3d& v, double t, bo
         
         if (!interpolating)
         {
-            if (!isMaster && !PyOS->PostEvent(
+            if (!isMaster && !DESTINY_PY_POST_EVENT(
                 (IEveBallpark*)this, "Destiny::OnDeactivatingWarp",
                 "OnDeactivatingWarp", "Li", ball->mId, mCurrentTime
                 ))
@@ -4399,7 +4417,7 @@ void Ballpark::EntityWarpIn(const ID& srcId, double x, double y, double z, int w
     //CCP_LOG_CH( s_chPark,"EntityWarpIn: The length between goto and pos is %.12f km", ball->mLastCollision/1000.0);
 
     //CCP_LOG_CH( s_chPark,"About to activate warp %I64d",ball->mId);
-    if (isMaster && !PyOS->PostEvent(
+    if (isMaster && !DESTINY_PY_POST_EVENT(
         (IEveBallpark*)this, "Destiny::OnActivatingWarp",
         "OnActivatingWarp", "Li", ball->mId, mCurrentTime))
     {
@@ -5541,7 +5559,7 @@ void Ballpark::RemoveBall(
 
     // Last chance to kill all references etc associated with this ball
     // We add this so that we can be more event based, rather than relying on tasklet timings
-    if( !PyOS->SendEvent( ball->GetRawRoot(), 
+    if( !DESTINY_PY_SEND_EVENT( ball->GetRawRoot(),
                           "Destiny::Ball::DoFinalCleanup",
                           "DoFinalCleanup", 
                           NULL,
@@ -5618,7 +5636,7 @@ void Ballpark::RemoveCapsule(
 
 	// Last chance to kill all references etc associated with this ball
 	// We add this so that we can be more event based, rather than relying on tasklet timings
-	if( !PyOS->SendEvent( capsule->GetRawRoot(), 
+	if( !DESTINY_PY_SEND_EVENT( capsule->GetRawRoot(),
 		"Destiny::Capsule::DoFinalCleanup",
 		"DoFinalCleanup", 
 		NULL,
@@ -5669,7 +5687,7 @@ void Ballpark::RemoveOrientedBox(
 
 	// Last chance to kill all references etc associated with this ball
 	// We add this so that we can be more event based, rather than relying on tasklet timings
-	if( !PyOS->SendEvent( obb->GetRawRoot(), 
+	if( !DESTINY_PY_SEND_EVENT( obb->GetRawRoot(),
 		"Destiny::OrientedBox::DoFinalCleanup",
 		"DoFinalCleanup", 
 		NULL,
@@ -6047,7 +6065,7 @@ void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
 
 void Ballpark::NotifyOfBubbleTransitions(const PyObject* transitions)
 {
-	if (transitions && !PyOS->SendEvent(
+	if (transitions && !DESTINY_PY_SEND_EVENT(
 			(IEveBallpark*)this, "Destiny::DoBubbleTransitions",
 			"DoBubbleTransitions", NULL,"(O)", transitions
 			))
@@ -6484,7 +6502,7 @@ void Ballpark::AddToBubble(Partitionable *p)
 			if(PyDict_GetItem(mBubbleSubscriptions, newBubbleId))
 			{
 				// Dispatch stuff
-				if (!PyOS->SendEvent(
+				if (!DESTINY_PY_SEND_EVENT(
 					(IEveBallpark*)this, "Destiny::DoBubbleAdd",
 					"DoBubbleAdd", NULL, "(iL)", p->mNewBubble, p->mId
 					))
@@ -6537,7 +6555,7 @@ void Ballpark::AddToBubble(Partitionable *p)
 				if(PyDict_GetItem(mBubbleSubscriptions, oldBubbleId))
 				{
 					// Dispatch stuff
-					if (!PyOS->SendEvent(
+					if (!DESTINY_PY_SEND_EVENT(
 						(IEveBallpark*)this, "Destiny::DoBubbleDel",
 						"DoBubbleDel", NULL, "(iL)", p->mOldBubble, p->mId
 						))

@@ -92,13 +92,13 @@ Apple Silicon host, AppleClang 21.0.0, CMake 4.4.0, Ninja 1.13.2.
    (client/server tickers, bubble updater, park-update batching). Nothing in
    the C++ core depends on it.
 
-9. **Posture.** Near term: link Python but never initialize the interpreter,
-   the same stance the trinity standalone probe takes. Long term, for a
-   Python-free stack: excise or guard `Thunkers.cpp` behind a
-   `DESTINY_WITH_PYTHON`-style seam (mirroring trinity's `WITH_GRANNY=OFF`
-   posture) and provide a no-Python blueexposure variant. The thunker
-   excision doubles as the first step of treating the core as a pure
-   function library.
+9. **Posture.** PL-10 corrected the near-term assumption: Trinity already
+   initializes CPython, and embedded Ballpark construction still creates
+   legacy Python containers. The accepted policy is therefore
+   `initialized-required`, while forbidding a Destiny module, Python methods,
+   scheduler ticks, tasklets, and callbacks. Long term, excise the remaining
+   containers and guard `Thunkers.cpp` behind a `DESTINY_WITH_PYTHON`-style
+   seam, then provide a no-Python blueexposure variant under D-03/PL-13.
 
 ## Determinism doctrine
 
@@ -126,16 +126,59 @@ Apple Silicon host, AppleClang 21.0.0, CMake 4.4.0, Ninja 1.13.2.
     function slot for attaching a destiny ball"; `EveSpaceScene` owns an
     `IEveBallparkPtr` and rebases its update-context origin from it each
     frame; the sun is identified by matching a planet's translation curve
-    against `m_sunBall` (the authentic lens-flare linkage). `IEveBallpark`
-    supplies `Delta`/`DeltaVel`/`GetUnitBase` over a double-precision
-    `GetReferencePoint`.
+    against `m_sunBall` (the authentic lens-flare linkage). Direct source
+    inspection and PL-10 instrumentation establish that `UpdateOrigin`
+    natively consumes only `GetReferencePoint`. `Delta`, `DeltaVel`, and
+    `GetUnitBase` are separate interface methods queried by the probe for
+    diagnostics.
 
-13. **First integration contract (planned, not started):** one `Ballpark`
-    with one ball driving the probe's ship placement through the existing
-    slots, verified by A/B capture against the current fixed-placement
-    state, with origin rebasing observed in logs. Subsequent contracts, one
-    at a time: authentic motion states, the sun-ball flare linkage, thunker
-    excision, and a deterministic replay consumer for recorded park updates.
-    These are now tracked gate-by-gate in
-    [`integration-roadmap.md`](integration-roadmap.md), which is
-    authoritative for destiny-side work.
+13. **First integration contract accepted:** `destinyEmbedded` excludes the
+    module entry, thunkers, `Partition_Blue.cpp`, and Python-facing exposure
+    files. A minimal exposure unit registers exactly ten `_destiny` classes,
+    idempotently, while the C API owns one Ballpark and one borrowed
+    `ClientBall` position/rotation pair. The normal `destiny` and
+    `destinyStatic` targets remain unchanged and all 74 existing tests pass.
+
+## PL-10 first Ballpark evidence (2026-07-12)
+
+Promised Land now owns the common dependency closure and execution gate:
+
+```sh
+cd /Users/rebecca/src/github.com/berkeleynerd/promised-land
+cmake --preset arm64-osx-debug
+cmake --build --preset arm64-osx-debug --target pl10_validate
+```
+
+The superbuild configures Destiny first with Trinity's manifest closure,
+installs only `destinyEmbedded`, then configures Trinity against that exact
+package and shared `vcpkg_installed` tree. Apple Objective-C++ does not support
+CMake's `WHOLE_ARCHIVE` link feature, so Trinity uses `-force_load` to retain
+the ten registrations.
+
+The embedded contract reports ten classes, one free STOP `ClientBall` in
+system `30005286`, and exactly two direct one-second evolves over frames
+`0..179`. `Start`, `OnTick`, scheduler registration, tasklets, and Python
+callbacks remain zero. CPython is initialized by Trinity, but `_destiny` and
+`_destiny_debug` are absent from `sys.modules`.
+
+The static fixture uses unit base `1`, maximum velocity `250`, the Astero's
+CMF-derived radius, zero position/velocity, and its authored quaternion.
+Native free-ball evolve applies roll-upright behavior, so PL-10 restores that
+quaternion after each evolve to keep the null visual contract exact. PL-11
+will remove the pin while accepting authentic orientation and motion.
+
+Evidence lives outside source control:
+
+```text
+/Users/rebecca/src/github.com/berkeleynerd/promised-land/.cmake-build-arm64-osx-debug/pl10/reports/PL10Validation.txt
+/Users/rebecca/src/github.com/berkeleynerd/promised-land/.cmake-build-arm64-osx-debug/pl10/reports/ballpark-a.csv
+/Users/rebecca/src/github.com/berkeleynerd/promised-land/.cmake-build-arm64-osx-debug/pl10/reports/ballpark-b.csv
+```
+
+Both CSVs have SHA-256
+`1b8398e9d987732353c265432335fedb75cd8c1561af15e18ddf0735958682a8`.
+Frozen off/static matrices, raw color/depth hashes, and encoded PNG pairs are
+byte-identical. Origin updates equal 180; reference point, origin, shift,
+deltas, and velocity remain zero. The integrated image loads exactly one
+`blue_debug.so` and Trinity's existing one Python dylib, with no Destiny
+module initializer, timer, thunker, Granny, or tracked EVE payload.

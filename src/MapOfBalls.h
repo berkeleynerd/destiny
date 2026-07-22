@@ -8,6 +8,67 @@
 class MapOfBalls
 {
 public:
+#ifdef DESTINY_EMBEDDED
+	std::unordered_map<ID, Ball*> mNative;
+
+	MapOfBalls() = default;
+
+	~MapOfBalls()
+	{
+		Clear();
+	}
+
+	Ball* operator [] (const ID id)
+	{
+		auto found = mNative.find(id);
+		return found == mNative.end() ? nullptr : found->second;
+	}
+
+	void Add(const ID id, Ball* ball)
+	{
+		ball->GetRawRoot()->Lock();
+		auto found = mNative.find(id);
+		if(found != mNative.end())
+		{
+			found->second->GetRawRoot()->Unlock();
+		}
+		mNative[id] = ball;
+	}
+
+	Ball* GetBall(const ID id)
+	{
+		Ball* ball = this->operator[](id);
+		if(!ball)
+		{
+			ball = new OBall;
+			Add(id, ball);
+			((IBall*)ball)->Unlock();
+		}
+		return ball;
+	}
+
+	bool RemoveBall(const ID id)
+	{
+		auto found = mNative.find(id);
+		if(found == mNative.end())
+			return false;
+		found->second->GetRawRoot()->Unlock();
+		mNative.erase(found);
+		return true;
+	}
+
+	size_t GetSize()
+	{
+		return mNative.size();
+	}
+
+	void Clear()
+	{
+		for(auto& entry : mNative)
+			entry.second->GetRawRoot()->Unlock();
+		mNative.clear();
+	}
+#else
 	PyObject* mDict;
 
 	MapOfBalls()
@@ -86,12 +147,40 @@ public:
 	{
 		PyDict_Clear(mDict);
 	}
+#endif
 
 };
 
 class BallIterator
 {
 public:
+#ifdef DESTINY_EMBEDDED
+	BallIterator(MapOfBalls *mapOball) :
+		mMapOfBalls(mapOball),
+		mIterator(mapOball->mNative.begin())
+	{
+	}
+
+	MapOfBalls *mMapOfBalls;
+	std::unordered_map<ID, Ball*>::iterator mIterator;
+
+	Ball* operator++(int)
+	{
+		return Next();
+	}
+
+	Ball* Next()
+	{
+		if(mIterator == mMapOfBalls->mNative.end())
+			return nullptr;
+		return (mIterator++)->second;
+	}
+
+	void Begin()
+	{
+		mIterator = mMapOfBalls->mNative.begin();
+	}
+#else
 	BallIterator(MapOfBalls *mapOball) :
 		mMapOfBalls(mapOball),key(0),value(0)
 	{
@@ -128,8 +217,8 @@ public:
 	{
 		pos = 0;
 	}
+#endif
 };
 
 
 #endif
-
