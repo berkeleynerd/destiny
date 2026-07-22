@@ -2,3 +2,5 @@
 /tools/benchmark/bin
 binaryCache
 CMakeUserPresets.json
+.cmake-build-*/
+__pycache__/
