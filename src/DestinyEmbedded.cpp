@@ -56,6 +56,21 @@ bool IsFinite( const DestinyEmbeddedBallConfig& config )
 			return false;
 	return true;
 }
+
+bool IsFinite( const DestinyEmbeddedSessionOptions& options )
+{
+	if( options.orientationPolicy < DESTINY_EMBEDDED_PIN_INITIAL ||
+		options.orientationPolicy > DESTINY_EMBEDDED_NATIVE_ORIENTATION ||
+		options.referenceFrame < DESTINY_EMBEDDED_PRIMARY_EGO ||
+		options.referenceFrame > DESTINY_EMBEDDED_FIXED_OBSERVER )
+	{
+		return false;
+	}
+	for( double value : options.observerPosition )
+		if( !std::isfinite( value ) )
+			return false;
+	return true;
+}
 }
 
 struct DestinyEmbeddedSession
@@ -66,7 +81,15 @@ struct DestinyEmbeddedSession
 	Be::Time lastRequestedTime = 0;
 	Be::Time nextTickTime = kTicksPerSecond;
 	uint64_t directEvolveCount = 0;
+	uint64_t commandCount = 0;
+	uint64_t orientationPinCount = 0;
 	bool previousDynamicalOrientation = false;
+	DestinyEmbeddedOrientationPolicy orientationPolicy = DESTINY_EMBEDDED_PIN_INITIAL;
+	DestinyEmbeddedReferenceFrame referenceFrame = DESTINY_EMBEDDED_PRIMARY_EGO;
+	Be::Time lastCommandTime = 0;
+	Be::Time pendingCommandTime = 0;
+	int pendingCommand = 0;
+	double pendingTarget[3] = {};
 	Quaternion authoredRotation = Quaternion( 0.0f, 0.0f, 0.0f, 1.0f );
 
 	~DestinyEmbeddedSession()
@@ -120,12 +143,28 @@ extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSession(
 	const DestinyEmbeddedBallConfig* config,
 	char* error,
 	size_t errorSize )
+
+{
+	DestinyEmbeddedSessionOptions options = {};
+	options.orientationPolicy = DESTINY_EMBEDDED_PIN_INITIAL;
+	options.referenceFrame = DESTINY_EMBEDDED_PRIMARY_EGO;
+	return Destiny_CreateEmbeddedSessionWithOptions( config, &options, error, errorSize );
+}
+
+extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSessionWithOptions(
+	const DestinyEmbeddedBallConfig* config,
+	const DestinyEmbeddedSessionOptions* options,
+	char* error,
+	size_t errorSize )
 {
 	if( error && errorSize )
 		error[0] = '\0';
-	if( !config || !IsFinite( *config ) || config->ballId == 0 || !config->isFree )
+	if( !config || !options || !IsFinite( *config ) || !IsFinite( *options ) ||
+		config->ballId == 0 || !config->isFree ||
+		( options->referenceFrame == DESTINY_EMBEDDED_FIXED_OBSERVER &&
+		  ( options->observerBallId == 0 || options->observerBallId == config->ballId ) ) )
 	{
-		SetError( error, errorSize, "Embedded Destiny requires a finite, free STOP ball configuration" );
+		SetError( error, errorSize, "Embedded Destiny requires finite session options and a free STOP ball configuration" );
 		return nullptr;
 	}
 #if BLUE_WITH_PYTHON
@@ -150,6 +189,8 @@ extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSession(
 		return nullptr;
 	}
 	session->previousDynamicalOrientation = g_useDynamicalOrientation;
+	session->orientationPolicy = options->orientationPolicy;
+	session->referenceFrame = options->referenceFrame;
 	g_useDynamicalOrientation = true;
 	DestinyEmbeddedResetRuntimeCounters();
 
@@ -206,7 +247,38 @@ extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSession(
 	session->ball = static_cast<ClientBall*>( created );
 	session->ballRoot = session->ball->GetRawRoot();
 	session->ballRoot->Lock();
-	session->ballpark->mEgo = config->ballId;
+	if( options->referenceFrame == DESTINY_EMBEDDED_FIXED_OBSERVER )
+	{
+		Ball* observer = session->ballpark->AddOldStyleOrientedBall(
+			options->observerBallId,
+			1.0,
+			1.0f,
+			0.0f,
+			false,
+			false,
+			false,
+			false,
+			false,
+			options->observerPosition[0],
+			options->observerPosition[1],
+			options->observerPosition[2],
+			0.0,
+			0.0,
+			0.0,
+			1.0f,
+			0.0f );
+		if( !observer )
+		{
+			SetError( error, errorSize, "Failed to add the embedded fixed observer" );
+			delete session;
+			return nullptr;
+		}
+		session->ballpark->mEgo = options->observerBallId;
+	}
+	else
+	{
+		session->ballpark->mEgo = config->ballId;
+	}
 	session->ballpark->SetBallRotation(
 		config->ballId,
 		config->rotation[0],
@@ -243,28 +315,81 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 	const Be::Time tickInterval = static_cast<Be::Time>( session->ballpark->mTickInterval ) * 10000;
 	while( simulationTime >= session->nextTickTime )
 	{
+		if( session->pendingCommand != 0 && session->pendingCommandTime == session->nextTickTime )
+		{
+			if( session->pendingCommand == 1 )
+			{
+				session->ballpark->GotoPoint(
+					session->ball->mId,
+					session->pendingTarget[0],
+					session->pendingTarget[1],
+					session->pendingTarget[2] );
+			}
+			else
+			{
+				session->ballpark->Stop( session->ball->mId );
+			}
+			session->pendingCommand = 0;
+		}
 		// ClientBall samples two ticks behind render time. Evolving the local fixture
 		// one tick behind the explicit clock keeps the latest interpolation segment
 		// aligned with that native history window without a scheduler or look-ahead.
 		session->ballpark->Evolve( session->nextTickTime - tickInterval );
-		// PL-10 is a fixed-placement null test. Keep the free STOP ball's authored
-		// orientation pinned after Destiny's native roll-upright behavior runs;
-		// PL-11 will remove this fixture constraint when motion becomes observable.
-		session->ballpark->SetBallRotation(
-			session->ball->mId,
-			session->authoredRotation.x,
-			session->authoredRotation.y,
-			session->authoredRotation.z,
-			session->authoredRotation.w );
-		session->ball->mLastRot = session->authoredRotation;
-		session->ball->mLastAngVel = Vector3( 0.0f, 0.0f, 0.0f );
-		session->ball->mTorque = Vector3( 0.0f, 0.0f, 0.0f );
-		session->ball->mRoll = 0.0f;
-		session->ball->mRotUpdateTime = 0;
+		if( session->orientationPolicy == DESTINY_EMBEDDED_PIN_INITIAL )
+		{
+			// Preserve the PL-10 null fixture while native-orientation sessions expose
+			// Destiny's roll and steering behavior without this compatibility pin.
+			session->ballpark->SetBallRotation(
+				session->ball->mId,
+				session->authoredRotation.x,
+				session->authoredRotation.y,
+				session->authoredRotation.z,
+				session->authoredRotation.w );
+			session->ball->mLastRot = session->authoredRotation;
+			session->ball->mLastAngVel = Vector3( 0.0f, 0.0f, 0.0f );
+			session->ball->mTorque = Vector3( 0.0f, 0.0f, 0.0f );
+			session->ball->mRoll = 0.0f;
+			session->ball->mRotUpdateTime = 0;
+			++session->orientationPinCount;
+		}
 		++session->directEvolveCount;
 		session->nextTickTime += tickInterval;
 	}
 	session->lastRequestedTime = simulationTime;
+	return true;
+}
+
+extern "C" bool Destiny_CommandEmbeddedGoto(
+	DestinyEmbeddedSession* session,
+	Be::Time effectiveTime,
+	const double target[3] )
+{
+	if( !session || !target || effectiveTime != session->nextTickTime ||
+		effectiveTime < session->lastRequestedTime ||
+		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
+		!std::isfinite( target[0] ) ||
+		!std::isfinite( target[1] ) || !std::isfinite( target[2] ) )
+	{
+		return false;
+	}
+	session->pendingCommand = 1;
+	session->pendingCommandTime = effectiveTime;
+	for( size_t i = 0; i < 3; ++i )
+		session->pendingTarget[i] = target[i];
+	session->lastCommandTime = effectiveTime;
+	++session->commandCount;
+	return true;
+}
+
+extern "C" bool Destiny_CommandEmbeddedStop( DestinyEmbeddedSession* session, Be::Time effectiveTime )
+{
+	if( !session || effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
+		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) )
+		return false;
+	session->pendingCommand = 2;
+	session->pendingCommandTime = effectiveTime;
+	session->lastCommandTime = effectiveTime;
+	++session->commandCount;
 	return true;
 }
 
@@ -299,19 +424,39 @@ extern "C" bool Destiny_GetEmbeddedDiagnostics(
 	diagnostics->mode = static_cast<int32_t>( session->ball->mMode );
 	diagnostics->schedulerRegistered = session->ballpark->DestinyEmbeddedHasRegisteredTicks();
 	diagnostics->dynamicalOrientationEnabled = g_useDynamicalOrientation;
+	diagnostics->primaryBallId = session->ball->mId;
+	diagnostics->egoBallId = session->ballpark->mEgo;
+	diagnostics->commandCount = session->commandCount;
+	diagnostics->orientationPinCount = session->orientationPinCount;
+	diagnostics->lastCommandTime = session->lastCommandTime;
 
-	Vector3 position;
-	Vector3 velocity;
+	const Vector3d& rawPosition = session->ball->mNewPos;
+	const Vector3d& rawVelocity = session->ball->mNewVel;
+	const Vector3d rawAcceleration = session->ball->mLastG + session->ball->mLastC;
+	Vector3d absolutePosition;
+	Vector3d referencePoint;
+	session->ball->InterpolatedPosition( &absolutePosition, session->lastRequestedTime );
+	session->ballpark->GetReferencePoint( &referencePoint, session->lastRequestedTime );
+
+	const Vector3 position = ( absolutePosition - referencePoint ).AsVector3();
+	const Vector3 velocity = session->ball->mLastVel.AsVector3();
+	Vector3 acceleration;
 	Quaternion rotation;
-	session->ball->GetValueAt( &position, session->lastRequestedTime );
-	session->ball->GetValueDotAt( &velocity, session->lastRequestedTime );
+	session->ball->GetValueDoubleDotAt( &acceleration, session->lastRequestedTime );
 	session->ball->GetValueAt( &rotation, session->lastRequestedTime );
-	diagnostics->position[0] = position.x;
-	diagnostics->position[1] = position.y;
-	diagnostics->position[2] = position.z;
-	diagnostics->velocity[0] = velocity.x;
-	diagnostics->velocity[1] = velocity.y;
-	diagnostics->velocity[2] = velocity.z;
+	for( size_t i = 0; i < 3; ++i )
+	{
+		diagnostics->rawPosition[i] = ( &rawPosition.x )[i];
+		diagnostics->rawVelocity[i] = ( &rawVelocity.x )[i];
+		diagnostics->rawAcceleration[i] = ( &rawAcceleration.x )[i];
+		diagnostics->absolutePosition[i] = ( &absolutePosition.x )[i];
+		diagnostics->referencePoint[i] = ( &referencePoint.x )[i];
+		diagnostics->position[i] = ( &position.x )[i];
+		diagnostics->velocity[i] = ( &velocity.x )[i];
+		diagnostics->acceleration[i] = ( &acceleration.x )[i];
+		diagnostics->angularVelocity[i] = ( &session->ball->mLastAngVel.x )[i];
+		diagnostics->gotoPoint[i] = ( &session->ball->mGoto.x )[i];
+	}
 	diagnostics->rotation[0] = rotation.x;
 	diagnostics->rotation[1] = rotation.y;
 	diagnostics->rotation[2] = rotation.z;

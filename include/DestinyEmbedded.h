@@ -17,6 +17,18 @@
 
 struct DestinyEmbeddedSession;
 
+enum DestinyEmbeddedOrientationPolicy
+{
+	DESTINY_EMBEDDED_PIN_INITIAL = 0,
+	DESTINY_EMBEDDED_NATIVE_ORIENTATION = 1,
+};
+
+enum DestinyEmbeddedReferenceFrame
+{
+	DESTINY_EMBEDDED_PRIMARY_EGO = 0,
+	DESTINY_EMBEDDED_FIXED_OBSERVER = 1,
+};
+
 struct DestinyEmbeddedRegistration
 {
 	uint32_t discoveredClassCount;
@@ -47,6 +59,14 @@ struct DestinyEmbeddedBallConfig
 	bool isSpaceJunk;
 };
 
+struct DestinyEmbeddedSessionOptions
+{
+	DestinyEmbeddedOrientationPolicy orientationPolicy;
+	DestinyEmbeddedReferenceFrame referenceFrame;
+	int64_t observerBallId;
+	double observerPosition[3];
+};
+
 struct DestinyEmbeddedDiagnostics
 {
 	uint64_t directEvolveCount;
@@ -58,9 +78,22 @@ struct DestinyEmbeddedDiagnostics
 	int32_t mode;
 	bool schedulerRegistered;
 	bool dynamicalOrientationEnabled;
+	int64_t primaryBallId;
+	int64_t egoBallId;
+	uint64_t commandCount;
+	uint64_t orientationPinCount;
+	Be::Time lastCommandTime;
+	double rawPosition[3];
+	double rawVelocity[3];
+	double rawAcceleration[3];
+	double absolutePosition[3];
+	double referencePoint[3];
 	double position[3];
 	double velocity[3];
+	double acceleration[3];
 	float rotation[4];
+	float angularVelocity[3];
+	double gotoPoint[3];
 };
 
 extern "C"
@@ -70,8 +103,20 @@ extern "C"
 		const DestinyEmbeddedBallConfig* config,
 		char* error,
 		size_t errorSize );
+	DESTINY_EMBEDDED_API DestinyEmbeddedSession* Destiny_CreateEmbeddedSessionWithOptions(
+		const DestinyEmbeddedBallConfig* config,
+		const DestinyEmbeddedSessionOptions* options,
+		char* error,
+		size_t errorSize );
 	DESTINY_EMBEDDED_API void Destiny_DestroyEmbeddedSession( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session, Be::Time simulationTime );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedGoto(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime,
+		const double target[3] );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedStop(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime );
 	DESTINY_EMBEDDED_API IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriVectorFunction* Destiny_GetEmbeddedPosition( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedRotation( DestinyEmbeddedSession* session );

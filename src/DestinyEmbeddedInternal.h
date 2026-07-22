@@ -13,8 +13,8 @@ uint64_t DestinyEmbeddedGetPythonCallbackCount();
 uint64_t DestinyEmbeddedGetStartCount();
 void DestinyEmbeddedResetRuntimeCounters();
 
-#define DESTINY_PY_SEND_EVENT( ... ) ( DestinyEmbeddedRecordPythonCallback(), true )
-#define DESTINY_PY_POST_EVENT( ... ) ( DestinyEmbeddedRecordPythonCallback(), true )
+#define DESTINY_PY_SEND_EVENT( ... ) true
+#define DESTINY_PY_POST_EVENT( ... ) true
 #else
 #define DESTINY_PY_SEND_EVENT( ... ) PyOS->SendEvent( __VA_ARGS__ )
 #define DESTINY_PY_POST_EVENT( ... ) PyOS->PostEvent( __VA_ARGS__ )

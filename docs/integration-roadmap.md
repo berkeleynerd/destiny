@@ -27,7 +27,7 @@ do and provide, gate by gate.
 | --- | --- | --- | --- | --- | --- |
 | D-00 | macOS arm64 build and test acceptance | PL-02 | Accepted | — | 78/78 targets, 74/74 tests; `macos-bringup.md`. |
 | D-01 | Consumable embedded package: curated `destinyEmbedded` static target, ten-class module-free Blue registration, real Ballpark/ClientBall C API, explicit scheduler-free advance, and install/export closure for `carbon-blue`, `carbon-core`, and `carbon-math`. | PL-10 | Accepted | D-00 | Promised Land consumes the installed package through `find_package`, force-loads it into Trinity, and passes two 180-frame null tests with one Blue runtime, no Destiny Python module/timer/thunker symbols, exactly two evolves, and byte-identical off/static outputs. |
-| D-02 | Motion-state reference corpus: per-state expected trajectories (stop, linear, orbit, warp, approach, align) derived from the closed forms (`Equations.mws`) as machine-readable expectation logs | PL-11 | Active | D-01 | Corpus committed (or staged per asset rules); probe-rendered motion matches expectations within recorded tolerance. |
+| D-02 | Motion-state reference corpus: per-state expected trajectories (stop, linear, orbit, warp, approach, align) derived from the closed forms (`Equations.mws`) as machine-readable expectation logs | PL-11 | Partial | D-01 | PL-11A accepts native STOP orientation and linear GOTO in ego and fixed-observer frames. Orbit, warp, approach, and align remain. |
 | D-03 | Python-free build: `DESTINY_WITH_PYTHON`-style seam guarding `src/Thunkers.cpp` (3,531 lines); Python-hosted tests ported to gtest or retired | PL-13 | Active (independent) | — | Build with the seam off links no libpython (`otool -L` clean); 73 C++ tests green; journal updated. |
 | D-04 | Wire-format recovery: document the park-update stream (from `python/destiny/net` semantics and the C++ `WriteBallsToStream` path) and provide a scripted-scenario recorder | PL-33 | Blocked | D-01 | Format writeup sufficient for an independent consumer; recorder emits a deterministic stream with tick numbers and RNG seed. |
 | D-05 | Oracle role for kernel succession: replay-equivalence corpora (motion, collision predicates) and exported RNG state for journaling; destiny retires to reference implementation | PL-50 | Blocked | D-02, D-04 | SPARK kernel matches destiny bit-for-bit over the corpora on same-binary replay terms; divergences adjudicated against the closed forms. |
@@ -43,6 +43,11 @@ do and provide, gate by gate.
   evolve applies roll-upright behavior even with zero angular velocity, so the
   embedded null test restores the authored quaternion after each evolve.
   D-02 removes that pin as each authentic motion/orientation state is accepted.
+- **PL-11A removes the pin for STOP and GOTO.** The committed 17-tick GOTO
+  corpus reproduces the analytic drag/thrust integration, including native
+  overshoot, turn-gated thrust, and velocity reversal. Both reference frames
+  produce trajectory hash `8ee43851a6c2f115`; raw errors remain below
+  `5e-10`. Native roll decreases from `0.785398` to `0.562532` radians.
 
 - **No gameplay-scope trim exists here, by design.** Of 21,310 C++ lines:
   core motion (Ball/Ballpark/IBall) 11,203 is entirely 1.0-vintage;
