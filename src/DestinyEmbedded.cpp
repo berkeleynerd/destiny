@@ -16,9 +16,13 @@
 #include <limits>
 #include <new>
 
+static_assert( DESTINY_EMBEDDED_BALL_MODE_STOP == DSTBALL_STOP, "embedded ball-mode mirror diverged" );
+static_assert( DESTINY_EMBEDDED_BALL_MODE_RIGID == DSTBALL_RIGID, "embedded ball-mode mirror diverged" );
+
 namespace
 {
 constexpr Be::Time kTicksPerSecond = 10000000;
+constexpr size_t kMaxCelestialBalls = 4;
 std::atomic<uint64_t> s_startCallCount = 0;
 std::atomic<uint64_t> s_onTickCallCount = 0;
 std::atomic<uint64_t> s_pythonCallbackCount = 0;
@@ -62,7 +66,9 @@ bool IsFinite( const DestinyEmbeddedSessionOptions& options )
 	if( options.orientationPolicy < DESTINY_EMBEDDED_PIN_INITIAL ||
 		options.orientationPolicy > DESTINY_EMBEDDED_NATIVE_ORIENTATION ||
 		options.referenceFrame < DESTINY_EMBEDDED_PRIMARY_EGO ||
-		options.referenceFrame > DESTINY_EMBEDDED_FIXED_OBSERVER )
+		options.referenceFrame > DESTINY_EMBEDDED_FIXED_OBSERVER ||
+		options.orbitPolicy < DESTINY_EMBEDDED_ORBIT_CHECKOUT_DEFAULT ||
+		options.orbitPolicy > DESTINY_EMBEDDED_ORBIT_FRONTIER_NEW )
 	{
 		return false;
 	}
@@ -77,6 +83,9 @@ struct DestinyEmbeddedSession
 {
 	BluePtr<Ballpark> ballpark;
 	ClientBall* ball = nullptr;
+	Ball* fixedTarget = nullptr;
+	Ball* celestials[kMaxCelestialBalls] = {};
+	size_t celestialCount = 0;
 	IRoot* ballRoot = nullptr;
 	Be::Time lastRequestedTime = 0;
 	Be::Time nextTickTime = kTicksPerSecond;
@@ -84,12 +93,18 @@ struct DestinyEmbeddedSession
 	uint64_t commandCount = 0;
 	uint64_t orientationPinCount = 0;
 	bool previousDynamicalOrientation = false;
+	bool previousUseNewOrbit = false;
 	DestinyEmbeddedOrientationPolicy orientationPolicy = DESTINY_EMBEDDED_PIN_INITIAL;
 	DestinyEmbeddedReferenceFrame referenceFrame = DESTINY_EMBEDDED_PRIMARY_EGO;
 	Be::Time lastCommandTime = 0;
 	Be::Time pendingCommandTime = 0;
 	int pendingCommand = 0;
 	double pendingTarget[3] = {};
+	int64_t pendingTargetBallId = 0;
+	float pendingRange = 0.0f;
+	Vector3d previousOrbitRelative;
+	bool hasPreviousOrbitRelative = false;
+	double orbitAccumulatedPhase = 0.0;
 	Quaternion authoredRotation = Quaternion( 0.0f, 0.0f, 0.0f, 1.0f );
 
 	~DestinyEmbeddedSession()
@@ -98,6 +113,7 @@ struct DestinyEmbeddedSession
 		if( ballRoot )
 			ballRoot->Unlock();
 		g_useDynamicalOrientation = previousDynamicalOrientation;
+		g_useNewOrbit = previousUseNewOrbit;
 		s_sessionActive = false;
 	}
 };
@@ -189,9 +205,11 @@ extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSessionWithOptions(
 		return nullptr;
 	}
 	session->previousDynamicalOrientation = g_useDynamicalOrientation;
+	session->previousUseNewOrbit = g_useNewOrbit;
 	session->orientationPolicy = options->orientationPolicy;
 	session->referenceFrame = options->referenceFrame;
 	g_useDynamicalOrientation = true;
+	g_useNewOrbit = options->orbitPolicy == DESTINY_EMBEDDED_ORBIT_FRONTIER_NEW;
 	DestinyEmbeddedResetRuntimeCounters();
 
 	DestinyEmbeddedRegistration registration = {};
@@ -325,9 +343,14 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 					session->pendingTarget[1],
 					session->pendingTarget[2] );
 			}
-			else
+			else if( session->pendingCommand == 2 )
 			{
 				session->ballpark->Stop( session->ball->mId );
+			}
+			else
+			{
+				session->ballpark->Orbit(
+					session->ball->mId, session->pendingTargetBallId, session->pendingRange );
 			}
 			session->pendingCommand = 0;
 		}
@@ -335,6 +358,20 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 		// one tick behind the explicit clock keeps the latest interpolation segment
 		// aligned with that native history window without a scheduler or look-ahead.
 		session->ballpark->Evolve( session->nextTickTime - tickInterval );
+		if( session->ball->mMode == DSTBALL_ORBIT && session->fixedTarget )
+		{
+			const Vector3d relative = session->ball->mNewPos - session->fixedTarget->mNewPos;
+			if( session->hasPreviousOrbitRelative )
+			{
+				Vector3d normal = session->previousOrbitRelative;
+				normal.Cross( relative );
+				const double crossLength = normal.Length();
+				const double dot = session->previousOrbitRelative * relative;
+				session->orbitAccumulatedPhase += std::atan2( crossLength, dot );
+			}
+			session->previousOrbitRelative = relative;
+			session->hasPreviousOrbitRelative = true;
+		}
 		if( session->orientationPolicy == DESTINY_EMBEDDED_PIN_INITIAL )
 		{
 			// Preserve the PL-10 null fixture while native-orientation sessions expose
@@ -357,6 +394,119 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 	}
 	session->lastRequestedTime = simulationTime;
 	return true;
+}
+
+extern "C" bool Destiny_AddEmbeddedFixedTarget(
+	DestinyEmbeddedSession* session,
+	const DestinyEmbeddedFixedTargetConfig* config,
+	char* error,
+	size_t errorSize )
+{
+	if( error && errorSize )
+		error[0] = '\0';
+	if( !session || !config || session->fixedTarget || session->directEvolveCount != 0 ||
+		session->commandCount != 0 || config->ballId == 0 || config->ballId == session->ball->mId ||
+		config->ballId == session->ballpark->mEgo || !std::isfinite( config->radius ) || config->radius <= 0.0f ||
+		!std::isfinite( config->position[0] ) || !std::isfinite( config->position[1] ) ||
+		!std::isfinite( config->position[2] ) )
+	{
+		SetError( error, errorSize, "Embedded Destiny requires one finite fixed target before advance or commands" );
+		return false;
+	}
+	session->fixedTarget = session->ballpark->AddOldStyleOrientedBall(
+		config->ballId, 1.0, config->radius, 0.0f, false, false, false, false, false,
+		config->position[0], config->position[1], config->position[2], 0.0, 0.0, 0.0, 1.0f, 0.0f );
+	if( !session->fixedTarget )
+	{
+		SetError( error, errorSize, "Failed to add embedded Destiny fixed target" );
+		return false;
+	}
+	return true;
+}
+
+extern "C" bool Destiny_AddEmbeddedCelestial(
+	DestinyEmbeddedSession* session,
+	const DestinyEmbeddedCelestialConfig* config,
+	char* error,
+	size_t errorSize )
+{
+	if( error && errorSize )
+		error[0] = '\0';
+	bool duplicate = false;
+	if( session && config )
+	{
+		for( size_t i = 0; i < session->celestialCount; ++i )
+			if( session->celestials[i]->mId == config->ballId )
+				duplicate = true;
+	}
+	if( !session || !config || duplicate || session->directEvolveCount != 0 ||
+		session->commandCount != 0 || session->celestialCount >= kMaxCelestialBalls ||
+		config->ballId == 0 || config->ballId == session->ball->mId ||
+		config->ballId == session->ballpark->mEgo ||
+		( session->fixedTarget && config->ballId == session->fixedTarget->mId ) ||
+		!std::isfinite( config->radius ) || config->radius <= 0.0f ||
+		!std::isfinite( config->position[0] ) || !std::isfinite( config->position[1] ) ||
+		!std::isfinite( config->position[2] ) )
+	{
+		SetError( error, errorSize, "Embedded Destiny requires finite unique celestials before advance or commands" );
+		return false;
+	}
+	Ball* celestial = session->ballpark->AddOldStyleOrientedBall(
+		config->ballId, 1.0, config->radius, 0.0f, false, true, false, false, false,
+		config->position[0], config->position[1], config->position[2], 0.0, 0.0, 0.0, 1.0f, 0.0f );
+	if( !celestial )
+	{
+		SetError( error, errorSize, "Failed to add embedded Destiny celestial ball" );
+		return false;
+	}
+	session->ballpark->SetBallRigid( config->ballId );
+	session->celestials[session->celestialCount] = celestial;
+	++session->celestialCount;
+	return true;
+}
+
+extern "C" ITriVectorFunction* Destiny_GetEmbeddedCelestialPosition(
+	DestinyEmbeddedSession* session,
+	int64_t ballId )
+{
+	if( !session )
+		return nullptr;
+	for( size_t i = 0; i < session->celestialCount; ++i )
+	{
+		if( session->celestials[i]->mId == ballId )
+			return static_cast<ITriVectorFunction*>( static_cast<ClientBall*>( session->celestials[i] ) );
+	}
+	return nullptr;
+}
+
+extern "C" bool Destiny_GetEmbeddedCelestialState(
+	DestinyEmbeddedSession* session,
+	int64_t ballId,
+	DestinyEmbeddedCelestialState* state )
+{
+	if( !session || !state )
+		return false;
+	for( size_t i = 0; i < session->celestialCount; ++i )
+	{
+		Ball* celestial = session->celestials[i];
+		if( celestial->mId != ballId )
+			continue;
+		*state = {};
+		state->ballId = celestial->mId;
+		state->mode = static_cast<int32_t>( celestial->mMode );
+		state->isFree = celestial->isFree;
+		state->isGlobal = celestial->isGlobal;
+		state->isMassive = celestial->isMassive;
+		state->isInteractive = celestial->isInteractive;
+		state->radius = celestial->mRadius;
+		for( size_t axis = 0; axis < 3; ++axis )
+		{
+			state->position[axis] = ( &celestial->mNewPos.x )[axis];
+			state->velocity[axis] = ( &celestial->mNewVel.x )[axis];
+		}
+		return true;
+	}
+	return false;
 }
 
 extern "C" bool Destiny_CommandEmbeddedGoto(
@@ -393,6 +543,29 @@ extern "C" bool Destiny_CommandEmbeddedStop( DestinyEmbeddedSession* session, Be
 	return true;
 }
 
+extern "C" bool Destiny_CommandEmbeddedOrbit(
+	DestinyEmbeddedSession* session,
+	Be::Time effectiveTime,
+	int64_t targetBallId,
+	float surfaceRange )
+{
+	if( !session || !session->fixedTarget || targetBallId != session->fixedTarget->mId ||
+		targetBallId == session->ball->mId || targetBallId == session->ballpark->mEgo ||
+		effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
+		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
+		!std::isfinite( surfaceRange ) || surfaceRange < 0.0f )
+	{
+		return false;
+	}
+	session->pendingCommand = 3;
+	session->pendingCommandTime = effectiveTime;
+	session->pendingTargetBallId = targetBallId;
+	session->pendingRange = surfaceRange;
+	session->lastCommandTime = effectiveTime;
+	++session->commandCount;
+	return true;
+}
+
 extern "C" IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session )
 {
 	return session ? static_cast<IEveBallpark*>( session->ballpark.p ) : nullptr;
@@ -424,6 +597,7 @@ extern "C" bool Destiny_GetEmbeddedDiagnostics(
 	diagnostics->mode = static_cast<int32_t>( session->ball->mMode );
 	diagnostics->schedulerRegistered = session->ballpark->DestinyEmbeddedHasRegisteredTicks();
 	diagnostics->dynamicalOrientationEnabled = g_useDynamicalOrientation;
+	diagnostics->frontierOrbitEnabled = g_useNewOrbit;
 	diagnostics->primaryBallId = session->ball->mId;
 	diagnostics->egoBallId = session->ballpark->mEgo;
 	diagnostics->commandCount = session->commandCount;
@@ -461,5 +635,31 @@ extern "C" bool Destiny_GetEmbeddedDiagnostics(
 	diagnostics->rotation[1] = rotation.y;
 	diagnostics->rotation[2] = rotation.z;
 	diagnostics->rotation[3] = rotation.w;
+	diagnostics->followBallId = session->ball->mFollowId;
+	diagnostics->followRange = session->ball->mFollowRange;
+	diagnostics->orbitAccumulatedPhase = session->orbitAccumulatedPhase;
+	if( session->fixedTarget )
+	{
+		diagnostics->orbitTargetBallId = session->fixedTarget->mId;
+		const Vector3d relative = rawPosition - session->fixedTarget->mNewPos;
+		const double distance = relative.Length();
+		diagnostics->orbitCenterDistance = distance;
+		diagnostics->orbitSurfaceDistance = distance - session->ball->mRadius - session->fixedTarget->mRadius;
+		Vector3d radial = distance > 0.0 ? relative / distance : Vector3d();
+		diagnostics->orbitRadialVelocity = rawVelocity * radial;
+		const double speedSquared = rawVelocity.LengthSq();
+		diagnostics->orbitTangentialVelocity = std::sqrt( std::max(
+			0.0, speedSquared - diagnostics->orbitRadialVelocity * diagnostics->orbitRadialVelocity ) );
+		Vector3d normal = relative;
+		normal.Cross( rawVelocity );
+		if( normal.LengthSq() > 0.0 )
+			normal.Normalize();
+		for( size_t i = 0; i < 3; ++i )
+		{
+			diagnostics->orbitTargetPosition[i] = ( &session->fixedTarget->mNewPos.x )[i];
+			diagnostics->orbitTargetVelocity[i] = ( &session->fixedTarget->mNewVel.x )[i];
+			diagnostics->orbitNormal[i] = ( &normal.x )[i];
+		}
+	}
 	return true;
 }

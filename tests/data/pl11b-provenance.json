@@ -1,0 +1,15 @@
+{
+  "contract": "PL-11B Frontier orbit",
+  "generator": "Python-exposed Ballpark with useNewOrbit=True and useDynamicalOrientation=True",
+  "frontierIntegrationCommit": "6612ffce7dedfe10d87009f21ca41c5b5d6f6dc8",
+  "codeCcpPath": "/Users/rebecca/Library/Application Support/EVE Online/SharedCache/tq/EVE.app/Contents/Resources/build/code.ccp",
+  "codeCcpSha256": "232a2c1552cd00d030e7b9f6bf1d4956673e3c1be85f07f4b19ebe19131fa67f",
+  "clientPolicyEvidence": "enable_new_orbit is present but no caller was found; Frontier orbit is an explicit PL-11B policy",
+  "primary": {"ballId": 1, "mass": 975000.0, "radius": 35.0, "maximumVelocity": 312.0, "agility": 2.87, "position": [0.0, 0.0, -2570.0]},
+  "target": {"ballId": 3, "radius": 35.0, "position": [0.0, 0.0, 0.0]},
+  "surfaceRange": 2500.0,
+  "commandEffectiveTick": 3,
+  "stopTicksBeforeCommand": 2,
+  "ticks": 60,
+  "accelerationDerivation": "Inverted Destiny drag integration: a=(v_new-v_old*exp(-k/m))*k/(m*(1-exp(-k/m))), m=mass*agility, k=1000000"
+}
