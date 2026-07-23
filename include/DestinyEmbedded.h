@@ -38,7 +38,11 @@ enum DestinyEmbeddedOrbitPolicy
 // Mirrors DSTBALLMODE for embedded consumers that must not include destiny internals.
 enum DestinyEmbeddedBallMode
 {
+	DESTINY_EMBEDDED_BALL_MODE_GOTO = 0,
+	DESTINY_EMBEDDED_BALL_MODE_FOLLOW = 1,
 	DESTINY_EMBEDDED_BALL_MODE_STOP = 2,
+	DESTINY_EMBEDDED_BALL_MODE_WARP = 3,
+	DESTINY_EMBEDDED_BALL_MODE_ORBIT = 4,
 	DESTINY_EMBEDDED_BALL_MODE_RIGID = 11,
 };
 
@@ -147,6 +151,18 @@ struct DestinyEmbeddedDiagnostics
 	double orbitTangentialVelocity;
 	double orbitNormal[3];
 	double orbitAccumulatedPhase;
+	// Warp state (valid while mode is DSTBALL_WARP, zero otherwise). The
+	// effect stamp is negative while aligning and holds the warp-start tick
+	// once warp proper begins; factor and minimum range echo the command
+	// inputs the sim stores in its shanghaied ball members.
+	int64_t warpEffectStamp;
+	int32_t warpFactor;
+	double warpMinRange;
+	double warpTotalDistance;
+	// Collision/sensor participation of the primary ball; warp suspends both
+	// and dropout must restore them.
+	bool isMassive;
+	bool sensorActive;
 };
 
 extern "C"
@@ -184,10 +200,25 @@ extern "C"
 		DestinyEmbeddedSession* session,
 		Be::Time effectiveTime,
 		const double target[3] );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedGotoDirection(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime,
+		const double direction[3] );
 	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedStop(
 		DestinyEmbeddedSession* session,
 		Be::Time effectiveTime );
 	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedOrbit(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime,
+		int64_t targetBallId,
+		float surfaceRange );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedWarp(
+		DestinyEmbeddedSession* session,
+		Be::Time effectiveTime,
+		const double target[3],
+		double minimumRange,
+		int32_t warpFactor );
+	DESTINY_EMBEDDED_API bool Destiny_CommandEmbeddedFollow(
 		DestinyEmbeddedSession* session,
 		Be::Time effectiveTime,
 		int64_t targetBallId,
