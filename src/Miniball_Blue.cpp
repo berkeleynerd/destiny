@@ -62,11 +62,13 @@ const Be::ClassInfo* MiniBall::ExposeToBlue()
 
 		////////////////////////////////////////////////////////////////////////////
 		//               __init__
+#if DESTINY_WITH_PYTHON
 		MAP_METHOD_AS_METHOD
 		(
 			"__init__",
 			Py__init__,
 			"Constructor arguments"
 		)
+#endif // DESTINY_WITH_PYTHON
 	EXPOSURE_END()
 }

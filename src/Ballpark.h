@@ -122,11 +122,20 @@ private://MEMBERS
 	std::unordered_map<ID, Capsule*> mCapsules;
 	std::unordered_map<ID, OrientedBox*> mOrientedBoxes;
 	SetOfBalls mBubbleConflicts;
+#if DESTINY_WITH_PYTHON
 	PyObject *bubbleInteractives;
     PyObject *bubbleKeepAlives; // Per bubble, a set of ballIDs which keep the bubble alive even when no interatives are present
 	PyObject *bubbleKeepAliveBalls; // balls that automatically keep their current bubbles alive
 	PyObject *bubbles;
 	PyObject *mBubbleSubscriptions;
+#else
+	// D-03 seam: C++ twin of the interactive-count bookkeeping. Only these
+	// counts are simulation-coupled (InDeadBubble / GetInteractiveCnt gate
+	// Evolve and Partition); the transition journal, bubble subscriptions,
+	// and keep-alive registries are host-facing surfaces that stay empty
+	// without the Python bridge.
+	std::unordered_map<long, std::unordered_set<long long>> bubbleInteractives;
+#endif
 
 	SetOfBalls moribundBalls;
 	SetOfCapsules moribundCapsules;

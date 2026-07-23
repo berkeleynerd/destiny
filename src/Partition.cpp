@@ -487,6 +487,7 @@ void Partition::GetNearbyBalls(Ball* ball, VectorOfBalls& uni, VectorOfStaticCol
 }
 
 
+#if DESTINY_WITH_PYTHON
 PyObject * Partition::GetActiveBoxes(int level)
 {
     if(level >= mNumberOfLevels || level < 0)
@@ -515,6 +516,7 @@ PyObject * Partition::GetActiveBoxes(int level)
 
     return ret;
 }
+#endif // DESTINY_WITH_PYTHON
 
 
 BoxAllocator::BoxAllocator(): chunkSize(256)

@@ -199,6 +199,7 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 
 		////////////////////////////////////////////////////////////////////////////
 		//               keys
+#if DESTINY_WITH_PYTHON
 		MAP_ATTRIBUTE
 		(
 			"bubbles",
@@ -246,6 +247,7 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			"Bubble that park subscribes to",
 			Be::READ
 		)
+#endif // DESTINY_WITH_PYTHON
 
 		////////////////////////////////////////////////////////////////////////////
 		//               Roll Speed Acceleration
@@ -289,6 +291,7 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 
 		////////////////////////////////////////////////////////////////////////////
 		//               __init__
+#if DESTINY_WITH_PYTHON
 		MAP_METHOD_AS_METHOD
 		(
 			"__init__",
@@ -343,6 +346,7 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			PyStop,
 			"no comment"
 		)
+#endif // DESTINY_WITH_PYTHON
 		MAP_METHOD_AND_WRAP_OPTIONAL_ARGS
 		(
 			"RemoveBall",
@@ -350,6 +354,7 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
 			1,
 			"Schedules the Ball for removal during the next evolution."
 		)
+#if DESTINY_WITH_PYTHON
 		MAP_METHOD_AS_METHOD
 		(
 		    "GetBallIdsInRangeOfTriangle",
@@ -752,5 +757,6 @@ const Be::ClassInfo* Ballpark::ExposeToBlue()
             PyGetBoxKey,
             "Describes the box key (ix, iy, iz) that contains a point at a given level. Intended mostly as debugging aid"
 		)
+#endif // DESTINY_WITH_PYTHON
 	EXPOSURE_END()
 }

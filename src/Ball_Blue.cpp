@@ -479,6 +479,7 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 
 		////////////////////////////////////////////////////////////////////////////
 		//               __init__
+#if DESTINY_WITH_PYTHON
 		MAP_METHOD_AS_METHOD
 		(
 			"__init__",
@@ -531,6 +532,7 @@ const Be::ClassInfo* Ball::ExposeToBlue()
 			PyFreeFormationSlot,
 			"Frees a formation slot"
 		)
+#endif // DESTINY_WITH_PYTHON
 	EXPOSURE_END()
 }
 
@@ -599,6 +601,7 @@ const Be::ClassInfo* ClientBall::ExposeToBlue()
 		    Be::READWRITE
 		)
 
+#if DESTINY_WITH_PYTHON
 		MAP_METHOD_AS_METHOD
 		(
 			"GetPartitionBoxes",
@@ -606,6 +609,7 @@ const Be::ClassInfo* ClientBall::ExposeToBlue()
 			"Testing python method call."
 		)
 
+#endif // DESTINY_WITH_PYTHON
 		MAP_METHOD_AND_WRAP
 		(
 			"ApplyImpulsiveForceAtPosition",

@@ -25,6 +25,8 @@ extern PyObject* Timer_WriteBallsToStream;
 extern ITaskletTimer *TheTimer;
 extern const std::array<int,4> followModes;
 
+#if DESTINY_WITH_PYTHON
+
 static size_t byteCount = 0;
 
 void RaiseBallNotInParkError(const char* callerName, ID ballID)
@@ -3529,3 +3531,5 @@ PyObject* Ballpark::PyGetBoxKey(
 
     return ret;
 }
+
+#endif // DESTINY_WITH_PYTHON

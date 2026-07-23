@@ -10,6 +10,7 @@ extern bool g_disableDynamicalOrientationForMissiles = g_disableDynamicalOrienta
 extern bool g_useNewOrbit = g_useNewOrbitDefault;
 extern GlobalSettings* s_globalSettings = new OGlobalSettings();
 
+#if DESTINY_WITH_PYTHON
 PyObject* GlobalSettings::ApplyConfiguration( PyObject* args )
 {
 	PyObject* pyConfig;
@@ -63,3 +64,4 @@ PyObject* GlobalSettings::ResetConfiguration( PyObject* args )
 	g_useNewOrbit = g_useNewOrbitDefault;
 	Py_RETURN_NONE;
 }
+#endif // DESTINY_WITH_PYTHON

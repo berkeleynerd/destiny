@@ -53,7 +53,11 @@ ClientBall::ClientBall(IRoot *lockobj) :
 	mSpeedModifier(10.0f)
 {
     //CCP_LOG_CH( s_ch,"New Ball:%d. Total is: %d\n",int(this),++ballCount);
+#if DESTINY_WITH_PYTHON
     mBoxList = PyList_New(27);
+#else
+    mBoxList = nullptr;
+#endif
     mLastRot = Quaternion(0.0f,0.0f,0.0f,1.0f);
 	mImpactRotation = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
 	mImpactVelocity = Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
@@ -136,7 +140,9 @@ Ball::~Ball()
 
 ClientBall::~ClientBall()
 {
+#if DESTINY_WITH_PYTHON
     Py_DECREF(mBoxList);
+#endif // DESTINY_WITH_PYTHON
     //CCP_LOG_CH( s_ch,"Ball:%d destroyed. Total is: %d\n",int(this),--ballCount);
 }
 
@@ -145,6 +151,7 @@ ClientBall::~ClientBall()
 //---------------------------------------------------------------------------------------
 void Ball::RegisterBallNotInPark()
 {
+#if DESTINY_WITH_PYTHON
     if( Ballpark::s_ballNotInParkCallback && Ballpark::s_ballNotInParkCallback != Py_None )
     {
         auto gil = PyGILState_Ensure();
@@ -154,6 +161,7 @@ void Ball::RegisterBallNotInPark()
         Py_XDECREF(pyThis);
         Py_XDECREF(ret);
     }
+#endif // DESTINY_WITH_PYTHON
 }
 
 //---------------------------------------------------------------------------------------
@@ -1939,6 +1947,7 @@ Vector3d* ClientBall::GetReferencePoint( Vector3d* out, Be::Time time )
 // Python thunkers
 //---------------------------------------------------------------------------------------
 
+#if DESTINY_WITH_PYTHON
 PyObject* Ball::Py__init__(
     PyObject* args
     )
@@ -1949,13 +1958,16 @@ PyObject* Ball::Py__init__(
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif // DESTINY_WITH_PYTHON
 
 void ClientBall::DispatchPartition()
 {
+#if DESTINY_WITH_PYTHON
     for(int i =0; i<27;i++)
     {
         PyList_SET_ITEM(mBoxList, i, PyLong_FromLong(mActiveBoxes[i]));
     }
+#endif // DESTINY_WITH_PYTHON
 
     if (!DESTINY_PY_SEND_EVENT(
         (IBall*)this, "Destiny::Ball::DoPartition",
@@ -1978,6 +1990,7 @@ void ClientBall::DispatchPartition()
 //---------------------------------------------------------------------------------------
 // GetPartitionBoxes
 //---------------------------------------------------------------------------------------
+#if DESTINY_WITH_PYTHON
 PyObject* ClientBall::PyGetPartitionBoxes(PyObject* args)
 {
     if (!PyArg_ParseTuple(args, ""))
@@ -1995,6 +2008,7 @@ PyObject* ClientBall::PyGetPartitionBoxes(PyObject* args)
     Py_DECREF(boxes);
     return ret;
 }
+#endif // DESTINY_WITH_PYTHON
 
 //---------------------------------------------------------------------------------------
 // Physical impact methods
@@ -2128,6 +2142,7 @@ double ClientBall::GetCenterDistance()
 //---------------------------------------------------------------------------------------
 // TestingPythonMethod
 //---------------------------------------------------------------------------------------
+#if DESTINY_WITH_PYTHON
 PyObject* Ball::PyAddMiniBall(PyObject* args)
 {
     double x,y,z;
@@ -2188,6 +2203,7 @@ PyObject* Ball::PyAddMiniBox(PyObject* args)
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif // DESTINY_WITH_PYTHON
 
 
 void Ball::GetRotatedVector(Vector3& vec)
@@ -2207,6 +2223,7 @@ void Ball::GetRotatedVector(Vector3& vec)
 //---------------------------------------------------------------------------------------
 // GetAtVector
 //---------------------------------------------------------------------------------------
+#if DESTINY_WITH_PYTHON
 PyObject* Ball::PyGetRotatedVector(PyObject* args)
 {
     PyObject *list;
@@ -2238,10 +2255,12 @@ PyObject* Ball::PyGetRotatedVector(PyObject* args)
     Py_INCREF(list);
     return list;
 }
+#endif // DESTINY_WITH_PYTHON
 
 //---------------------------------------------------------------------------------------
 // Ball::PyAddProximitySensor
 //---------------------------------------------------------------------------------------
+#if DESTINY_WITH_PYTHON
 PyObject* Ball::PyAddProximitySensor(
     PyObject* args
     )
@@ -2273,6 +2292,7 @@ PyObject* Ball::PyReserveFormationSlot(
 
     return PyLong_FromLong(slot);
 }
+#endif // DESTINY_WITH_PYTHON
 
 char Ball::ReserveFormationSlot()
 {
@@ -2307,6 +2327,7 @@ char Ball::ReserveFormationSlot()
     return slot;
 }
 
+#if DESTINY_WITH_PYTHON
 PyObject* Ball::PyFreeFormationSlot(
     PyObject* args
     )
@@ -2323,6 +2344,7 @@ PyObject* Ball::PyFreeFormationSlot(
     Py_INCREF(Py_None);
     return Py_None;
 }
+#endif // DESTINY_WITH_PYTHON
 void Ball::FreeFormationSlot(size_t slot)
 {
     if(mFormationID == -1)

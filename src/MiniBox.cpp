@@ -30,6 +30,7 @@ MiniBox::~MiniBox()
 //
 //////////////////////////////////////////////////////////////////////
 
+#if DESTINY_WITH_PYTHON
 PyObject* MiniBox::Py__init__(
 	PyObject* args
 	)
@@ -44,3 +45,4 @@ PyObject* MiniBox::Py__init__(
 	Py_INCREF(Py_None);
 	return Py_None;
 }
+#endif // DESTINY_WITH_PYTHON

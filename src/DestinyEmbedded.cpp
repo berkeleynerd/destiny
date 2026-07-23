@@ -30,6 +30,7 @@ std::atomic<uint64_t> s_startCallCount = 0;
 std::atomic<uint64_t> s_onTickCallCount = 0;
 std::atomic<uint64_t> s_pythonCallbackCount = 0;
 std::atomic<bool> s_sessionActive = false;
+DestinyEmbeddedSession* s_activeSession = nullptr;
 
 void SetError( char* error, size_t errorSize, const char* message )
 {
@@ -112,6 +113,8 @@ struct DestinyEmbeddedSession
 	bool hasPreviousOrbitRelative = false;
 	double orbitAccumulatedPhase = 0.0;
 	Quaternion authoredRotation = Quaternion( 0.0f, 0.0f, 0.0f, 1.0f );
+	DestinyEmbeddedWarpEventCallback warpEventCallback = nullptr;
+	void* warpEventUserData = nullptr;
 
 	~DestinyEmbeddedSession()
 	{
@@ -120,6 +123,7 @@ struct DestinyEmbeddedSession
 			ballRoot->Unlock();
 		g_useDynamicalOrientation = previousDynamicalOrientation;
 		g_useNewOrbit = previousUseNewOrbit;
+		s_activeSession = nullptr;
 		s_sessionActive = false;
 	}
 };
@@ -159,6 +163,36 @@ void DestinyEmbeddedResetRuntimeCounters()
 	s_startCallCount = 0;
 	s_onTickCallCount = 0;
 	s_pythonCallbackCount = 0;
+}
+
+bool DestinyEmbeddedPostEvent(
+	void* ballpark,
+	const char* timerName,
+	const char* eventName,
+	const char* format,
+	long long ballId,
+	long long eventTime )
+{
+	// The recovered warp event contract (docs/thunker-contract-audit.md):
+	// exactly three semantic events survive the Python excision, forwarded
+	// to the host callback when one is registered. Unknown names are
+	// silently accepted (the historical surface treated them as posted).
+	( void )ballpark;
+	( void )timerName;
+	( void )format;
+	DestinyEmbeddedSession* session = s_activeSession;
+	if( !session || !session->warpEventCallback || !eventName )
+		return true;
+	int warpEvent = -1;
+	if( std::strcmp( eventName, "OnActivatingWarp" ) == 0 )
+		warpEvent = DESTINY_EMBEDDED_WARP_EVENT_ACTIVATING;
+	else if( std::strcmp( eventName, "OnDeactivatingWarp" ) == 0 )
+		warpEvent = DESTINY_EMBEDDED_WARP_EVENT_DEACTIVATING;
+	else if( std::strcmp( eventName, "OnExitWarp" ) == 0 )
+		warpEvent = DESTINY_EMBEDDED_WARP_EVENT_EXIT;
+	if( warpEvent >= 0 )
+		session->warpEventCallback( warpEvent, ballId, eventTime, session->warpEventUserData );
+	return true;
 }
 
 extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSession(
@@ -214,6 +248,9 @@ extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSessionWithOptions(
 	session->previousUseNewOrbit = g_useNewOrbit;
 	session->orientationPolicy = options->orientationPolicy;
 	session->referenceFrame = options->referenceFrame;
+	session->warpEventCallback = options->warpEventCallback;
+	session->warpEventUserData = options->warpEventUserData;
+	s_activeSession = session;
 	g_useDynamicalOrientation = true;
 	g_useNewOrbit = options->orbitPolicy == DESTINY_EMBEDDED_ORBIT_FRONTIER_NEW;
 	DestinyEmbeddedResetRuntimeCounters();

@@ -106,8 +106,10 @@ Ballpark::Ballpark(IRoot* lockobj) :
     mFriction(1000000.0),
     mWarpSpeed(2.0),
     mBubbleId(0),
+#if DESTINY_WITH_PYTHON
     bubbles(0),
     mBubbleSubscriptions(0),
+#endif
     mSomeWeirdHackToFixSomething(1.0f),
     inEvolve(false),
     mPara1(0.0),
@@ -126,10 +128,12 @@ Ballpark::Ballpark(IRoot* lockobj) :
     dt = mTickInterval * 0.001;
     mHaveTicks = false;
     mPartition = new Partition();
+#if DESTINY_WITH_PYTHON
     mBubbleSubscriptions = PyDict_New();
     bubbleInteractives = PyDict_New();
     bubbleKeepAlives = PyDict_New();
 	bubbleKeepAliveBalls = PySet_New(NULL);
+#endif // DESTINY_WITH_PYTHON
 
     if (ballparkCounter == 0)
     {   // these strings are really static and we make sure that they are only allocated one time
@@ -146,12 +150,16 @@ Ballpark::Ballpark(IRoot* lockobj) :
         Timer_CalculateYawPitchRoll = PyUnicode_FromString("Destiny::CalculateYawPitchRoll");
         Timer_WriteBallsToStream = PyUnicode_FromString("Destiny::WriteBallsToStream");
 #endif
+#if DESTINY_WITH_PYTHON
         Plus  = PyLong_FromLong(1);
         Zero  = PyLong_FromLong(0);
         Minus = PyLong_FromLong(-1);
+#endif // DESTINY_WITH_PYTHON
     }
 
+#if DESTINY_WITH_PYTHON
     bubbles = PyDict_New();
+#endif // DESTINY_WITH_PYTHON
 
     ballparkCounter++;
     CCP_LOG_CH( s_chPark, "Ballpark:%d created with time-step %d msec. Total of %d\n",this, mTickInterval,ballparkCounter);
@@ -181,9 +189,11 @@ Ballpark::~Ballpark()
         Py_DECREF(Timer_WarpDistance);
         Py_DECREF(Timer_CalculateYawPitchRoll);
 #endif
+#if DESTINY_WITH_PYTHON
         Py_DECREF(Plus);
         Py_DECREF(Zero);
         Py_DECREF(Minus);
+#endif // DESTINY_WITH_PYTHON
     }
 
     ClearAll();
@@ -193,6 +203,7 @@ Ballpark::~Ballpark()
         mPartition = 0;
     }
 
+#if DESTINY_WITH_PYTHON
     if(mBubbleSubscriptions)
         Py_DECREF(mBubbleSubscriptions);
 
@@ -206,6 +217,7 @@ Ballpark::~Ballpark()
         Py_DECREF(bubbleKeepAliveBalls);
 
     Py_XDECREF( Ballpark::s_ballNotInParkCallback );
+#endif // DESTINY_WITH_PYTHON
     Ballpark::s_ballNotInParkCallback = NULL;
 
     // Always need to unregister from ticks if we get destroyed
@@ -5889,6 +5901,7 @@ void Ballpark::HandleProximities()
 //---------------------------------------------------------------------------------------
 void Ballpark::ClearBubbles()
 {
+#if DESTINY_WITH_PYTHON
 	if( bubbles )
 	{
 		PyDict_Clear( bubbles );
@@ -5905,6 +5918,9 @@ void Ballpark::ClearBubbles()
 	{
 		PySet_Clear( bubbleKeepAliveBalls );
 	}
+#else
+	bubbleInteractives.clear();
+#endif
 }
 
 //---------------------------------------------------------------------------------------
@@ -6024,6 +6040,7 @@ void Ballpark::UpdateBallBubble(
 // and appends it to the provided list
 //---------------------------------------------------------------------------------------
 
+#if DESTINY_WITH_PYTHON
 void Ballpark::AddTransitionToList(const Ball *ball, PyObject *transitions)
 {
 	if (transitions == nullptr)
@@ -6073,6 +6090,7 @@ void Ballpark::NotifyOfBubbleTransitions(const PyObject* transitions)
 		PyOS->PyError();
 	}
 }
+#endif // DESTINY_WITH_PYTHON
 
 //---------------------------------------------------------------------------------------
 // ResolveBubbleConflicts recacalculates causal domains and assigns new bubble Ids
@@ -6169,6 +6187,7 @@ void Ballpark::ResolveBubbleConflicts()
     //CCP_LOG_CH( s_chPark,"Conflict Resolution: %f",timer.GetTime()/10000.0);
 }
 
+#if DESTINY_WITH_PYTHON
 void Ballpark::CopyBubbles()
 {
     TASKLET(Timer_CopyBubbles);
@@ -6230,6 +6249,7 @@ void Ballpark::CopyBubbles()
     Py_DECREF(delBallList);
     Py_DECREF(delBubbleList);
 }
+#endif // DESTINY_WITH_PYTHON
 
 bool Ballpark::InDeadBubble(Ball *ball)
 {
@@ -6244,6 +6264,7 @@ bool Ballpark::InDeadBubble(Ball *ball)
         return false;
     }
 
+#if DESTINY_WITH_PYTHON
     PyObject *key = PyLong_FromLong(ball->mNewBubble);
 
     PyObject *interactives;
@@ -6274,6 +6295,12 @@ bool Ballpark::InDeadBubble(Ball *ball)
 
     Py_DECREF(key);
     return true;
+#else
+    // D-03 twin: a bubble with interactive balls is live; the keep-alive
+    // registry is Python-written and always empty without the bridge.
+    const auto liveIt = bubbleInteractives.find( ball->mNewBubble );
+    return liveIt == bubbleInteractives.end() || liveIt->second.empty();
+#endif
 }
 
 size_t Ballpark::GetInteractiveCnt(Ball *ball)
@@ -6281,6 +6308,7 @@ size_t Ballpark::GetInteractiveCnt(Ball *ball)
     if(!isMaster)
         return 0;
 
+#if DESTINY_WITH_PYTHON
     Py_ssize_t cnt = 0;
 
     PyObject *interactives;
@@ -6292,6 +6320,10 @@ size_t Ballpark::GetInteractiveCnt(Ball *ball)
     Py_DECREF(key);
 
     return cnt;
+#else
+    const auto cntIt = bubbleInteractives.find( ball->mNewBubble );
+    return cntIt == bubbleInteractives.end() ? 0 : cntIt->second.size();
+#endif
 }
 void Ballpark::SetBallRigid(
     const ID& srcId
@@ -6384,6 +6416,7 @@ void Ballpark::SetBallInteractive(
 
 void Ballpark::DecreaseInteractiveCnt(Partitionable *p, long inBubble)
 {
+#if DESTINY_WITH_PYTHON
     if(p->isInteractive)
     {
         Py_ssize_t val = 0;
@@ -6406,6 +6439,18 @@ void Ballpark::DecreaseInteractiveCnt(Partitionable *p, long inBubble)
             Py_DECREF(key);
         }
     }
+#else
+    if(p->isInteractive && inBubble != -1)
+    {
+        auto setIt = bubbleInteractives.find( inBubble );
+        if(setIt != bubbleInteractives.end())
+        {
+            setIt->second.erase( p->mId );
+            if(setIt->second.empty())
+                bubbleInteractives.erase( setIt );
+        }
+    }
+#endif
 }
 
 void Ballpark::UpdateInteractiveCnt(Partitionable *p, long oldBubble, long newBubble)
@@ -6419,6 +6464,7 @@ void Ballpark::UpdateInteractiveCnt(Partitionable *p, long oldBubble, long newBu
 
 void Ballpark::IncreaseInteractiveCnt(Partitionable *p, long inBubble)
 {
+#if DESTINY_WITH_PYTHON
     if(p->isInteractive)
     {
         long val = 0;
@@ -6442,10 +6488,15 @@ void Ballpark::IncreaseInteractiveCnt(Partitionable *p, long inBubble)
 
         }
     }
+#else
+    if(p->isInteractive && inBubble != -1)
+        bubbleInteractives[ inBubble ].insert( p->mId );
+#endif
 }
 
 void Ballpark::AddToBubble(Partitionable *p)
 {
+#if DESTINY_WITH_PYTHON
 	if(!bubbles)
 	{ 
 		// Bubbles are kept as a dictionary, containing a map to ball IDs
@@ -6574,6 +6625,12 @@ void Ballpark::AddToBubble(Partitionable *p)
 	Py_DECREF(newBubbleId);
 	Py_DECREF(oldBubbleId);
 	Py_DECREF(ballId);
+#else
+	// D-03 twin: the transition journal and bubble subscriptions are
+	// host-facing surfaces; only the count bookkeeping feeds the sim.
+	UpdateInteractiveCnt(p, p->mOldBubble, p->mNewBubble);
+	UpdateKeepAliveBalls(p, p->mOldBubble, p->mNewBubble);
+#endif
 }
 
 //---------------------------------------------------------------------------------------
@@ -6666,6 +6723,7 @@ ClientBall* Ballpark::GetEgo()
 // InitializeFormations initializes formations static data
 //---------------------------------------------------------------------------------------
 
+#if DESTINY_WITH_PYTHON
 void Ballpark::AddFormation(PyObject *vectorList)
 {
     VectorOfVectors vecs;
@@ -6687,6 +6745,7 @@ void Ballpark::AddFormation(PyObject *vectorList)
     mFormations.resize(mFormations.size()+1);
     mFormations.back().swap(vecs);
 }
+#endif // DESTINY_WITH_PYTHON
 
 void Ballpark::SetBallFormation(const ID& srcId, char formationID)
 {
@@ -6745,6 +6804,7 @@ void Ballpark::SetBallFormation(const ID& srcId, char formationID)
 
 }
 
+#if DESTINY_WITH_PYTHON
 PyObject* Ballpark::PySetBallNotInParkCallback(
      PyObject* args
      )
@@ -6759,9 +6819,11 @@ PyObject* Ballpark::PySetBallNotInParkCallback(
     Py_INCREF( Py_None );
     return Py_None;
 }
+#endif // DESTINY_WITH_PYTHON
 
 void Ballpark::UpdateKeepAliveBalls(Partitionable *p, long oldBubble, long newBubble)
 {
+#if DESTINY_WITH_PYTHON
 	PyObject* ballId = PyLong_FromLongLong( p->mId );
 	if( !ballId )
 	{
@@ -6783,8 +6845,14 @@ void Ballpark::UpdateKeepAliveBalls(Partitionable *p, long oldBubble, long newBu
 	}
 	AddKeepAliveBall( ballId, newBubble );
 	RemoveKeepAliveBall( ballId, oldBubble );
+#else
+	// D-03 twin: the keep-alive registry is Python-written and therefore
+	// always empty without the bridge.
+	(void)p; (void)oldBubble; (void)newBubble;
+#endif
 }
 
+#if DESTINY_WITH_PYTHON
 void Ballpark::AddKeepAliveBall(PyObject *ballId, long inBubble)
 {
     if(inBubble != -1)
@@ -6819,3 +6887,4 @@ void Ballpark::RemoveKeepAliveBall(PyObject *ballId, long inBubble)
         Py_DECREF(bubbleId);
     }
 }
+#endif // DESTINY_WITH_PYTHON

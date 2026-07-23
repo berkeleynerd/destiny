@@ -1,0 +1,31 @@
+# D-03 sanctioned import surface for destinyEmbedded (see
+# docs/destiny-python-seam.md). Three provenance classes; anything beyond
+# this list means destiny-authored CPython calls crept back in.
+#
+# 1. Host-readiness probe (DestinyEmbedded.cpp, D-01 contract: the host must
+#    initialize CPython for Blue before creating a session).
+_Py_IsInitialized
+#
+# 2. Blue registration ABI: EXPOSURE_BEGIN_IMP instantiates a static
+#    PyTypeObject headed by &PyType_Type (BlueExposureMacrosPython.h).
+_PyType_Type
+#
+# 3. Blue header-template residue: BlueList_Impl<MiniBall/MiniBox/MiniCapsule>
+#    weak instantiations carry PyRepr/PyDebugExpand/PyDebugCollapse and their
+#    exposure helpers under Blue's own BLUE_WITH_PYTHON=1 (mandatory for ABI
+#    parity with blue.so). Never reachable on the simulation path.
+_PyErr_SetString
+_PyExc_IndexError
+_PyExc_TypeError
+_PyList_Append
+_PyList_New
+_PyObject_Size
+_PyObject_Str
+_PyUnicode_Append
+_PyUnicode_FromFormat
+_PyUnicode_FromString
+__Py_Dealloc
+__Py_NoneStruct
+#
+# Not CPython at all, but matches the _Py prefix: Blue's global IPyOS pointer.
+_PyOS
