@@ -243,6 +243,11 @@ extern "C"
 		Be::Time effectiveTime,
 		int64_t targetBallId,
 		float surfaceRange );
+	DESTINY_EMBEDDED_API bool Destiny_WriteEmbeddedFullState(
+		DestinyEmbeddedSession* session,
+		void* buffer,
+		size_t bufferSize,
+		size_t* bytesWritten );
 	DESTINY_EMBEDDED_API IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriVectorFunction* Destiny_GetEmbeddedPosition( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API ITriQuaternionFunction* Destiny_GetEmbeddedRotation( DestinyEmbeddedSession* session );
