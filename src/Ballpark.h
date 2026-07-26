@@ -898,13 +898,17 @@ public://FUNCTIONS
 #ifdef DESTINY_EMBEDDED
 	bool DestinyEmbeddedHasRegisteredTicks() const { return mHaveTicks; }
 	size_t DestinyEmbeddedWriteFullState( IBlueStreamPtr s );
+	size_t DestinyEmbeddedWriteFullStateOrdered( IBlueStreamPtr s, const ID* ballIds, size_t ballCount );
+	bool DestinyEmbeddedReadFullState( IBlueStreamPtr s ) { return ReadFullStateFromStream( s, 0 ); }
+	Ball* DestinyEmbeddedFindBall( ID ballId ) { return mBalls[ballId]; }
+	size_t DestinyEmbeddedBallCount() { return mBalls.GetSize(); }
 #endif
 
 	Vector3d* GetReferencePoint(Vector3d* out, Be::Time time) override;
 
-    void EntityWarpIn(const ID& srcId, double x, double y, double z, int warpFactor);
+	void EntityWarpIn(const ID& srcId, double x, double y, double z, int warpFactor);
 
-    void AdjustTimes(Be::Time timeDelta);
+	void AdjustTimes(Be::Time timeDelta);
 
 private:
 	void InsertInBox(Box *box,Partitionable *partitionable);

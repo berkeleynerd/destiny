@@ -209,9 +209,12 @@ evolves against the independently generated Python-Ballpark corpus
 are bit-identical. The target remains stationary and nonrendered, and all
 scheduler/Python callback counters remain zero.
 
-Installed `code.ccp` has SHA-256
+The historical RC-11 installed `code.ccp` snapshot has SHA-256
 `232a2c1552cd00d030e7b9f6bf1d4956673e3c1be85f07f4b19ebe19131fa67f`.
-It contains `enable_new_orbit` but no observed caller; Frontier orbit is an
+It is not the current PL-14G bytecode authority
+(`19ff580705e3800ccaba7cc03b7b8c988ab4095eafc36912f090896082311564`).
+The historical snapshot contains `enable_new_orbit` but no observed caller;
+Frontier orbit is an
 explicit Promised Land choice rather than claimed installed-client policy.
 
 ## PL-12 celestial ball exposure (2026-07-12)
