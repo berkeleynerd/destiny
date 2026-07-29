@@ -306,6 +306,21 @@ if(BUILD_DESTINY_EMBEDDED)
 			add_test(NAME DestinyEmbeddedFullStateContract COMMAND DestinyEmbeddedFullStateContractTest)
 		endif()
 
+		ccp_add_executable(DestinyEmbeddedMultiBallContractTest)
+		target_sources(DestinyEmbeddedMultiBallContractTest PRIVATE
+			tests/DestinyEmbeddedMultiBallContractTest.cpp)
+		target_include_directories(DestinyEmbeddedMultiBallContractTest PRIVATE
+			${CMAKE_CURRENT_SOURCE_DIR}/include
+			${CMAKE_CURRENT_SOURCE_DIR}/src)
+		target_link_libraries(DestinyEmbeddedMultiBallContractTest PRIVATE
+			"$<LINK_LIBRARY:WHOLE_ARCHIVE,destinyEmbedded>")
+		if(APPLE)
+			target_link_libraries(DestinyEmbeddedMultiBallContractTest PRIVATE "-framework CoreFoundation")
+		endif()
+		if(BUILD_TESTING)
+			add_test(NAME DestinyEmbeddedMultiBallContract COMMAND DestinyEmbeddedMultiBallContractTest)
+		endif()
+
 		if(BUILD_TESTING AND APPLE)
 			add_test(NAME DestinyEmbeddedSymbolGate
 				COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/tests/check-embedded-python-symbols.sh
@@ -325,7 +340,8 @@ if(BUILD_DESTINY_EMBEDDED)
 			DestinyEmbeddedCelestialContractTest
 			DestinyEmbeddedSeamTest
 			DestinyEmbeddedRecorderTest
-			DestinyEmbeddedFullStateContractTest)
+			DestinyEmbeddedFullStateContractTest
+			DestinyEmbeddedMultiBallContractTest)
 			target_compile_definitions(${_embeddedTest} PRIVATE
 				DESTINY_WITH_PYTHON=0
 				DESTINY_EMBEDDED=1)
