@@ -15,6 +15,7 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <map>
 #include <new>
 #include <unordered_set>
 #include <vector>
@@ -23,6 +24,7 @@ static_assert( DESTINY_EMBEDDED_BALL_MODE_FOLLOW == DSTBALL_FOLLOW, "embedded ba
 static_assert( DESTINY_EMBEDDED_BALL_MODE_STOP == DSTBALL_STOP, "embedded ball-mode mirror diverged" );
 static_assert( DESTINY_EMBEDDED_BALL_MODE_GOTO == DSTBALL_GOTO, "embedded ball-mode mirror diverged" );
 static_assert( DESTINY_EMBEDDED_BALL_MODE_ORBIT == DSTBALL_ORBIT, "embedded ball-mode mirror diverged" );
+static_assert( DESTINY_EMBEDDED_BALL_MODE_MISSILE == DSTBALL_MISSILE, "embedded ball-mode mirror diverged" );
 static_assert( DESTINY_EMBEDDED_BALL_MODE_RIGID == DSTBALL_RIGID, "embedded ball-mode mirror diverged" );
 
 namespace
@@ -800,6 +802,19 @@ bool InspectEmbeddedFullStateInternal(
 }
 }
 
+struct EmbeddedMissileRecord
+{
+	DestinyEmbeddedMissileConfig config = {};
+	int64_t ownerBallId = 0;
+	int64_t targetBallId = 0;
+	Be::Time launchTime = 0;
+	Be::Time firstCollisionTime = 0;
+	int64_t firstCollisionBallId = 0;
+	DestinyEmbeddedBallState terminalState = {};
+	bool expired = false;
+	bool removed = false;
+};
+
 struct DestinyEmbeddedSession
 {
 	BluePtr<Ballpark> ballpark;
@@ -830,6 +845,12 @@ struct DestinyEmbeddedSession
 	float pendingRange = 0.0f;
 	double pendingMinRange = 0.0;
 	int32_t pendingWarpFactor = 0;
+	DestinyEmbeddedMissileConfig pendingMissileConfig = {};
+	int64_t pendingMissileOwnerBallId = 0;
+	int64_t pendingMissileTargetBallId = 0;
+	bool pendingMissileAimedLaunch = false;
+	bool pendingMissileMassive = false;
+	std::map<int64_t, EmbeddedMissileRecord> missiles;
 	Vector3d previousOrbitRelative;
 	bool hasPreviousOrbitRelative = false;
 	double orbitAccumulatedPhase = 0.0;
@@ -854,6 +875,28 @@ namespace
 Ball* FindEmbeddedBall( DestinyEmbeddedSession* session, int64_t ballId )
 {
 	return session && ballId != 0 ? session->ballpark->DestinyEmbeddedFindBall( ballId ) : nullptr;
+}
+
+void PopulateEmbeddedBallState( const Ball* ball, DestinyEmbeddedBallState& state )
+{
+	state = {};
+	state.ballId = ball->mId;
+	state.mode = static_cast<int32_t>( ball->mMode );
+	state.flags = ( ball->isFree ? DSTBALL_ISFREE : 0 ) |
+		( ball->isGlobal ? DSTBALL_ISGLOBAL : 0 ) |
+		( ball->isMassive ? DSTBALL_ISMASSIVE : 0 ) |
+		( ball->isInteractive ? DSTBALL_ISINTERACTIVE : 0 ) |
+		( ball->isSpaceJunk ? DSTBALL_ISSPACEJUNK : 0 );
+	state.radius = ball->mRadius;
+	for( size_t axis = 0; axis < 3; ++axis )
+	{
+		state.position[axis] = ( &ball->mNewPos.x )[axis];
+		state.velocity[axis] = ( &ball->mNewVel.x )[axis];
+	}
+	state.rotation[0] = ball->mNewRot.x;
+	state.rotation[1] = ball->mNewRot.y;
+	state.rotation[2] = ball->mNewRot.z;
+	state.rotation[3] = ball->mNewRot.w;
 }
 
 bool IsCelestialRole( const DestinyEmbeddedSession* session, int64_t ballId )
@@ -907,6 +950,65 @@ void InitializeEmbeddedPrimaryHistory( DestinyEmbeddedSession* session )
 {
 	session->authoredRotation = session->ball->mNewRot;
 	InitializeEmbeddedBallHistory( session, session->ball );
+}
+
+bool LaunchPendingEmbeddedMissile( DestinyEmbeddedSession* session )
+{
+	const DestinyEmbeddedMissileConfig& missileConfig = session->pendingMissileConfig;
+	const DestinyEmbeddedBallConfig& config = missileConfig.ball;
+	Ball* owner = FindEmbeddedBall( session, session->pendingMissileOwnerBallId );
+	Ball* target = FindEmbeddedBall( session, session->pendingMissileTargetBallId );
+	if( !owner || !target || FindEmbeddedBall( session, config.ballId ) )
+		return false;
+
+	Ball* missile = session->ballpark->AddDynamicallyOrientedBall(
+		config.ballId,
+		config.mass,
+		config.radius,
+		config.maximumVelocity,
+		config.maximumAngularVelocity,
+		config.isFree,
+		config.isGlobal,
+		config.isMassive,
+		config.isInteractive,
+		config.isSpaceJunk,
+		owner->mNewPos.x,
+		owner->mNewPos.y,
+		owner->mNewPos.z,
+		owner->mNewVel.x,
+		owner->mNewVel.y,
+		owner->mNewVel.z,
+		owner->mNewRot.x,
+		owner->mNewRot.y,
+		owner->mNewRot.z,
+		owner->mNewRot.w,
+		owner->mNewAngVel.x,
+		owner->mNewAngVel.y,
+		owner->mNewAngVel.z,
+		config.agility,
+		config.rotationalAgility,
+		config.speedFraction );
+	if( !missile )
+		return false;
+	InitializeEmbeddedBallHistory( session, static_cast<ClientBall*>( missile ) );
+	if( !session->ballpark->LaunchMissile(
+			config.ballId,
+			session->pendingMissileTargetBallId,
+			session->pendingMissileOwnerBallId,
+			session->pendingMissileAimedLaunch,
+			session->pendingMissileMassive ) )
+	{
+		session->ballpark->RemoveBall( config.ballId );
+		return false;
+	}
+	InitializeEmbeddedBallHistory( session, static_cast<ClientBall*>( missile ) );
+	EmbeddedMissileRecord record;
+	record.config = missileConfig;
+	record.ownerBallId = session->pendingMissileOwnerBallId;
+	record.targetBallId = session->pendingMissileTargetBallId;
+	record.launchTime = session->pendingCommandTime;
+	session->missiles.emplace( config.ballId, record );
+	return true;
 }
 }
 
@@ -1594,12 +1696,39 @@ extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session,
 					session->pendingTarget[1],
 					session->pendingTarget[2] );
 			}
+			else if( session->pendingCommand == 7 )
+			{
+				if( !LaunchPendingEmbeddedMissile( session ) )
+					return false;
+			}
 			session->pendingCommand = 0;
 		}
 		// ClientBall samples two ticks behind render time. Evolving the local fixture
 		// one tick behind the explicit clock keeps the latest interpolation segment
 		// aligned with that native history window without a scheduler or look-ahead.
 		session->ballpark->Evolve( session->nextTickTime - tickInterval );
+		for( auto& missileEntry : session->missiles )
+		{
+			EmbeddedMissileRecord& record = missileEntry.second;
+			if( record.removed )
+				continue;
+			Ball* missile = FindEmbeddedBall( session, missileEntry.first );
+			if( !missile )
+				return false;
+			PopulateEmbeddedBallState( missile, record.terminalState );
+			if( record.firstCollisionTime == 0 &&
+				std::find( missile->mCollisions.begin(), missile->mCollisions.end(), record.targetBallId ) !=
+					missile->mCollisions.end() )
+			{
+				record.firstCollisionTime = session->nextTickTime;
+				record.firstCollisionBallId = record.targetBallId;
+			}
+			if( record.firstCollisionTime == 0 &&
+				session->nextTickTime >= record.launchTime + record.config.lifetime )
+			{
+				record.expired = true;
+			}
+		}
 		if( session->ball->mMode == DSTBALL_ORBIT && session->orbitTarget )
 		{
 			const Vector3d relative = session->ball->mNewPos - session->orbitTarget->mNewPos;
@@ -1957,6 +2086,95 @@ extern "C" bool Destiny_CommandEmbeddedFollow(
 	return true;
 }
 
+extern "C" bool Destiny_CommandEmbeddedLaunchMissile(
+	DestinyEmbeddedSession* session,
+	Be::Time effectiveTime,
+	const DestinyEmbeddedMissileConfig* config,
+	int64_t ownerBallId,
+	int64_t targetBallId,
+	bool aimedLaunch,
+	bool massive )
+{
+	if( !session || !config || !IsFinite( config->ball ) || !config->ball.isFree ||
+		config->ball.ballId == 0 || config->ball.ballId == ownerBallId ||
+		config->ball.ballId == targetBallId || ownerBallId == targetBallId ||
+		config->ball.solarSystemId != session->ballpark->mSolarsystemID ||
+		config->ball.maximumVelocity <= 0.0f || config->lifetime <= 0 ||
+		effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
+		session->pendingCommand != 0 ||
+		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
+		!FindEmbeddedBall( session, ownerBallId ) || !FindEmbeddedBall( session, targetBallId ) ||
+		FindEmbeddedBall( session, config->ball.ballId ) ||
+		session->missiles.find( config->ball.ballId ) != session->missiles.end() )
+	{
+		return false;
+	}
+
+	session->pendingCommand = 7;
+	session->pendingCommandTime = effectiveTime;
+	session->pendingMissileConfig = *config;
+	session->pendingMissileOwnerBallId = ownerBallId;
+	session->pendingMissileTargetBallId = targetBallId;
+	session->pendingMissileAimedLaunch = aimedLaunch;
+	session->pendingMissileMassive = massive;
+	session->lastCommandTime = effectiveTime;
+	++session->commandCount;
+	return true;
+}
+
+extern "C" bool Destiny_GetEmbeddedMissileState(
+	DestinyEmbeddedSession* session,
+	int64_t missileBallId,
+	DestinyEmbeddedMissileState* state )
+{
+	if( !session || !state )
+		return false;
+	const auto found = session->missiles.find( missileBallId );
+	if( found == session->missiles.end() )
+		return false;
+	const EmbeddedMissileRecord& record = found->second;
+	*state = {};
+	Ball* missile = record.removed ? nullptr : FindEmbeddedBall( session, missileBallId );
+	if( missile )
+		PopulateEmbeddedBallState( missile, state->ball );
+	else
+		state->ball = record.terminalState;
+	state->ownerBallId = record.ownerBallId;
+	state->targetBallId = record.targetBallId;
+	state->launchTime = record.launchTime;
+	state->lifetime = record.config.lifetime;
+	state->firstCollisionTime = record.firstCollisionTime;
+	state->firstCollisionBallId = record.firstCollisionBallId;
+	state->active = missile != nullptr;
+	state->initialStraightFlight = missile != nullptr && !record.expired &&
+		session->lastRequestedTime - record.launchTime <= 8000000;
+	state->collided = record.firstCollisionTime != 0;
+	state->expired = record.expired;
+	state->removed = record.removed;
+	return true;
+}
+
+extern "C" bool Destiny_RemoveEmbeddedMissile(
+	DestinyEmbeddedSession* session,
+	int64_t missileBallId )
+{
+	if( !session )
+		return false;
+	const auto found = session->missiles.find( missileBallId );
+	if( found == session->missiles.end() )
+		return false;
+	EmbeddedMissileRecord& record = found->second;
+	Ball* missile = FindEmbeddedBall( session, missileBallId );
+	if( record.removed || !missile || ( record.firstCollisionTime == 0 && !record.expired ) )
+		return false;
+	PopulateEmbeddedBallState( missile, record.terminalState );
+	session->ballpark->RemoveBall( missileBallId );
+	if( FindEmbeddedBall( session, missileBallId ) )
+		return false;
+	record.removed = true;
+	return true;
+}
+
 extern "C" IEveBallpark* Destiny_GetEmbeddedBallpark( DestinyEmbeddedSession* session )
 {
 	return session ? static_cast<IEveBallpark*>( session->ballpark.p ) : nullptr;
@@ -1998,24 +2216,7 @@ extern "C" bool Destiny_GetEmbeddedBallState(
 	Ball* ball = FindEmbeddedBall( session, ballId );
 	if( !ball )
 		return false;
-	*state = {};
-	state->ballId = ball->mId;
-	state->mode = static_cast<int32_t>( ball->mMode );
-	state->flags = ( ball->isFree ? DSTBALL_ISFREE : 0 ) |
-		( ball->isGlobal ? DSTBALL_ISGLOBAL : 0 ) |
-		( ball->isMassive ? DSTBALL_ISMASSIVE : 0 ) |
-		( ball->isInteractive ? DSTBALL_ISINTERACTIVE : 0 ) |
-		( ball->isSpaceJunk ? DSTBALL_ISSPACEJUNK : 0 );
-	state->radius = ball->mRadius;
-	for( size_t axis = 0; axis < 3; ++axis )
-	{
-		state->position[axis] = ( &ball->mNewPos.x )[axis];
-		state->velocity[axis] = ( &ball->mNewVel.x )[axis];
-	}
-	state->rotation[0] = ball->mNewRot.x;
-	state->rotation[1] = ball->mNewRot.y;
-	state->rotation[2] = ball->mNewRot.z;
-	state->rotation[3] = ball->mNewRot.w;
+	PopulateEmbeddedBallState( ball, *state );
 	return true;
 }
 

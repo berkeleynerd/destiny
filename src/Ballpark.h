@@ -321,6 +321,17 @@ public://FUNCTIONS
 		const ID& ownerId
 		);
 
+	// Launches an already-created missile ball using the same native path as
+	// the Python thunker. Returns false when the owner/target contract cannot
+	// be satisfied; no mode change is committed in that case.
+	bool LaunchMissile(
+		const ID& srcId,
+		const ID& dstId,
+		const ID& ownerId,
+		bool aimedLaunch,
+		bool massive
+		);
+
 	void FormationFollow(
 		const ID& srcId,
 		const ID& dstId,
