@@ -113,6 +113,24 @@ int main()
 		&astero, &options, error, sizeof( error ) );
 	if( !direct )
 		return Fail( std::string( "direct session failed: " ) + error );
+	std::vector<uint8_t> beforeRejectedBalls;
+	if( !WritePacket( direct, beforeRejectedBalls ) )
+		return Fail( "pre-rejection full-state write failed" );
+	DestinyEmbeddedBallConfig negative = venture;
+	negative.ballId = -2;
+	DestinyEmbeddedBallConfig global = venture;
+	global.ballId = 3;
+	global.isGlobal = true;
+	if( Destiny_AddEmbeddedDynamicBall( direct, &negative, error, sizeof( error ) ) ||
+		Destiny_AddEmbeddedDynamicBall( direct, &global, error, sizeof( error ) ) ||
+		Destiny_GetEmbeddedBallPosition( direct, negative.ballId ) ||
+		Destiny_GetEmbeddedBallPosition( direct, global.ballId ) )
+	{
+		return Fail( "non-ordinary dynamic ball was accepted or allocated" );
+	}
+	std::vector<uint8_t> afterRejectedBalls;
+	if( !WritePacket( direct, afterRejectedBalls ) || afterRejectedBalls != beforeRejectedBalls )
+		return Fail( "rejected dynamic ball changed serialized state" );
 	if( !Destiny_AddEmbeddedDynamicBall( direct, &venture, error, sizeof( error ) ) )
 		return Fail( std::string( "Venture addition failed: " ) + error );
 	if( Destiny_AddEmbeddedDynamicBall( direct, &venture, error, sizeof( error ) ) )
@@ -189,6 +207,6 @@ int main()
 
 	std::printf(
 		"Destiny PL-C0 two-ball contract: stop-balls=2 curves=distinct "
-		"late-rejection=true duplicate-rejection=true fixed-point=true evolves=2\n" );
+		"late-rejection=true duplicate-rejection=true ordinary-rejection=true fixed-point=true evolves=2\n" );
 	return 0;
 }

@@ -1804,7 +1804,8 @@ extern "C" bool Destiny_AddEmbeddedFixedTarget(
 		error[0] = '\0';
 	if( !session || !config || session->fixedTarget || session->directEvolveCount != 0 ||
 		session->commandCount != 0 || config->ballId == 0 || config->ballId == session->ball->mId ||
-		config->ballId == session->ballpark->mEgo || !std::isfinite( config->radius ) || config->radius <= 0.0f ||
+		config->ballId == session->ballpark->mEgo || FindEmbeddedBall( session, config->ballId ) ||
+		!std::isfinite( config->radius ) || config->radius <= 0.0f ||
 		!std::isfinite( config->position[0] ) || !std::isfinite( config->position[1] ) ||
 		!std::isfinite( config->position[2] ) )
 	{
@@ -1831,8 +1832,8 @@ extern "C" bool Destiny_AddEmbeddedDynamicBall(
 {
 	if( error && errorSize )
 		error[0] = '\0';
-	if( !session || !config || !IsFinite( *config ) || !config->isFree ||
-		config->ballId == 0 || config->solarSystemId != session->ballpark->mSolarsystemID ||
+	if( !session || !config || !IsFinite( *config ) || !config->isFree || config->isGlobal ||
+		config->ballId <= 0 || config->solarSystemId != session->ballpark->mSolarsystemID ||
 		session->directEvolveCount != 0 || session->commandCount != 0 ||
 		FindEmbeddedBall( session, config->ballId ) )
 	{
@@ -1903,8 +1904,7 @@ extern "C" bool Destiny_AddEmbeddedCelestial(
 	if( !session || !config || duplicate || session->directEvolveCount != 0 ||
 		session->commandCount != 0 || session->celestialCount >= kMaxCelestialBalls ||
 		config->ballId == 0 || config->ballId == session->ball->mId ||
-		config->ballId == session->ballpark->mEgo ||
-		( session->fixedTarget && config->ballId == session->fixedTarget->mId ) ||
+		config->ballId == session->ballpark->mEgo || FindEmbeddedBall( session, config->ballId ) ||
 		!std::isfinite( config->radius ) || config->radius <= 0.0f ||
 		!std::isfinite( config->position[0] ) || !std::isfinite( config->position[1] ) ||
 		!std::isfinite( config->position[2] ) )
@@ -2143,8 +2143,8 @@ extern "C" bool Destiny_CommandEmbeddedLaunchMissile(
 	if( !session )
 		return false;
 	session->eventCallbackConfigurationLocked = true;
-	if( !config || !IsFinite( config->ball ) || !config->ball.isFree ||
-		config->ball.ballId == 0 || config->ball.ballId == ownerBallId ||
+	if( !config || !IsFinite( config->ball ) || !config->ball.isFree || config->ball.isGlobal ||
+		config->ball.ballId <= 0 || config->ball.ballId == ownerBallId ||
 		config->ball.ballId == targetBallId || ownerBallId == targetBallId ||
 		config->ball.solarSystemId != session->ballpark->mSolarsystemID ||
 		config->ball.maximumVelocity <= 0.0f || config->lifetime <= 0 ||

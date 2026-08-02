@@ -313,6 +313,172 @@ bool CheckAdditionConstraints( std::string& error )
 	return true;
 }
 
+bool SameBallState( const DestinyEmbeddedBallState& first, const DestinyEmbeddedBallState& second )
+{
+	if( first.ballId != second.ballId || first.mode != second.mode || first.flags != second.flags ||
+		first.radius != second.radius )
+	{
+		return false;
+	}
+	for( size_t axis = 0; axis < 3; ++axis )
+		if( first.position[axis] != second.position[axis] || first.velocity[axis] != second.velocity[axis] )
+			return false;
+	for( size_t axis = 0; axis < 4; ++axis )
+		if( first.rotation[axis] != second.rotation[axis] )
+			return false;
+	return true;
+}
+
+bool SameCelestialState(
+	const DestinyEmbeddedCelestialState& first,
+	const DestinyEmbeddedCelestialState& second )
+{
+	if( first.ballId != second.ballId || first.mode != second.mode || first.isFree != second.isFree ||
+		first.isGlobal != second.isGlobal || first.isMassive != second.isMassive ||
+		first.isInteractive != second.isInteractive || first.radius != second.radius )
+	{
+		return false;
+	}
+	for( size_t axis = 0; axis < 3; ++axis )
+		if( first.position[axis] != second.position[axis] || first.velocity[axis] != second.velocity[axis] )
+			return false;
+	return true;
+}
+
+bool CheckRoleCollisionConstraints( std::string& error )
+{
+	char addError[512] = {};
+	DestinyEmbeddedFixedTargetConfig fixed = {};
+	fixed.ballId = 700;
+	fixed.radius = 25.0f;
+	fixed.position[0] = 1000.0;
+	DestinyEmbeddedCelestialConfig celestial = {};
+	celestial.ballId = fixed.ballId;
+	celestial.radius = 100.0f;
+	celestial.position[0] = 2000.0;
+
+	DestinyEmbeddedSession* fixedFirst = CreateOrbitSession( DESTINY_EMBEDDED_PRIMARY_EGO, error );
+	if( !fixedFirst )
+		return false;
+	DestinyEmbeddedBallState fixedBefore = {};
+	DestinyEmbeddedBallState fixedAfter = {};
+	DestinyEmbeddedCelestialState unexpectedCelestial = {};
+	const bool fixedFirstOk =
+		Destiny_AddEmbeddedFixedTarget( fixedFirst, &fixed, addError, sizeof( addError ) ) &&
+		Destiny_GetEmbeddedBallState( fixedFirst, fixed.ballId, &fixedBefore ) &&
+		!Destiny_AddEmbeddedCelestial( fixedFirst, &celestial, addError, sizeof( addError ) ) &&
+		Destiny_GetEmbeddedBallState( fixedFirst, fixed.ballId, &fixedAfter ) &&
+		SameBallState( fixedBefore, fixedAfter ) &&
+		!Destiny_GetEmbeddedCelestialState( fixedFirst, fixed.ballId, &unexpectedCelestial ) &&
+		Destiny_CommandEmbeddedFollow( fixedFirst, kTicksPerSecond, fixed.ballId, 10.0f );
+	Destiny_DestroyEmbeddedSession( fixedFirst );
+	if( !fixedFirstOk )
+	{
+		error = "fixed-target-first role collision changed state or role authority";
+		return false;
+	}
+
+	DestinyEmbeddedSession* celestialFirst = CreateOrbitSession( DESTINY_EMBEDDED_PRIMARY_EGO, error );
+	if( !celestialFirst )
+		return false;
+	DestinyEmbeddedCelestialState celestialBefore = {};
+	DestinyEmbeddedCelestialState celestialAfter = {};
+	const bool celestialFirstOk =
+		Destiny_AddEmbeddedCelestial( celestialFirst, &celestial, addError, sizeof( addError ) ) &&
+		Destiny_GetEmbeddedCelestialState( celestialFirst, celestial.ballId, &celestialBefore ) &&
+		!Destiny_AddEmbeddedFixedTarget( celestialFirst, &fixed, addError, sizeof( addError ) ) &&
+		Destiny_GetEmbeddedCelestialState( celestialFirst, celestial.ballId, &celestialAfter ) &&
+		SameCelestialState( celestialBefore, celestialAfter ) &&
+		Destiny_GetEmbeddedCelestialPosition( celestialFirst, celestial.ballId ) &&
+		!Destiny_CommandEmbeddedFollow( celestialFirst, kTicksPerSecond, celestial.ballId, 10.0f ) &&
+		Destiny_CommandEmbeddedOrbit( celestialFirst, kTicksPerSecond, celestial.ballId, 10.0f );
+	Destiny_DestroyEmbeddedSession( celestialFirst );
+	if( !celestialFirstOk )
+	{
+		error = "celestial-first role collision changed state or role authority";
+		return false;
+	}
+
+	DestinyEmbeddedBallConfig dynamic = {};
+	dynamic.ballId = fixed.ballId;
+	dynamic.solarSystemId = 30005286;
+	dynamic.mass = 1000.0;
+	dynamic.radius = fixed.radius;
+	dynamic.maximumVelocity = 100.0f;
+	dynamic.maximumAngularVelocity = 1.0f;
+	dynamic.position[0] = 3000.0;
+	dynamic.rotation[3] = 1.0f;
+	dynamic.agility = 1.0f;
+	dynamic.rotationalAgility = 1.0f;
+	dynamic.speedFraction = 1.0f;
+	dynamic.isFree = true;
+	dynamic.isMassive = true;
+	dynamic.isInteractive = true;
+	DestinyEmbeddedFixedTargetConfig alternateFixed = fixed;
+	alternateFixed.ballId = fixed.ballId + 1;
+	DestinyEmbeddedCelestialConfig alternateCelestial = celestial;
+	alternateCelestial.ballId = celestial.ballId + 1;
+
+	DestinyEmbeddedSession* dynamicThenFixed = CreateOrbitSession( DESTINY_EMBEDDED_PRIMARY_EGO, error );
+	if( !dynamicThenFixed )
+		return false;
+	DestinyEmbeddedBallState dynamicFixedBefore = {};
+	DestinyEmbeddedBallState dynamicFixedAfter = {};
+	const bool dynamicAdded = Destiny_AddEmbeddedDynamicBall(
+		dynamicThenFixed, &dynamic, addError, sizeof( addError ) );
+	const bool dynamicStateRead = dynamicAdded && Destiny_GetEmbeddedBallState(
+		dynamicThenFixed, dynamic.ballId, &dynamicFixedBefore );
+	const bool collidingFixedRejected = dynamicStateRead && !Destiny_AddEmbeddedFixedTarget(
+		dynamicThenFixed, &fixed, addError, sizeof( addError ) );
+	const bool dynamicFixedUnchanged = collidingFixedRejected && Destiny_GetEmbeddedBallState(
+		dynamicThenFixed, dynamic.ballId, &dynamicFixedAfter ) &&
+		SameBallState( dynamicFixedBefore, dynamicFixedAfter );
+	const bool fixedRoleAvailable = dynamicFixedUnchanged && Destiny_AddEmbeddedFixedTarget(
+		dynamicThenFixed, &alternateFixed, addError, sizeof( addError ) );
+	Destiny_DestroyEmbeddedSession( dynamicThenFixed );
+	if( !dynamicAdded || !dynamicStateRead || !collidingFixedRejected || !dynamicFixedUnchanged ||
+		!fixedRoleAvailable )
+	{
+		std::ostringstream detail;
+		detail << "dynamic-first fixed-target collision contract failed: add=" << dynamicAdded
+			<< " read=" << dynamicStateRead << " reject=" << collidingFixedRejected
+			<< " unchanged=" << dynamicFixedUnchanged << " role=" << fixedRoleAvailable;
+		error = detail.str();
+		return false;
+	}
+
+	DestinyEmbeddedSession* dynamicThenCelestial = CreateOrbitSession( DESTINY_EMBEDDED_PRIMARY_EGO, error );
+	if( !dynamicThenCelestial )
+		return false;
+	DestinyEmbeddedBallState dynamicCelestialBefore = {};
+	DestinyEmbeddedBallState dynamicCelestialAfter = {};
+	const bool secondDynamicAdded = Destiny_AddEmbeddedDynamicBall(
+		dynamicThenCelestial, &dynamic, addError, sizeof( addError ) );
+	const bool secondDynamicStateRead = secondDynamicAdded && Destiny_GetEmbeddedBallState(
+		dynamicThenCelestial, dynamic.ballId, &dynamicCelestialBefore );
+	const bool collidingCelestialRejected = secondDynamicStateRead && !Destiny_AddEmbeddedCelestial(
+		dynamicThenCelestial, &celestial, addError, sizeof( addError ) );
+	const bool dynamicCelestialUnchanged = collidingCelestialRejected && Destiny_GetEmbeddedBallState(
+		dynamicThenCelestial, dynamic.ballId, &dynamicCelestialAfter ) &&
+		SameBallState( dynamicCelestialBefore, dynamicCelestialAfter ) &&
+		!Destiny_GetEmbeddedCelestialState(
+			dynamicThenCelestial, dynamic.ballId, &unexpectedCelestial );
+	const bool celestialRoleAvailable = dynamicCelestialUnchanged && Destiny_AddEmbeddedCelestial(
+		dynamicThenCelestial, &alternateCelestial, addError, sizeof( addError ) );
+	Destiny_DestroyEmbeddedSession( dynamicThenCelestial );
+	if( !secondDynamicAdded || !secondDynamicStateRead || !collidingCelestialRejected ||
+		!dynamicCelestialUnchanged || !celestialRoleAvailable )
+	{
+		std::ostringstream detail;
+		detail << "dynamic-first celestial collision contract failed: add=" << secondDynamicAdded
+			<< " read=" << secondDynamicStateRead << " reject=" << collidingCelestialRejected
+			<< " unchanged=" << dynamicCelestialUnchanged << " role=" << celestialRoleAvailable;
+		error = detail.str();
+		return false;
+	}
+	return true;
+}
+
 bool RunScenario(
 	DestinyEmbeddedReferenceFrame referenceFrame,
 	bool withCelestials,
@@ -465,7 +631,7 @@ int main()
 		return Fail( "orbit corpus is missing or invalid" );
 
 	std::string error;
-	if( !CheckAdditionConstraints( error ) )
+	if( !CheckAdditionConstraints( error ) || !CheckRoleCollisionConstraints( error ) )
 		return Fail( error );
 
 	std::vector<Sample> egoBaseline, egoCelestial, observerCelestial;
@@ -476,7 +642,8 @@ int main()
 	if( !( egoBaseline == egoCelestial ) || !( egoCelestial == observerCelestial ) )
 		return Fail( "celestial balls perturbed the accepted orbit trajectory" );
 	std::printf(
-		"Destiny PL-12 celestial contract: balls=%lld,%lld rigid global fixed; orbit trajectory preserved\n",
+		"Destiny PL-12 celestial contract: balls=%lld,%lld rigid global fixed; "
+		"role-collision=side-effect-free orbit trajectory preserved\n",
 		static_cast<long long>( kSunBallId ),
 		static_cast<long long>( kPlanetBallId ) );
 	return 0;
