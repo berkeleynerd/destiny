@@ -2,6 +2,9 @@
 
 #pragma once
 
+#include <BlueTypes.h>
+#include <CcpMath.h>
+
 #include "IEveBallpark.h"
 
 #include <ITriFunction.h>
