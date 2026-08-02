@@ -103,11 +103,14 @@ capsule/box order differs from the flag-bit order).
   block. The dynamical-orientation quaternion block is read only when the
   READER's `g_useDynamicalOrientation` is set, confirming the setting is
   a stream-profile parameter that both ends must share.
-- Balls are **created, not updated**: `AddDynamicallyOrientedBall` under
-  dynamical orientation, `AddOldStyleOrientedBall` otherwise — the
-  reader's setting also selects the creation path. Defaults for fields
-  absent from RIGID/non-free records: mass sentinel `1.0e34`,
-  harmonic -1, corporation/alliance -1, identity rotation.
+- Balls are **replaced or created** through `Ballpark::AddBall`
+  (`src/ParkStream.cpp`, `src/Ballpark.cpp`). A same-ID ball is reused,
+  removed from its spatial membership, and repopulated from the stream;
+  allocation occurs only when the ID is absent. Dynamical orientation
+  selects `AddDynamicallyOrientedBall`, otherwise the reader uses
+  `AddOldStyleOrientedBall`. Defaults for fields absent from RIGID/non-free
+  records: mass sentinel `1.0e34`, harmonic -1, corporation/alliance -1,
+  identity rotation.
 - `partial != 1` and the ball is not free: existing mini shapes are
   destroyed (mini balls individually `RemoveBall`'d, capsules and boxes
   likewise, lists cleared) before the stream's shapes are re-read —
@@ -143,20 +146,24 @@ who crossed bubbles, computed against their old/new bubble pair). Only
 bubbles containing interactive balls are materialized. Filters: journal
 action +1 appends to the add list, -1 to the delete list; cloaked-ball
 removals are suppressed; adds skip missing, global, and cloaked balls and
-the observer itself. The values are ball-ID lists — the wire bytes for an
-addition are produced separately by `WriteBallsToStream` over those IDs.
-Framing of the pair (ID deltas + ball streams) belongs to the
-`python/destiny/net` layer (next OPEN item).
+the observer itself. Per-bubble values are ball-ID lists. Per-player values
+are either an explicit ball-ID list or a bubble-ID integer indirection; the
+integer selects an already serialized per-bubble update in
+`python/destiny/net/server/_parkupdatebatcher.py`. The wire bytes for an
+addition are produced separately by `WriteBallsToStream` over the selected
+IDs. Framing of the pair (ID deltas + ball streams) belongs to the
+`python/destiny/net` layer.
 
 ## Net framing (source-verified essentials)
 
 The transport unit is the `DoDestinyUpdate` message
 (`net/server/_parkupdatebatcher.py`), sent from the park's `DoPostTick`.
-Its payload is a per-tick list of `(stamp, event)` update actions; the
-batcher asserts every event's stamp equals the tick being flushed
-(`_check_state_timestamp` raises on mismatch) — the stamp is the park
-timestamp, i.e. the same value the packet headers truncate to i32. Ball
-streams ride inside events: `generate_add_balls_update` fills a
+Its payload is a per-tick list of `(stamp, event)` update actions. For a
+positive timestamp that differs from the tick being flushed,
+`_check_state_timestamp` logs an error and continues; tick-zero entries are
+deliberately ignored. The stamp is the park timestamp, i.e. the same value
+the packet headers truncate to i32. Ball streams ride inside events:
+`generate_add_balls_update` fills a
 `blue.MemStream` via `WriteBallsToStream` and the resulting
 `DESTINY_BALLS` bytes travel as an event argument.
 
@@ -172,17 +179,13 @@ every tick.
 
 ## RNG inventory (source-verified)
 
-Destiny's evolution consumes **no randomness**. The tree carries a
-`Random` class (`src/Random.h/.cpp`, a small LCG utility) with **zero
-call sites anywhere in `src/`** — it is orphaned code. No other
-`rand`-family usage exists in the simulation sources. The proximity
-sensor API exposes a `shuffle` parameter, but nothing in the C++ core
-draws random numbers to honor it. Consequences: the recorder needs no
-RNG seed for destiny as it stands (the recording header reserves the
-field and records it as absent), and the determinism doctrine's
-journaled-RNG requirement is satisfied vacuously until a successor
-introduces a generator — at which point the seed goes in the snapshot
-and journal per architecture section 6.
+The tree's `Random` class (`src/Random.h/.cpp`, a small LCG utility) has no
+call sites, but the simulation is not globally randomness-free:
+`Ball::AddProximitySensor(..., shuffle, ...)` calls `floatrand`, which uses
+the C library `rand()`, when shuffled proximity is enabled (`src/Ball.cpp`).
+Therefore an `rng-seed=absent` recording is authoritative only for scenarios
+that never enable shuffled proximity sensors. A future recorder that covers
+that path must capture and restore the relevant RNG state.
 
 ## The deterministic recorder (source-verified, accepted)
 
@@ -196,7 +199,8 @@ stream — no Blue factory involvement.
 `DestinyEmbeddedRecorderTest` is the scripted-scenario recorder: the
 PL-11A GOTO scenario, one FULLSTATE packet per evolve. Recording
 container: header (magic `0x44503034` "D-04", i64 tick rate 10^7,
-u8 RNG-seed marker = 0 absent per the RNG inventory), then per packet an
+u8 RNG-seed marker = 0 absent because this scenario never enables shuffled
+proximity sensors), then per packet an
 i64 simulation tick, u32 size, and the packet bytes. Determinism is the
 pinned acceptance: two independent runs of the scenario produce
 byte-identical recordings (19 packets, 3,328 bytes).

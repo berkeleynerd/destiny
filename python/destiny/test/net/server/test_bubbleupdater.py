@@ -29,6 +29,13 @@ class TestBubbleUpdater(unittest.TestCase):
         self.assertEqual({0: [BALL_ID_1], 1: [BALL_ID_2]}, self._bubble_updater.additions_per_bubble)
         self.assertEqual({0: [], 1: []}, self._bubble_updater.deletions_per_bubble)
 
+    def test_per_player_delta_can_be_an_explicit_ball_list(self):
+        add_ball_to_park(self._park, ball_id=BALL_ID_1)
+        add_ball_to_park(self._park, ball_id=BALL_ID_2, x=500000000.0)
+        self._bubble_updater.additions_and_deletions()
+        self.assertEqual([BALL_ID_1], self._bubble_updater.additions_per_player[BALL_ID_1])
+        self.assertEqual([BALL_ID_2], self._bubble_updater.additions_per_player[BALL_ID_2])
+
     def test_additions_and_deletions_updates_bubbles_dict(self):
         add_ball_to_park(self._park, ball_id=BALL_ID_1)
         add_ball_to_park(self._park, ball_id=BALL_ID_2, x=500000000.0)
@@ -58,6 +65,18 @@ class TestBubbleUpdater(unittest.TestCase):
             {0: [BALL_ID_1]},
             self._bubble_updater.deletions_per_bubble
         )
+
+    def test_per_player_delta_can_indirect_through_a_bubble_id(self):
+        add_ball_to_park(self._park, ball_id=BALL_ID_1)
+        add_ball_to_park(self._park, ball_id=BALL_ID_2)
+        self._bubble_updater.additions_and_deletions()
+        self._park.Evolve()
+        self._park.RemoveBall(BALL_ID_1)
+        self._bubble_updater.additions_and_deletions()
+        bubble_id = self._bubble_updater.additions_per_player[BALL_ID_2]
+        self.assertIsInstance(bubble_id, int)
+        self.assertEqual([], self._bubble_updater.additions_per_bubble[bubble_id])
+        self.assertEqual([BALL_ID_1], self._bubble_updater.deletions_per_bubble[bubble_id])
 
     def test_additions_and_deletions_multiple_calls_same_tick(self):
         add_ball_to_park(self._park, ball_id=BALL_ID_1)
