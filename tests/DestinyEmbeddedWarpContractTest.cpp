@@ -274,7 +274,6 @@ bool RunScenario(
 	options.orientationPolicy = DESTINY_EMBEDDED_NATIVE_ORIENTATION;
 	options.referenceFrame = referenceFrame;
 	options.observerBallId = 2;
-	options.warpEventCallback = CollectWarpEvent;
 	s_warpEvents.clear();
 
 	char createError[512] = {};
@@ -283,6 +282,14 @@ bool RunScenario(
 	if( !session )
 	{
 		error = createError;
+		return false;
+	}
+	if( !Destiny_SetEmbeddedWarpEventCallback( session, CollectWarpEvent, nullptr ) ||
+		!Destiny_SetEmbeddedWarpEventCallback( session, nullptr, nullptr ) ||
+		!Destiny_SetEmbeddedWarpEventCallback( session, CollectWarpEvent, nullptr ) )
+	{
+		error = "failed to install, clear, or replace the pre-command warp callback";
+		Destiny_DestroyEmbeddedSession( session );
 		return false;
 	}
 
@@ -301,6 +308,13 @@ bool RunScenario(
 		Destiny_CommandEmbeddedWarp( session, kTicksPerSecond, kWarpTarget, -1.0, kWarpFactor ) )
 	{
 		error = "an invalid warp command was accepted";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+	const bool lateCallbackRejected = !Destiny_SetEmbeddedWarpEventCallback( session, nullptr, nullptr );
+	if( !lateCallbackRejected )
+	{
+		error = "callback mutation remained available after a command attempt";
 		Destiny_DestroyEmbeddedSession( session );
 		return false;
 	}
@@ -503,11 +517,26 @@ bool RunScenario(
 
 	DestinyEmbeddedDiagnostics finalDiagnostics = {};
 	const bool diagnosticsOk = Destiny_GetEmbeddedDiagnostics( session, &finalDiagnostics );
+	DestinyEmbeddedEventDiagnostics eventDiagnostics = {};
+	const bool eventDiagnosticsOk = Destiny_GetEmbeddedEventDiagnostics(
+		session, &eventDiagnostics, sizeof( eventDiagnostics ) );
+	DestinyEmbeddedEventDiagnostics boundedDiagnostics = {};
+	boundedDiagnostics.suppressedPostEventAttemptCount = UINT64_MAX;
+	boundedDiagnostics.deliveredWarpEventCallbackCount = UINT64_MAX;
+	const bool boundedDiagnosticsOk = Destiny_GetEmbeddedEventDiagnostics(
+		session, &boundedDiagnostics, sizeof( boundedDiagnostics.suppressedSendEventAttemptCount ) );
 	Destiny_DestroyEmbeddedSession( session );
 	if( !diagnosticsOk || finalDiagnostics.directEvolveCount != 44 || finalDiagnostics.commandCount != 1 ||
-		finalDiagnostics.lastCommandTime != 3 * kTicksPerSecond || finalDiagnostics.mode != DSTBALL_STOP )
+		finalDiagnostics.lastCommandTime != 3 * kTicksPerSecond || finalDiagnostics.mode != DSTBALL_STOP ||
+		!eventDiagnosticsOk || !boundedDiagnosticsOk || !lateCallbackRejected ||
+		eventDiagnostics.suppressedSendEventAttemptCount == 0 ||
+		eventDiagnostics.deliveredWarpEventCallbackCount != s_warpEvents.size() ||
+		eventDiagnostics.suppressedPostEventAttemptCount < eventDiagnostics.deliveredWarpEventCallbackCount ||
+		boundedDiagnostics.suppressedSendEventAttemptCount != eventDiagnostics.suppressedSendEventAttemptCount ||
+		boundedDiagnostics.suppressedPostEventAttemptCount != UINT64_MAX ||
+		boundedDiagnostics.deliveredWarpEventCallbackCount != UINT64_MAX )
 	{
-		error = "final warp counters failed";
+		error = "final warp or event counters failed";
 		return false;
 	}
 	if( !sawWarpMode || result.activationEvolve < 0 || result.dropoutEvolve < 0 ||

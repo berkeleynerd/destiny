@@ -149,6 +149,15 @@ bool RunMissile(
 	{
 		return false;
 	}
+	DestinyEmbeddedEventDiagnostics eventDiagnostics = {};
+	const bool eventDiagnosticsOk = Destiny_GetEmbeddedEventDiagnostics(
+		session, &eventDiagnostics, sizeof( eventDiagnostics ) );
+	if( !eventDiagnosticsOk || eventDiagnostics.suppressedSendEventAttemptCount != 4 ||
+		eventDiagnostics.suppressedPostEventAttemptCount != 0 ||
+		eventDiagnostics.deliveredWarpEventCallbackCount != 0 )
+	{
+		return false;
+	}
 	DestinyEmbeddedMissileState removed = {};
 	return Destiny_GetEmbeddedMissileState( session, kMissileId, &removed ) && removed.removed &&
 		!removed.active && removed.collided && !Destiny_RemoveEmbeddedMissile( session, kMissileId );

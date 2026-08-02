@@ -857,6 +857,10 @@ struct DestinyEmbeddedSession
 	Quaternion authoredRotation = Quaternion( 0.0f, 0.0f, 0.0f, 1.0f );
 	DestinyEmbeddedWarpEventCallback warpEventCallback = nullptr;
 	void* warpEventUserData = nullptr;
+	bool eventCallbackConfigurationLocked = false;
+	uint64_t suppressedSendEventAttemptCount = 0;
+	uint64_t suppressedPostEventAttemptCount = 0;
+	uint64_t deliveredWarpEventCallbackCount = 0;
 
 	~DestinyEmbeddedSession()
 	{
@@ -1022,6 +1026,12 @@ void DestinyEmbeddedRecordPythonCallback()
 	++s_pythonCallbackCount;
 }
 
+void DestinyEmbeddedRecordSuppressedSendEvent()
+{
+	if( s_activeSession )
+		++s_activeSession->suppressedSendEventAttemptCount;
+}
+
 void DestinyEmbeddedRecordStart()
 {
 	++s_startCallCount;
@@ -1065,7 +1075,10 @@ bool DestinyEmbeddedPostEvent(
 	( void )timerName;
 	( void )format;
 	DestinyEmbeddedSession* session = s_activeSession;
-	if( !session || !session->warpEventCallback || !eventName )
+	if( !session )
+		return true;
+	++session->suppressedPostEventAttemptCount;
+	if( !session->warpEventCallback || !eventName )
 		return true;
 	int warpEvent = -1;
 	if( std::strcmp( eventName, "OnActivatingWarp" ) == 0 )
@@ -1075,7 +1088,10 @@ bool DestinyEmbeddedPostEvent(
 	else if( std::strcmp( eventName, "OnExitWarp" ) == 0 )
 		warpEvent = DESTINY_EMBEDDED_WARP_EVENT_EXIT;
 	if( warpEvent >= 0 )
+	{
+		++session->deliveredWarpEventCallbackCount;
 		session->warpEventCallback( warpEvent, ballId, eventTime, session->warpEventUserData );
+	}
 	return true;
 }
 
@@ -1369,8 +1385,6 @@ extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSessionWithOptions(
 	session->previousUseNewOrbit = g_useNewOrbit;
 	session->orientationPolicy = options->orientationPolicy;
 	session->referenceFrame = options->referenceFrame;
-	session->warpEventCallback = options->warpEventCallback;
-	session->warpEventUserData = options->warpEventUserData;
 	s_activeSession = session;
 	g_useDynamicalOrientation = true;
 	g_useNewOrbit = options->orbitPolicy == DESTINY_EMBEDDED_ORBIT_FRONTIER_NEW;
@@ -1532,8 +1546,6 @@ extern "C" DestinyEmbeddedSession* Destiny_CreateEmbeddedSessionFromFullState(
 	session->previousUseNewOrbit = g_useNewOrbit;
 	session->orientationPolicy = options->orientationPolicy;
 	session->referenceFrame = options->referenceFrame;
-	session->warpEventCallback = options->warpEventCallback;
-	session->warpEventUserData = options->warpEventUserData;
 	++s_fullStateGlobalSettingsMutationCount;
 	s_activeSession = session;
 	g_useDynamicalOrientation = true;
@@ -1647,9 +1659,24 @@ extern "C" void Destiny_DestroyEmbeddedSession( DestinyEmbeddedSession* session 
 	delete session;
 }
 
+extern "C" bool Destiny_SetEmbeddedWarpEventCallback(
+	DestinyEmbeddedSession* session,
+	DestinyEmbeddedWarpEventCallback callback,
+	void* userData )
+{
+	if( !session || session->eventCallbackConfigurationLocked )
+		return false;
+	session->warpEventCallback = callback;
+	session->warpEventUserData = callback ? userData : nullptr;
+	return true;
+}
+
 extern "C" bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session, Be::Time simulationTime )
 {
-	if( !session || simulationTime < session->lastRequestedTime )
+	if( !session )
+		return false;
+	session->eventCallbackConfigurationLocked = true;
+	if( simulationTime < session->lastRequestedTime )
 		return false;
 	const Be::Time tickInterval = static_cast<Be::Time>( session->ballpark->mTickInterval ) * 10000;
 	while( simulationTime >= session->nextTickTime )
@@ -1938,7 +1965,10 @@ extern "C" bool Destiny_CommandEmbeddedGoto(
 	Be::Time effectiveTime,
 	const double target[3] )
 {
-	if( !session || !target || effectiveTime != session->nextTickTime ||
+	if( !session )
+		return false;
+	session->eventCallbackConfigurationLocked = true;
+	if( !target || effectiveTime != session->nextTickTime ||
 		effectiveTime < session->lastRequestedTime ||
 		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
 		!std::isfinite( target[0] ) ||
@@ -1960,7 +1990,10 @@ extern "C" bool Destiny_CommandEmbeddedGotoDirection(
 	Be::Time effectiveTime,
 	const double direction[3] )
 {
-	if( !session || !direction || effectiveTime != session->nextTickTime ||
+	if( !session )
+		return false;
+	session->eventCallbackConfigurationLocked = true;
+	if( !direction || effectiveTime != session->nextTickTime ||
 		effectiveTime < session->lastRequestedTime ||
 		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
 		!std::isfinite( direction[0] ) || !std::isfinite( direction[1] ) ||
@@ -1983,7 +2016,10 @@ extern "C" bool Destiny_CommandEmbeddedGotoDirection(
 
 extern "C" bool Destiny_CommandEmbeddedStop( DestinyEmbeddedSession* session, Be::Time effectiveTime )
 {
-	if( !session || effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
+	if( !session )
+		return false;
+	session->eventCallbackConfigurationLocked = true;
+	if( effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
 		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) )
 		return false;
 	session->pendingCommand = 2;
@@ -1999,8 +2035,11 @@ extern "C" bool Destiny_CommandEmbeddedOrbit(
 	int64_t targetBallId,
 	float surfaceRange )
 {
+	if( !session )
+		return false;
+	session->eventCallbackConfigurationLocked = true;
 	Ball* target = ResolveCommandTarget( session, targetBallId, true, true );
-	if( !session || !target || targetBallId == session->ball->mId || targetBallId == session->ballpark->mEgo ||
+	if( !target || targetBallId == session->ball->mId || targetBallId == session->ballpark->mEgo ||
 		effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
 		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
 		!std::isfinite( surfaceRange ) || surfaceRange < 0.0f )
@@ -2024,7 +2063,10 @@ extern "C" bool Destiny_CommandEmbeddedWarp(
 	double minimumRange,
 	int32_t warpFactor )
 {
-	if( !session || !target || effectiveTime != session->nextTickTime ||
+	if( !session )
+		return false;
+	session->eventCallbackConfigurationLocked = true;
+	if( !target || effectiveTime != session->nextTickTime ||
 		effectiveTime < session->lastRequestedTime ||
 		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
 		!std::isfinite( target[0] ) || !std::isfinite( target[1] ) || !std::isfinite( target[2] ) ||
@@ -2068,8 +2110,11 @@ extern "C" bool Destiny_CommandEmbeddedFollow(
 	// only rejects a NaN range (Ballpark::FollowBall), so the embedded
 	// contract enforces finite non-negative ranges and a live fixed target
 	// itself, mirroring the orbit seam.
+	if( !session )
+		return false;
+	session->eventCallbackConfigurationLocked = true;
 	Ball* target = ResolveCommandTarget( session, targetBallId, true, false );
-	if( !session || !target ||
+	if( !target ||
 		targetBallId == session->ball->mId || targetBallId == session->ballpark->mEgo ||
 		effectiveTime != session->nextTickTime || effectiveTime < session->lastRequestedTime ||
 		( session->commandCount != 0 && effectiveTime <= session->lastCommandTime ) ||
@@ -2095,7 +2140,10 @@ extern "C" bool Destiny_CommandEmbeddedLaunchMissile(
 	bool aimedLaunch,
 	bool massive )
 {
-	if( !session || !config || !IsFinite( config->ball ) || !config->ball.isFree ||
+	if( !session )
+		return false;
+	session->eventCallbackConfigurationLocked = true;
+	if( !config || !IsFinite( config->ball ) || !config->ball.isFree ||
 		config->ball.ballId == 0 || config->ball.ballId == ownerBallId ||
 		config->ball.ballId == targetBallId || ownerBallId == targetBallId ||
 		config->ball.solarSystemId != session->ballpark->mSolarsystemID ||
@@ -2326,10 +2374,25 @@ extern "C" bool Destiny_GetEmbeddedDiagnostics(
 	return true;
 }
 
+extern "C" bool Destiny_GetEmbeddedEventDiagnostics(
+	DestinyEmbeddedSession* session,
+	DestinyEmbeddedEventDiagnostics* diagnostics,
+	size_t diagnosticsSize )
+{
+	if( !session || !diagnostics || diagnosticsSize == 0 )
+		return false;
+	DestinyEmbeddedEventDiagnostics value = {};
+	value.suppressedSendEventAttemptCount = session->suppressedSendEventAttemptCount;
+	value.suppressedPostEventAttemptCount = session->suppressedPostEventAttemptCount;
+	value.deliveredWarpEventCallbackCount = session->deliveredWarpEventCallbackCount;
+	std::memcpy( diagnostics, &value, std::min( diagnosticsSize, sizeof( value ) ) );
+	return true;
+}
+
 extern "C"
 {
 
-	__attribute__( ( visibility( "default" ) ) ) bool Destiny_WriteEmbeddedFullState(
+	bool Destiny_WriteEmbeddedFullState(
 		DestinyEmbeddedSession* session,
 		void* buffer,
 		size_t bufferSize,
@@ -2350,7 +2413,7 @@ extern "C"
 		return written > 0 && !stream.Overflowed();
 	}
 
-	__attribute__( ( visibility( "default" ) ) ) bool Destiny_MeasureEmbeddedFullState(
+	bool Destiny_MeasureEmbeddedFullState(
 		DestinyEmbeddedSession* session,
 		size_t* bytesRequired )
 	{

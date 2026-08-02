@@ -322,10 +322,16 @@ bool RunScenario(
 
 	DestinyEmbeddedDiagnostics diagnostics = {};
 	const bool diagnosticsOk = Destiny_GetEmbeddedDiagnostics( session, &diagnostics );
+	DestinyEmbeddedEventDiagnostics eventDiagnostics = {};
+	const bool eventDiagnosticsOk = Destiny_GetEmbeddedEventDiagnostics(
+		session, &eventDiagnostics, sizeof( eventDiagnostics ) );
 	Destiny_DestroyEmbeddedSession( session );
 	if( !diagnosticsOk || diagnostics.directEvolveCount != 19 || diagnostics.commandCount != 1 ||
 		diagnostics.lastCommandTime != 3 * kTicksPerSecond || diagnostics.mode != DSTBALL_GOTO ||
-		result.rawMotion.size() != expected.size() || result.finalRoll >= result.initialRoll )
+		result.rawMotion.size() != expected.size() || result.finalRoll >= result.initialRoll ||
+		!eventDiagnosticsOk || eventDiagnostics.suppressedSendEventAttemptCount == 0 ||
+		eventDiagnostics.suppressedPostEventAttemptCount != 0 ||
+		eventDiagnostics.deliveredWarpEventCallbackCount != 0 )
 	{
 		error = "final GOTO counters or native roll contract failed";
 		return false;
@@ -367,11 +373,16 @@ bool ValidateGotoDirectionCommand( std::string& error )
 	const bool advanced = commanded && Destiny_AdvanceEmbeddedSession( session, 2 * kTicksPerSecond );
 	DestinyEmbeddedDiagnostics diagnostics = {};
 	const bool diagnosed = advanced && Destiny_GetEmbeddedDiagnostics( session, &diagnostics );
+	DestinyEmbeddedEventDiagnostics eventDiagnostics = {};
+	const bool eventsDiagnosed = diagnosed && Destiny_GetEmbeddedEventDiagnostics(
+		session, &eventDiagnostics, sizeof( eventDiagnostics ) );
 	Destiny_DestroyEmbeddedSession( session );
-	if( !diagnosed || diagnostics.mode != DESTINY_EMBEDDED_BALL_MODE_GOTO ||
+	if( !eventsDiagnosed || diagnostics.mode != DESTINY_EMBEDDED_BALL_MODE_GOTO ||
 		diagnostics.commandCount != 1 || diagnostics.lastCommandTime != kTicksPerSecond ||
 		std::abs( diagnostics.rawVelocity[0] ) > 1e-10 || std::abs( diagnostics.rawVelocity[1] ) > 1e-10 ||
-		diagnostics.rawVelocity[2] <= 0.0 )
+		diagnostics.rawVelocity[2] <= 0.0 || eventDiagnostics.suppressedSendEventAttemptCount == 0 ||
+		eventDiagnostics.suppressedPostEventAttemptCount != 0 ||
+		eventDiagnostics.deliveredWarpEventCallbackCount != 0 )
 	{
 		error = "valid GotoDirection command did not enter positive-Z GOTO motion";
 		return false;

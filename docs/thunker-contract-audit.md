@@ -94,16 +94,17 @@ inventory transfers to the successor as configuration schema, not API.
 
 ## Outbound events (destiny → host)
 Exactly three semantic events exist, preserved in executable form by the
-D-03 embedded warp-event callback (DestinyEmbedded.h) and pinned by the warp
-contract test: a completed warp fires `OnActivatingWarp` at the RealWarp
+D-03 embedded warp-event callback setter (`DestinyEmbedded.h`) and pinned by
+the warp contract test: a completed warp fires `OnActivatingWarp` at the RealWarp
 tick (mCurrentTime 10 in the PL-11C fixture), `OnDeactivatingWarp` at
 dropout (tick 30), and `OnExitWarp` from Ball::SetMode's WARP-exit hook with
 its historical literal time 0. The WarpTo sub-100 km downgrade path posts an
 additional OnExitWarp(t=1) that the embedded seam makes unreachable (it
 rejects sub-200 km warps by contract). The collision/proximity SendEvent
 family stays macro-silenced in embedded builds — chartered to the combat and
-proximity contracts. The 38 `Destiny::*` timer labels are profiling
-instrumentation, not contract.
+proximity contracts. `DestinyEmbeddedEventDiagnostics` counts both suppressed
+event families separately from delivered host warp callbacks. The 38
+`Destiny::*` timer labels are profiling instrumentation, not contract.
 
 ## Summary counts
 91 exposed methods: 8 [EMBEDDED+CORPUS], ~20 [TRIVIAL], 4 [SUPERSEDED],

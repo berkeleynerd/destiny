@@ -135,9 +135,16 @@ struct DestinyEmbeddedSessionOptions
 	DestinyEmbeddedOrbitPolicy orbitPolicy;
 	int64_t observerBallId;
 	double observerPosition[3];
-	// Optional host callback for the three warp events; null disables.
-	DestinyEmbeddedWarpEventCallback warpEventCallback;
-	void* warpEventUserData;
+};
+
+// Event counters are kept outside DestinyEmbeddedDiagnostics so the legacy
+// diagnostics ABI never needs to grow. Callers pass the writable byte count;
+// future versions may append fields while preserving this prefix.
+struct DestinyEmbeddedEventDiagnostics
+{
+	uint64_t suppressedSendEventAttemptCount;
+	uint64_t suppressedPostEventAttemptCount;
+	uint64_t deliveredWarpEventCallbackCount;
 };
 
 struct DestinyEmbeddedFixedTargetConfig
@@ -324,6 +331,12 @@ extern "C"
 		const DestinyEmbeddedSessionOptions* options,
 		char* error,
 		size_t errorSize );
+	// Callback configuration is mutable only until the first command or
+	// advance attempt. Passing a null callback clears the registration.
+	DESTINY_EMBEDDED_API bool Destiny_SetEmbeddedWarpEventCallback(
+		DestinyEmbeddedSession* session,
+		DestinyEmbeddedWarpEventCallback callback,
+		void* userData );
 	DESTINY_EMBEDDED_API void Destiny_DestroyEmbeddedSession( DestinyEmbeddedSession* session );
 	DESTINY_EMBEDDED_API bool Destiny_AdvanceEmbeddedSession( DestinyEmbeddedSession* session, Be::Time simulationTime );
 	DESTINY_EMBEDDED_API bool Destiny_AddEmbeddedDynamicBall(
@@ -431,6 +444,12 @@ extern "C"
 	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedDiagnostics(
 		DestinyEmbeddedSession* session,
 		DestinyEmbeddedDiagnostics* diagnostics );
+	// Writes at most diagnosticsSize bytes and leaves later caller storage
+	// untouched, allowing older callers to consume the stable prefix.
+	DESTINY_EMBEDDED_API bool Destiny_GetEmbeddedEventDiagnostics(
+		DestinyEmbeddedSession* session,
+		DestinyEmbeddedEventDiagnostics* diagnostics,
+		size_t diagnosticsSize );
 }
 
 #undef DESTINY_EMBEDDED_API
