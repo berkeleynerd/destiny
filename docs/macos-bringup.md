@@ -169,7 +169,7 @@ will remove the pin while accepting authentic orientation and motion.
 
 ## PL-11A native STOP and linear GOTO (2026-07-12)
 
-`Destiny_CreateEmbeddedSessionWithOptions` now selects native orientation and
+`Destiny_CreateEmbeddedSessionWithOptions` selects native orientation and
 either the primary-ego or fixed-observer reference frame. Commands are accepted
 only for the next native tick; the fixture applies one `GotoPoint` at frame 180
 and reaches 19 direct evolves over 1,200 render frames without `Start`,
@@ -262,9 +262,17 @@ the warp state without leaking the sim's member reuse: the effect stamp
 factor and minimum range unpunned from the shanghaied `mOwnerId` and
 `mFollowId` members, the total leg length from the repurposed
 `mLastCollision`, and the ball's collision/sensor participation. The
-three warp lifecycle events compile to no-ops in the scheduler-free
-build (`DESTINY_PY_POST_EVENT` is `true` under the embedded seam), so
-nothing is absorbed at runtime because nothing is emitted.
+three warp lifecycle events are forwarded to an optional host callback
+installed with `Destiny_SetEmbeddedWarpEventCallback` before the first command
+or advance. Python PostEvent execution remains suppressed. The separate,
+size-bounded `DestinyEmbeddedEventDiagnostics` surface distinguishes attempted
+suppressed SendEvent/PostEvent traffic from callbacks delivered to the host;
+the legacy `pythonCallbackCount` continues to mean actual Python work.
+
+`DestinyEmbeddedSessionOptions` is the frozen pre-D06 ABI prefix. It must not
+grow: optional session behavior is added through setters, while new diagnostic
+records use an explicit writable byte count so later fields can be appended
+without reading or writing beyond an older caller's object.
 
 `DestinyEmbeddedWarpContractTest` proves the contract on the PL-11C
 fixture leg — the stargate anchor to the New Eden planet, 9.058774 AU,

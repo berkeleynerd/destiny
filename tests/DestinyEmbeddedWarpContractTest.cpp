@@ -2,6 +2,7 @@
 
 #include "StdAfx.h"
 
+#include "Ballpark.h"
 #include "DestinyEmbedded.h"
 #include "DstConstants.h"
 
@@ -274,7 +275,6 @@ bool RunScenario(
 	options.orientationPolicy = DESTINY_EMBEDDED_NATIVE_ORIENTATION;
 	options.referenceFrame = referenceFrame;
 	options.observerBallId = 2;
-	options.warpEventCallback = CollectWarpEvent;
 	s_warpEvents.clear();
 
 	char createError[512] = {};
@@ -283,6 +283,14 @@ bool RunScenario(
 	if( !session )
 	{
 		error = createError;
+		return false;
+	}
+	if( !Destiny_SetEmbeddedWarpEventCallback( session, CollectWarpEvent, nullptr ) ||
+		!Destiny_SetEmbeddedWarpEventCallback( session, nullptr, nullptr ) ||
+		!Destiny_SetEmbeddedWarpEventCallback( session, CollectWarpEvent, nullptr ) )
+	{
+		error = "failed to install, clear, or replace the pre-command warp callback";
+		Destiny_DestroyEmbeddedSession( session );
 		return false;
 	}
 
@@ -301,6 +309,13 @@ bool RunScenario(
 		Destiny_CommandEmbeddedWarp( session, kTicksPerSecond, kWarpTarget, -1.0, kWarpFactor ) )
 	{
 		error = "an invalid warp command was accepted";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+	const bool lateCallbackRejected = !Destiny_SetEmbeddedWarpEventCallback( session, nullptr, nullptr );
+	if( !lateCallbackRejected )
+	{
+		error = "callback mutation remained available after a command attempt";
 		Destiny_DestroyEmbeddedSession( session );
 		return false;
 	}
@@ -503,11 +518,29 @@ bool RunScenario(
 
 	DestinyEmbeddedDiagnostics finalDiagnostics = {};
 	const bool diagnosticsOk = Destiny_GetEmbeddedDiagnostics( session, &finalDiagnostics );
+	DestinyEmbeddedEventDiagnostics eventDiagnostics = {};
+	const bool eventDiagnosticsOk = Destiny_GetEmbeddedEventDiagnostics(
+		session, &eventDiagnostics, sizeof( eventDiagnostics ) );
+	DestinyEmbeddedEventDiagnostics boundedDiagnostics = {};
+	boundedDiagnostics.suppressedPostEventAttemptCount = UINT64_MAX;
+	boundedDiagnostics.deliveredWarpEventCallbackCount = UINT64_MAX;
+	const bool boundedDiagnosticsOk = Destiny_GetEmbeddedEventDiagnostics(
+		session, &boundedDiagnostics, sizeof( boundedDiagnostics.suppressedSendEventAttemptCount ) );
 	Destiny_DestroyEmbeddedSession( session );
 	if( !diagnosticsOk || finalDiagnostics.directEvolveCount != 44 || finalDiagnostics.commandCount != 1 ||
-		finalDiagnostics.lastCommandTime != 3 * kTicksPerSecond || finalDiagnostics.mode != DSTBALL_STOP )
+		finalDiagnostics.lastCommandTime != 3 * kTicksPerSecond || finalDiagnostics.mode != DSTBALL_STOP ||
+		finalDiagnostics.followBallId != 0 || finalDiagnostics.followRange != 0.0f ||
+		finalDiagnostics.warpEffectStamp != 0 || finalDiagnostics.warpFactor != 0 ||
+		finalDiagnostics.warpMinRange != 0.0 || finalDiagnostics.warpTotalDistance != 0.0 ||
+		!eventDiagnosticsOk || !boundedDiagnosticsOk || !lateCallbackRejected ||
+		eventDiagnostics.suppressedSendEventAttemptCount == 0 ||
+		eventDiagnostics.deliveredWarpEventCallbackCount != s_warpEvents.size() ||
+		eventDiagnostics.suppressedPostEventAttemptCount < eventDiagnostics.deliveredWarpEventCallbackCount ||
+		boundedDiagnostics.suppressedSendEventAttemptCount != eventDiagnostics.suppressedSendEventAttemptCount ||
+		boundedDiagnostics.suppressedPostEventAttemptCount != UINT64_MAX ||
+		boundedDiagnostics.deliveredWarpEventCallbackCount != UINT64_MAX )
 	{
-		error = "final warp counters failed";
+		error = "final warp or event counters failed";
 		return false;
 	}
 	if( !sawWarpMode || result.activationEvolve < 0 || result.dropoutEvolve < 0 ||
@@ -554,6 +587,270 @@ bool RunScenario(
 			return false;
 		}
 	}
+	return true;
+}
+
+enum class ReplacementCommand
+{
+	Stop,
+	Goto,
+	Orbit,
+	Follow,
+	GotoDirection,
+};
+
+struct InterruptionResult
+{
+	int32_t mode = 0;
+	int64_t followBallId = 0;
+	float followRange = 0.0f;
+	std::array<double, 3> position = {};
+	std::array<double, 3> velocity = {};
+	std::vector<WarpEventRecord> events;
+
+	bool operator==( const InterruptionResult& other ) const
+	{
+		return mode == other.mode && followBallId == other.followBallId &&
+			followRange == other.followRange && position == other.position &&
+			velocity == other.velocity && events.size() == other.events.size() &&
+			std::equal(
+				events.begin(), events.end(), other.events.begin(),
+				[]( const WarpEventRecord& first, const WarpEventRecord& second ) {
+					return first.event == second.event && first.ballId == second.ballId &&
+						first.eventTime == second.eventTime;
+				} );
+	}
+};
+
+bool RunInterruptedWarp(
+	ReplacementCommand replacement,
+	InterruptionResult& result,
+	std::string& error )
+{
+	DestinyEmbeddedBallConfig config = {};
+	config.ballId = 1;
+	config.solarSystemId = 30005286;
+	config.mass = 975000.0;
+	config.radius = 35.0f;
+	config.maximumVelocity = 312.0f;
+	config.maximumAngularVelocity = 1.0f;
+	config.position[2] = -1000.0;
+	config.rotation[3] = 1.0f;
+	config.agility = 2.87f;
+	config.rotationalAgility = 1.0f;
+	config.speedFraction = 1.0f;
+	config.isFree = true;
+	config.isMassive = true;
+	config.isInteractive = true;
+	DestinyEmbeddedSessionOptions options = {};
+	options.orientationPolicy = DESTINY_EMBEDDED_NATIVE_ORIENTATION;
+	options.referenceFrame = DESTINY_EMBEDDED_PRIMARY_EGO;
+	char createError[512] = {};
+	DestinyEmbeddedSession* session = Destiny_CreateEmbeddedSessionWithOptions(
+		&config, &options, createError, sizeof( createError ) );
+	if( !session )
+	{
+		error = createError;
+		return false;
+	}
+	s_warpEvents.clear();
+	DestinyEmbeddedFixedTargetConfig fixed = {};
+	fixed.ballId = 3;
+	fixed.radius = 35.0f;
+	fixed.position[0] = 5000.0;
+	if( !Destiny_SetEmbeddedWarpEventCallback( session, CollectWarpEvent, nullptr ) ||
+		!Destiny_AddEmbeddedFixedTarget( session, &fixed, createError, sizeof( createError ) ) ||
+		!Destiny_CommandEmbeddedWarp( session, kTicksPerSecond, kWarpTarget, kMinimumRange, kWarpFactor ) )
+	{
+		error = "interruption fixture setup failed";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+
+	DestinyEmbeddedDiagnostics before = {};
+	bool reachedWarpProper = false;
+	for( int tick = 1; tick <= 20; ++tick )
+	{
+		if( !Destiny_AdvanceEmbeddedSession( session, static_cast<Be::Time>( tick ) * kTicksPerSecond ) ||
+			!Destiny_GetEmbeddedDiagnostics( session, &before ) )
+		{
+			error = "interruption fixture advance failed";
+			Destiny_DestroyEmbeddedSession( session );
+			return false;
+		}
+		if( before.mode == DESTINY_EMBEDDED_BALL_MODE_WARP && before.warpEffectStamp >= 0 )
+		{
+			reachedWarpProper = true;
+			break;
+		}
+	}
+	if( !reachedWarpProper || before.isMassive || before.sensorActive )
+	{
+		error = "interruption fixture did not reach collision-suspended warp proper";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+
+	const Be::Time effectiveTime = before.nextTickTime;
+	bool accepted = false;
+	const double gotoTarget[3] = { 250000.0, 1000.0, -1000.0 };
+	const double direction[3] = { 1.0, 0.0, 0.0 };
+	int32_t expectedMode = DESTINY_EMBEDDED_BALL_MODE_STOP;
+	int64_t expectedFollowBallId = 0;
+	float expectedFollowRange = 0.0f;
+	switch( replacement )
+	{
+	case ReplacementCommand::Stop:
+		accepted = Destiny_CommandEmbeddedStop( session, effectiveTime );
+		break;
+	case ReplacementCommand::Goto:
+		accepted = Destiny_CommandEmbeddedGoto( session, effectiveTime, gotoTarget );
+		expectedMode = DESTINY_EMBEDDED_BALL_MODE_GOTO;
+		break;
+	case ReplacementCommand::Orbit:
+		accepted = Destiny_CommandEmbeddedOrbit( session, effectiveTime, fixed.ballId, 2500.0f );
+		expectedMode = DESTINY_EMBEDDED_BALL_MODE_ORBIT;
+		expectedFollowBallId = fixed.ballId;
+		expectedFollowRange = 2500.0f;
+		break;
+	case ReplacementCommand::Follow:
+		accepted = Destiny_CommandEmbeddedFollow( session, effectiveTime, fixed.ballId, 1500.0f );
+		expectedMode = DESTINY_EMBEDDED_BALL_MODE_FOLLOW;
+		expectedFollowBallId = fixed.ballId;
+		expectedFollowRange = 1500.0f;
+		break;
+	case ReplacementCommand::GotoDirection:
+		accepted = Destiny_CommandEmbeddedGotoDirection( session, effectiveTime, direction );
+		expectedMode = DESTINY_EMBEDDED_BALL_MODE_GOTO;
+		break;
+	}
+	DestinyEmbeddedDiagnostics queued = {};
+	if( !accepted || !Destiny_GetEmbeddedDiagnostics( session, &queued ) ||
+		queued.mode != DESTINY_EMBEDDED_BALL_MODE_WARP || queued.isMassive || queued.sensorActive ||
+		!Destiny_AdvanceEmbeddedSession( session, effectiveTime ) )
+	{
+		error = "replacement command was not deferred to its effective tick";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+	DestinyEmbeddedDiagnostics after = {};
+	if( !Destiny_GetEmbeddedDiagnostics( session, &after ) || after.mode != expectedMode ||
+		!after.isMassive || !after.sensorActive || after.followBallId != expectedFollowBallId ||
+		after.followRange != expectedFollowRange || after.warpEffectStamp != 0 ||
+		after.warpFactor != 0 || after.warpMinRange != 0.0 || after.warpTotalDistance != 0.0 ||
+		after.lastCommandTime != effectiveTime || s_warpEvents.size() != 3 ||
+		s_warpEvents[0].event != DESTINY_EMBEDDED_WARP_EVENT_ACTIVATING ||
+		s_warpEvents[1].event != DESTINY_EMBEDDED_WARP_EVENT_DEACTIVATING ||
+		s_warpEvents[2].event != DESTINY_EMBEDDED_WARP_EVENT_EXIT )
+	{
+		error = "replacement command did not perform a complete warp dropout";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+	result.mode = after.mode;
+	result.followBallId = after.followBallId;
+	result.followRange = after.followRange;
+	for( size_t axis = 0; axis < 3; ++axis )
+	{
+		result.position[axis] = after.rawPosition[axis];
+		result.velocity[axis] = after.rawVelocity[axis];
+	}
+	result.events = s_warpEvents;
+	Destiny_DestroyEmbeddedSession( session );
+	return true;
+}
+
+bool RunAlignmentCancellationPreservesParticipation( std::string& error )
+{
+	DestinyEmbeddedBallConfig config = {};
+	config.ballId = 1;
+	config.solarSystemId = 30005286;
+	config.mass = 975000.0;
+	config.radius = 35.0f;
+	config.maximumVelocity = 312.0f;
+	config.maximumAngularVelocity = 1.0f;
+	config.position[2] = -1000.0;
+	config.rotation[3] = 1.0f;
+	config.agility = 2.87f;
+	config.rotationalAgility = 1.0f;
+	config.speedFraction = 1.0f;
+	config.isFree = true;
+	config.isMassive = false;
+	config.isInteractive = true;
+	DestinyEmbeddedSessionOptions options = {};
+	options.orientationPolicy = DESTINY_EMBEDDED_NATIVE_ORIENTATION;
+	options.referenceFrame = DESTINY_EMBEDDED_PRIMARY_EGO;
+	char createError[512] = {};
+	DestinyEmbeddedSession* session = Destiny_CreateEmbeddedSessionWithOptions(
+		&config, &options, createError, sizeof( createError ) );
+	if( !session )
+	{
+		error = createError;
+		return false;
+	}
+
+	Ballpark* ballpark = static_cast<Ballpark*>( Destiny_GetEmbeddedBallpark( session ) );
+	Ball* ball = ballpark ? ballpark->DestinyEmbeddedFindBall( config.ballId ) : nullptr;
+	if( !ball )
+	{
+		error = "alignment-cancellation fixture could not access the primary ball";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+	ball->mSensor.active = false;
+	s_warpEvents.clear();
+	if( !Destiny_SetEmbeddedWarpEventCallback( session, CollectWarpEvent, nullptr ) ||
+		!Destiny_CommandEmbeddedWarp( session, kTicksPerSecond, kWarpTarget, kMinimumRange, kWarpFactor ) ||
+		!Destiny_AdvanceEmbeddedSession( session, kTicksPerSecond ) )
+	{
+		error = "alignment-cancellation fixture setup failed";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+
+	DestinyEmbeddedDiagnostics aligning = {};
+	if( !Destiny_GetEmbeddedDiagnostics( session, &aligning ) ||
+		aligning.mode != DESTINY_EMBEDDED_BALL_MODE_WARP || aligning.warpEffectStamp >= 0 ||
+		aligning.isMassive || aligning.sensorActive || !s_warpEvents.empty() )
+	{
+		error = "alignment-cancellation fixture did not remain in pre-warp alignment";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+
+	const Be::Time effectiveTime = aligning.nextTickTime;
+	if( !Destiny_CommandEmbeddedStop( session, effectiveTime ) ||
+		!Destiny_AdvanceEmbeddedSession( session, effectiveTime ) )
+	{
+		error = "alignment-cancellation STOP command failed";
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+
+	DestinyEmbeddedDiagnostics stopped = {};
+	if( !Destiny_GetEmbeddedDiagnostics( session, &stopped ) ||
+		stopped.mode != DESTINY_EMBEDDED_BALL_MODE_STOP || stopped.isMassive || stopped.sensorActive ||
+		stopped.followBallId != 0 || stopped.followRange != 0.0f || stopped.warpEffectStamp != 0 ||
+		stopped.warpFactor != 0 || stopped.warpMinRange != 0.0 || stopped.warpTotalDistance != 0.0 ||
+		stopped.lastCommandTime != effectiveTime || !s_warpEvents.empty() )
+	{
+		char detail[512] = {};
+		std::snprintf(
+			detail, sizeof( detail ),
+			"alignment cancellation state mismatch: mode=%d massive=%d sensor=%d follow=%lld/%.3f "
+			"warp=%lld/%d/%.3f/%.3f command=%lld expected=%lld events=%zu first=%d",
+			stopped.mode, stopped.isMassive, stopped.sensorActive,
+			static_cast<long long>( stopped.followBallId ), stopped.followRange,
+			static_cast<long long>( stopped.warpEffectStamp ), stopped.warpFactor,
+			stopped.warpMinRange, stopped.warpTotalDistance,
+			static_cast<long long>( stopped.lastCommandTime ), static_cast<long long>( effectiveTime ),
+			s_warpEvents.size(), s_warpEvents.empty() ? -1 : s_warpEvents.front().event );
+		error = detail;
+		Destiny_DestroyEmbeddedSession( session );
+		return false;
+	}
+
+	Destiny_DestroyEmbeddedSession( session );
 	return true;
 }
 
@@ -656,9 +953,28 @@ int main( int argc, char** argv )
 		}
 	}
 
+	for( ReplacementCommand replacement : {
+		ReplacementCommand::Stop,
+		ReplacementCommand::Goto,
+		ReplacementCommand::Orbit,
+		ReplacementCommand::Follow,
+		ReplacementCommand::GotoDirection,
+	} )
+	{
+		InterruptionResult first;
+		InterruptionResult second;
+		if( !RunInterruptedWarp( replacement, first, error ) ||
+			!RunInterruptedWarp( replacement, second, error ) || !( first == second ) )
+		{
+			return Fail( error.empty() ? "interrupted warp was not deterministic" : error );
+		}
+	}
+	if( !RunAlignmentCancellationPreservesParticipation( error ) )
+		return Fail( error );
+
 	std::printf(
 		"Destiny PL-11C warp contract: samples=%zu align=%llu activation=%lld dropout=%lld "
-		"distance=%.6f AU frames=primary+observer+celestial\n",
+		"distance=%.6f AU frames=primary+observer+celestial interruptions=stop+goto+orbit+follow+direction\n",
 		primaryA.rawMotion.size(),
 		static_cast<unsigned long long>( primaryA.aligningTicks ),
 		static_cast<long long>( primaryA.activationEvolve ),

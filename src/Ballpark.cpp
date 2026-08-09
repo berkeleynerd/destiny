@@ -3894,7 +3894,7 @@ void Ballpark::MissileFollow(
     // The effect stamp is used to make the missile go in a straight launch direction for a few timesteps before actually following
     missile->mEffectStamp = mCurrentTime;
     Vector3d velocity = missile->mNewVel;
-    missile->mGoto = velocity.Normalize()*1.e16;
+    missile->mGoto = velocity.LengthSq() > 0.0 ? velocity.Normalize()*1.e16 : target->mNewPos;
     missile->mSpeedFraction = 1.0;
     missile->SetMode(DSTBALL_MISSILE);
 
@@ -3925,9 +3925,8 @@ bool Ballpark::LaunchMissile(
 	if( target && aimedLaunch && !target->isCloaked )
 	{
 		launchVelocity = target->mNewPos - launchPosition;
-		if( launchVelocity.LengthSq() <= 0.0 )
-			return false;
-		launchVelocity.Normalize();
+		if( launchVelocity.LengthSq() > 0.0 )
+			launchVelocity.Normalize();
 	}
 	else
 	{
@@ -4410,15 +4409,6 @@ double Ballpark::WarpDistance(Ball *ball, Vector3d& p, Vector3d& v, double t, bo
         // (This ensures that very fast ships still spend a bit of time in the end-warp phase before they become active/targetable)
         if (speed < std::min(ball->mMaxVel / 2.0, 100.0) && !interpolating)
         {
-            if (!isMaster && !DESTINY_PY_POST_EVENT(
-                (IEveBallpark*)this, "Destiny::OnDeactivatingWarp",
-                "OnDeactivatingWarp", "Li", ball->mId, mCurrentTime
-                ))
-            {
-                PyOS->PyError();
-            }
-            ball->isMassive = true;
-            ball->mSensor.active = true;
             Stop(ball);
         }
     }
@@ -4435,15 +4425,6 @@ double Ballpark::WarpDistance(Ball *ball, Vector3d& p, Vector3d& v, double t, bo
         
         if (!interpolating)
         {
-            if (!isMaster && !DESTINY_PY_POST_EVENT(
-                (IEveBallpark*)this, "Destiny::OnDeactivatingWarp",
-                "OnDeactivatingWarp", "Li", ball->mId, mCurrentTime
-                ))
-            {
-                PyOS->PyError();
-            }
-            ball->isMassive = true;
-            ball->mSensor.active = true;
             Stop(ball);
         }
     }
@@ -4670,6 +4651,27 @@ void Ballpark::Stop(
     )
 {
     CCP_ASSERT(ball);
+	const bool wasWarping = ball->IsWarping();
+	const bool wasWarpish = ball->IsWarpish();
+	if( wasWarping && !isMaster && !DESTINY_PY_POST_EVENT(
+		(IEveBallpark*)this, "Destiny::OnDeactivatingWarp",
+		"OnDeactivatingWarp", "Li", ball->mId, mCurrentTime ) )
+	{
+		PyOS->PyError();
+	}
+	if( wasWarping )
+	{
+		ball->isMassive = true;
+		ball->mSensor.active = true;
+	}
+	if( wasWarpish )
+	{
+		ball->mFollowPtr = 0;
+		ball->mFollowId = 0;
+		ball->mOwnerId = 0;
+		ball->mFollowRange = 0.0;
+		ball->mLastCollision = 0.0;
+	}
     // stop following or orbiting others
     uint8_t ballMode = ball->mMode;
 	if(std::any_of(followModes.begin(), followModes.end(), [ballMode](int mode){return ballMode == mode;}) )
@@ -4730,6 +4732,8 @@ void Ballpark::Stop(
     }
 
     ball->SetMode(DSTBALL_STOP);
+	if( wasWarpish )
+		ball->mEffectStamp = 0;
 }
 #pragma endregion
 

@@ -922,7 +922,7 @@ void Ball::SetMode(DSTBALLMODE mode)
 
             //mIntAcc = Vector3d(0.0,0.0,0.0);
         }
-        else if(mMode==DSTBALL_WARP)
+        else if(IsWarping())
         {
             if (mPark && !DESTINY_PY_POST_EVENT(
                 (IEveBallpark*)mPark, "Destiny::OnExitWarp",

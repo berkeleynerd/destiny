@@ -217,12 +217,18 @@ bool RunScenario(
 
 	DestinyEmbeddedDiagnostics final = {};
 	const bool finalOk = Destiny_GetEmbeddedDiagnostics( session, &final );
+	DestinyEmbeddedEventDiagnostics eventDiagnostics = {};
+	const bool eventDiagnosticsOk = Destiny_GetEmbeddedEventDiagnostics(
+		session, &eventDiagnostics, sizeof( eventDiagnostics ) );
 	Destiny_DestroyEmbeddedSession( session );
 	if( !finalOk || final.directEvolveCount != 62 || final.commandCount != 1 ||
 		final.mode != DSTBALL_ORBIT || final.followBallId != 3 || !Near( final.followRange, 2500.0, 1e-6 ) ||
 		final.orbitTargetBallId != 3 || final.orbitAccumulatedPhase < 1.96 * 3.141592653589793 ||
 		final.orbitAccumulatedPhase > 2.04 * 3.141592653589793 ||
-		std::abs( final.orbitCenterDistance - 2570.0 ) / 2570.0 > 0.035 )
+		std::abs( final.orbitCenterDistance - 2570.0 ) / 2570.0 > 0.035 ||
+		!eventDiagnosticsOk || eventDiagnostics.suppressedSendEventAttemptCount == 0 ||
+		eventDiagnostics.suppressedPostEventAttemptCount != 0 ||
+		eventDiagnostics.deliveredWarpEventCallbackCount != 0 )
 	{
 		error = "final Frontier orbit state failed";
 		return false;

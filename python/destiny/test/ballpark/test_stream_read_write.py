@@ -21,6 +21,35 @@ class TestWriteBallsToStream(helpers.BallparkTestCase):
         loaded_ball = reader_park.balls[saved_ball.id]
         self.assertBallEqual(saved_ball, loaded_ball)
 
+    def test_read_replaces_existing_same_id_ball_state(self):
+        stream = blue.MemStream()
+        saved_ball = helpers.add_ball_to_park(
+            self.park,
+            objectID=42,
+            x=100.0,
+            y=200.0,
+            z=300.0,
+            vx=4.0,
+            vy=5.0,
+            vz=6.0,
+            isFree=True,
+        )
+        self.park.WriteBallsToStream([saved_ball.id], stream)
+
+        reader_park = destiny.Ballpark()
+        existing_ball = helpers.add_ball_to_park(
+            reader_park,
+            objectID=saved_ball.id,
+            x=-1.0,
+            y=-2.0,
+            z=-3.0,
+        )
+        reader_park.ReadFullStateFromStream(stream)
+
+        self.assertEqual(1, len(reader_park.balls))
+        self.assertEqual(existing_ball.id, saved_ball.id)
+        self.assertBallEqual(saved_ball, reader_park.balls[saved_ball.id])
+
     def test_write_read_miniball(self):
         stream = blue.MemStream()
         saved_ball, = self.add_balls(1)

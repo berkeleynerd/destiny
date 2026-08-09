@@ -90,14 +90,18 @@ int main()
 	}
 
 	DestinyEmbeddedDiagnostics diagnostics = {};
-	if( !Destiny_GetEmbeddedDiagnostics( session, &diagnostics ) )
+	DestinyEmbeddedEventDiagnostics eventDiagnostics = {};
+	if( !Destiny_GetEmbeddedDiagnostics( session, &diagnostics ) ||
+		!Destiny_GetEmbeddedEventDiagnostics( session, &eventDiagnostics, sizeof( eventDiagnostics ) ) )
 	{
 		Destiny_DestroyEmbeddedSession( session );
 		return Fail( "diagnostic query failed" );
 	}
 	if( diagnostics.directEvolveCount != 2 || diagnostics.mode != DSTBALL_STOP ||
 		diagnostics.schedulerRegistered || diagnostics.startCallCount || diagnostics.onTickCallCount ||
-		diagnostics.pythonCallbackCount )
+		diagnostics.pythonCallbackCount || eventDiagnostics.suppressedSendEventAttemptCount != 0 ||
+		eventDiagnostics.suppressedPostEventAttemptCount != 0 ||
+		eventDiagnostics.deliveredWarpEventCallbackCount != 0 )
 	{
 		Destiny_DestroyEmbeddedSession( session );
 		return Fail( "STOP session used a forbidden scheduler or callback path" );

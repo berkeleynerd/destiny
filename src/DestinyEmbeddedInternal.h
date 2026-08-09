@@ -7,6 +7,7 @@
 #ifdef DESTINY_EMBEDDED
 void DestinyEmbeddedRecordOnTick();
 void DestinyEmbeddedRecordPythonCallback();
+void DestinyEmbeddedRecordSuppressedSendEvent();
 void DestinyEmbeddedRecordStart();
 uint64_t DestinyEmbeddedGetOnTickCount();
 uint64_t DestinyEmbeddedGetPythonCallbackCount();
@@ -26,7 +27,7 @@ bool DestinyEmbeddedPostEvent(
 	long long ballId,
 	long long eventTime );
 
-#define DESTINY_PY_SEND_EVENT( ... ) true
+#define DESTINY_PY_SEND_EVENT( ... ) ( DestinyEmbeddedRecordSuppressedSendEvent(), true )
 #define DESTINY_PY_POST_EVENT( park, timerName, eventName, format, ... ) \
 	DestinyEmbeddedPostEvent( (void*)( park ), timerName, eventName, format, __VA_ARGS__ )
 #else

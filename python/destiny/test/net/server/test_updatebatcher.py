@@ -77,6 +77,23 @@ class TestUpdateBatcher(DestinyTestCase):
             self._update_batcher.get_character_history(CHAR_ID_1)
         )
 
+    def test_positive_timestamp_mismatch_logs_and_continues(self):
+        mismatched_action = (self._park.currentTime + 1, GOTO_ACTION[1])
+        with self.assertLogs(
+            "destiny.net.server._parkupdatebatcher",
+            level="ERROR",
+        ) as captured:
+            self._update_batcher._check_state_timestamp([mismatched_action])
+        self.assertIn("mismatched timestamp", captured.output[0])
+
+    def test_tick_zero_timestamp_mismatch_is_ignored(self):
+        self._park.Evolve()
+        with self.assertNoLogs(
+            "destiny.net.server._parkupdatebatcher",
+            level="ERROR",
+        ):
+            self._update_batcher._check_state_timestamp([GOTO_ACTION])
+
     def test_add_to_bubble_history(self):
         self._update_batcher.add_to_bubble_history(BUBBLE_1, GOTO_ACTION)
         self.assertListEqual(
